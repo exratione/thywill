@@ -1,0 +1,29 @@
+{
+  "client-interface": {
+    "component": "node",
+    "static_path": "/static",
+    "port": 443,
+    "secure": true,
+    "hostname": "mydomain.com"
+  },
+ 
+  "application-interface": {
+    "component": "none",
+    "applicationModule": ""
+  },
+  
+  "database": {
+    "component": "mysql",
+    "database": "thywill",
+    "user": "thywill",
+    "password": "dummy_password",
+    "host": "localhost",
+    "port": 3306,
+  },
+  
+  "log": {
+    "component": "none",
+    "level": "debug"
+  }
+  
+}

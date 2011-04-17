@@ -3,7 +3,7 @@
 var thywill = require("thywill");
 
 
-// TODO startup script
+// TODO startup 
 
 // SUPPLY, READ CONFIG
 

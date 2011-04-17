@@ -7,7 +7,12 @@
   "engines": {"node": ">= 0.4.0"},
   "author": "Reason <reason@exratione.com>",
   "main" : "./index",
-  "scripts": { "install", "node install.js" },
+  "scripts": { 
+    "install": "node scripts/install.js",
+    "uninstall": "node scripts/uninstall.js",
+    "start": "node bin/thywill.js",
+    "stop": "node scripts/stop.js"
+  },
   "repository" : {
     "type" : "git",
     "url" : "https://github.com/exratione/thywill-js"
