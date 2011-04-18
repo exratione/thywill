@@ -4,18 +4,22 @@
   "keywords": [ "asynchronous", "message", "framework" ],
   "version": "v0.0.1",
   "homepage": "https://github.com/exratione/thywill-js",
-  "engines": {"node": ">= 0.4.0"},
   "author": "Reason <reason@exratione.com>",
+  "engines": {"node": ">= 0.4.0"},
+  "dependencies": {
+    "express": ">= 2.2.2",
+    "socket.io": ">= 0.6.17"
+  },
+  "repository" : {
+    "type" : "git",
+    "url" : "https://github.com/exratione/thywill-js"
+  },
   "main" : "./index",
   "scripts": { 
     "install": "node scripts/install.js",
     "uninstall": "node scripts/uninstall.js",
     "start": "node bin/thywill.js",
     "stop": "node scripts/stop.js"
-  },
-  "repository" : {
-    "type" : "git",
-    "url" : "https://github.com/exratione/thywill-js"
   },
   "directories" : {
     "doc": "./doc",
