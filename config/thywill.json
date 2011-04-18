@@ -1,7 +1,7 @@
 {
   "client-interface": {
     "component": "node",
-    "static_path": "/static",
+    "staticPath": "/static",
     "port": 443,
     "secure": true,
     "hostname": "mydomain.com"
@@ -18,12 +18,11 @@
     "user": "thywill",
     "password": "dummy_password",
     "host": "localhost",
-    "port": 3306,
+    "port": 3306
   },
   
   "log": {
     "component": "none",
     "level": "debug"
   }
-  
 }
