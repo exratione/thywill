@@ -51,14 +51,12 @@ And put this into /etc/profile.d/node.csh
 
     setenv PATH /home/node/local/node/bin:$PATH
 
-
-Install node.js Modules
------------------------
-
-
-
 Install thywill.js
 ------------------
+
+Installing through NPM will automatically install the necessary dependency chains.
+
+    npm install thywill
 
 
 

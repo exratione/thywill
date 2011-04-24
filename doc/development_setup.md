@@ -24,7 +24,7 @@ http://amateras.sourceforge.jp/cgi-bin/fswiki_en/wiki.cgi?page=EclipseHTMLEditor
 Or use the default package in Eclipse, which is installed through the IDE:
 
   * "Help" > "Install New Software" Choose to work with the site for your version of eclipse.
-  * Expand "Web, XML and Java EE development", check "Javascript Development Tools" and click Next to continue with the install
+  * Expand "Web, XML and Java EE development", check "Javascript Development Tools" and "Web Page Editor" and click Next to continue with the install
 
 Creating a Project
 ------------------

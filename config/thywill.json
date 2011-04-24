@@ -1,5 +1,5 @@
 {
-  "client-interface": {
+  "clientInterface": {
     "component": "node",
     "staticPath": "/static",
     "port": 443,
@@ -7,9 +7,8 @@
     "hostname": "mydomain.com"
   },
  
-  "application-interface": {
-    "component": "none",
-    "applicationModule": ""
+  "applicationInterface": {
+    "component": "events",
   },
   
   "database": {
