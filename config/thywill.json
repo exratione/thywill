@@ -8,16 +8,11 @@
   },
  
   "applicationInterface": {
-    "component": "events",
+    "component": "local",
   },
   
   "database": {
-    "component": "mysql",
-    "database": "thywill",
-    "user": "thywill",
-    "password": "dummy_password",
-    "host": "localhost",
-    "port": 3306
+    "component": "memory",
   },
   
   "log": {
