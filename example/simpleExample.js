@@ -5,7 +5,7 @@
 
 var http = require("http");
 var thywill = require("thywill");
-var echoAppClass = require("../apps/echo");
+var echoAppClass = require("../lib/apps/echo");
 
 /*
  * Start up an HTTP server.
