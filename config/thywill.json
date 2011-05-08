@@ -1,10 +1,7 @@
 {
   "clientInterface": {
-    "component": "node",
-    "staticPath": "/static",
-    "port": 443,
-    "secure": true,
-    "hostname": "mydomain.com"
+    "component": "socketIO",
+    "path": "/thywill",
   },
  
   "applicationInterface": {
