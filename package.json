@@ -15,12 +15,6 @@
     "url" : "https://github.com/exratione/thywill-js"
   },
   "main" : "./index",
-  "scripts": { 
-    "install": "node scripts/install.js",
-    "uninstall": "node scripts/uninstall.js",
-    "start": "node bin/thywill.js",
-    "stop": "node scripts/stop.js"
-  },
   "directories" : {
     "doc": "./doc",
     "lib": "./lib", 

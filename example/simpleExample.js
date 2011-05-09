@@ -14,6 +14,7 @@ var server = http.createServer(function(req, res) {
   res.writeHead(200, { "Content-Type": "text/html"}); 
   res.end("Echo Test");   
 });
+server.listen(80);
 
 /*
  * Then define your application object and callback function:

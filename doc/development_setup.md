@@ -51,8 +51,3 @@ In the upper repository directory, run:
 This effectively installs the repository code as the module, and changes made to the code will reflect immediately when you run it. See the NPM documentation for more:
 
 https://github.com/isaacs/npm/blob/master/doc/link.md
-
-You can now start and stop thywill.js with the normal NPM commands:
-
-    npm start thywill
-    npm stop thywill
