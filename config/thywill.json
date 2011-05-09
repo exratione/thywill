@@ -1,15 +1,15 @@
 {
   "clientInterface": {
     "component": "socketIO",
-    "path": "/thywill",
+    "path": "/thywill"
   },
  
   "applicationInterface": {
-    "component": "local",
+    "component": "local"
   },
   
   "database": {
-    "component": "memory",
+    "component": "memory"
   },
   
   "log": {
