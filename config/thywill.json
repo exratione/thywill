@@ -13,7 +13,7 @@
   },
   
   "log": {
-    "component": "none",
+    "component": "console",
     "level": "debug"
   }
 }
