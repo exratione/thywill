@@ -10,13 +10,26 @@ var thywill = require("thywill");
 var EchoAppClass = require("../lib/apps/echo");
 
 /*
- * Start up an HTTP server.
+ * Start up an HTTP server. Note that this will need sufficient privileges to 
+ * bind to the privileged port 80. E.g. you are running the script while logged
+ * in as root or through sudo via something like:
+ * 
+ * sudo /full/path/to/node /full/path/to/simpleExample.js
  */ 
 var server = http.createServer(function(req, res) {
   res.writeHead(200, { "Content-Type": "text/html"}); 
   res.end("Echo Test");   
 });
 server.listen(80);
+
+/*
+ * Drop the permissions of the process now that the port is bound by switching ownership
+ * to another user who still has sufficient permissions to access the needed scripts.
+ * 
+ * Replace the username below with your lower-permissions node user
+ * and uncomment the line.
+ */
+// process.setguid("node");
 
 /*
  * Then define your application object and callback function:

@@ -43,13 +43,26 @@ This will put NPM into the node installation in /home/node/local/node, under /ho
 Add Paths to PATH
 -----------------
 
-To add the path to node.js and NMP to the system path for every user, create the file /etc/profile.d/node.sh and add this to it:
+To add the path to node.js and NMP to the system path for every user, create the file /etc/profile.d/node.sh and add 
+this to it:
 
     export PATH=/home/node/local/node/bin:$PATH
 
 And put this into /etc/profile.d/node.csh
 
     setenv PATH /home/node/local/node/bin:$PATH
+
+User Permissions
+----------------
+
+Depending on what you want to do with node.js (e.g. bind to privileged ports < 1024), you may want to allow the node 
+user to be able to use sudo. In Fedora, do this by adding a file "node" into /etc/sudoers.d and putting the following 
+line into it:
+
+    node        ALL=(ALL)       NOPASSWD: ALL
+
+For a production server, you would probably want to constrain the node user's options a little more that the blanket 
+sudo access above.
 
 Install thywill.js
 ------------------

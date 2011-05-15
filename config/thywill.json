@@ -19,7 +19,7 @@
   
   "template": {
   	"component": "ejs"
-  }
+  },
   
   "resources": {
   	"component": "useDatastore"
