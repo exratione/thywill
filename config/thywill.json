@@ -1,19 +1,27 @@
 {
   "clientInterface": {
     "component": "socketIO",
-    "path": "/thywill"
+    "basePath": "/thywill"
   },
  
-  "applicationInterface": {
+  "appInterface": {
     "component": "local"
   },
   
-  "database": {
+  "datastore": {
     "component": "memory"
   },
   
   "log": {
     "component": "console",
     "level": "debug"
+  },
+  
+  "template": {
+  	"component": "ejs"
+  }
+  
+  "resources": {
+  	"component": "useDatastore"
   }
 }

@@ -7,8 +7,9 @@
   "author": "Reason <reason@exratione.com>",
   "engines": {"node": ">= 0.4.0"},
   "dependencies": {
-    "express": ">= 2.2.2",
-    "socket.io": ">= 0.6.17"
+    "socket.io": ">= 0.6.17",
+    "ejs": ">= 0.4.1",
+    "async": ">= 0.1.9"
   },
   "repository" : {
     "type" : "git",
