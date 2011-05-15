@@ -1,6 +1,7 @@
 {
   "clientInterface": {
     "component": "socketIO",
+    "encoding": "utf-8",
     "basePath": "/thywill"
   },
  
