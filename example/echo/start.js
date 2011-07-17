@@ -7,9 +7,10 @@
  * When running, navigate to /thywill on the server to see it in action.
  */
 
+var path = require("path");
 var express = require("express");
 var ThywillClass = require("thywill");
-var EchoAppClass = require("../lib/apps/echo");
+var EchoAppClass = require("../../lib/apps/echo");
 
 /*
  * Start up an HTTP server. Note that this will need sufficient privileges to 
@@ -37,7 +38,7 @@ var callback = function(error) {
  * Create and configure the thywill instance.
  */ 
 var thywill = new ThywillClass();
-thywill.configureFromFile("./thywillConfig.json");
+thywill.configureFromFile(path.resolve(__dirname, "./thywillConfig.json"));
 
 /*
  * Start thywill running. This is an asynchronous call. 
