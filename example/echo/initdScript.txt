@@ -26,7 +26,7 @@
 . /etc/init.d/functions
 
 NAME=my_application_name
-SOURCE_DIR=/path/to/my/application/package/scripts
+SOURCE_DIR=/home/node/local/node/lib/node/thywill/example/echo
 SOURCE_FILE=start.js
 
 user=node
@@ -65,7 +65,7 @@ start() {
 stop() {
   echo -n "Shutting down $NAME node instance : "
   if [ "$foreverid" != "" ]; then
-    $node $SOURCE_DIR/prepareForStop.js
+    $node $SOURCE_DIR/prepareForShutdown.js
     $forever stop -p $forever_dir $id
   else
     echo "Instance is not running";

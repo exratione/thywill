@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /*
  * An example of a thywill HTTP server, using a very simple configuration and a proof of concept application.
  * All this does is echo messages back to the client.
@@ -5,7 +7,7 @@
  * When running, navigate to /thywill on the server to see it in action.
  */
 
-var http = require("http");
+var express = require("express");
 var ThywillClass = require("thywill");
 var EchoAppClass = require("../lib/apps/echo");
 
@@ -16,20 +18,8 @@ var EchoAppClass = require("../lib/apps/echo");
  * 
  * sudo /full/path/to/node /full/path/to/simpleExample.js
  */ 
-var server = http.createServer(function(req, res) {
-  res.writeHead(200, { "Content-Type": "text/html"}); 
-  res.end("Echo Example Running");   
-});
+var server = express.createServer();
 server.listen(80);
-
-/*
- * Drop the permissions of the process now that the port is bound by switching ownership
- * to another user who still has sufficient permissions to access the needed scripts.
- * 
- * Replace the username below with your lower-permissions node user is it is not "node"
- */
-process.setgid("node");
-process.setuid("node");
 
 /*
  * Then define your application object and callback function:
@@ -58,5 +48,14 @@ thywill.configureFromFile("./thywillConfig.json");
  * The callback has the form function(error) {}, where error == Component.NO_ERROR == null on a successful startup.
  */
 thywill.startup(server, echoApp, callback);
+
+/*
+ * Drop the permissions of the process now that all ports are bound by switching ownership
+ * to another user who still has sufficient permissions to access the needed scripts.
+ * 
+ * Replace the username below with your lower-permissions node user is it is not "node"
+ */
+process.setgid("node");
+process.setuid("node");
 
 

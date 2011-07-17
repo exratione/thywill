@@ -1,8 +1,16 @@
 {
+  "thywill": {
+  	"prepareForShutdown": {
+      "port": 10080,
+  	  "path": "/thywill/prepareForShutdown"
+  	}
+  },
+  
   "clientInterface": {
     "component": "socketIO",
     "encoding": "utf-8",
     "basePath": "/thywill"
+    "namespace": "/thywillNamespace"
   },
  
   "appInterface": {
