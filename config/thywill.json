@@ -9,8 +9,8 @@
   "clientInterface": {
     "component": "socketIO",
     "encoding": "utf-8",
-    "basePath": "/thywill"
-    "namespace": "/thywill"
+    "basePath": "/thywill",
+    "namespace": "/thywillNamespace"
   },
  
   "appInterface": {
