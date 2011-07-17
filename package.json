@@ -3,7 +3,7 @@
   "description": "A framework for building asynchronous message based applications in node.js",
   "keywords": [ "asynchronous", "message", "framework" ],
   "version": "v0.0.1",
-  "homepage": "https://github.com/exratione/thywill-js",
+  "homepage": "https://github.com/exratione/thywill",
   "author": "Reason <reason@exratione.com>",
   "engines": {"node": ">= 0.4.0"},
   "dependencies": {
@@ -13,7 +13,7 @@
   },
   "repository" : {
     "type" : "git",
-    "url" : "https://github.com/exratione/thywill-js"
+    "url" : "https://github.com/exratione/thywill"
   },
   "main" : "./index",
   "directories" : {

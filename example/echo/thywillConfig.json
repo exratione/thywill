@@ -1,0 +1,28 @@
+{
+  "clientInterface": {
+    "component": "socketIO",
+    "encoding": "utf-8",
+    "basePath": "/thywill"
+  },
+ 
+  "appInterface": {
+    "component": "local"
+  },
+  
+  "datastore": {
+    "component": "memory"
+  },
+  
+  "log": {
+    "component": "console",
+    "level": "debug"
+  },
+  
+  "template": {
+  	"component": "ejs"
+  },
+  
+  "resources": {
+  	"component": "useDatastore"
+  }
+}

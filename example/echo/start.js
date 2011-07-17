@@ -1,12 +1,12 @@
 /*
  * An example of a thywill HTTP server, using a very simple configuration and a proof of concept application.
- * All this does is echo messages submitted back to the client.
+ * All this does is echo messages back to the client.
  * 
  * When running, navigate to /thywill on the server to see it in action.
  */
 
 var http = require("http");
-var thywill = require("thywill");
+var ThywillClass = require("thywill");
 var EchoAppClass = require("../lib/apps/echo");
 
 /*
@@ -18,7 +18,7 @@ var EchoAppClass = require("../lib/apps/echo");
  */ 
 var server = http.createServer(function(req, res) {
   res.writeHead(200, { "Content-Type": "text/html"}); 
-  res.end("Echo Test");   
+  res.end("Echo Example Running");   
 });
 server.listen(80);
 
@@ -26,10 +26,10 @@ server.listen(80);
  * Drop the permissions of the process now that the port is bound by switching ownership
  * to another user who still has sufficient permissions to access the needed scripts.
  * 
- * Replace the username below with your lower-permissions node user
- * and uncomment the line.
+ * Replace the username below with your lower-permissions node user is it is not "node"
  */
-// process.setguid("node");
+process.setgid("node");
+process.setuid("node");
 
 /*
  * Then define your application object and callback function:
@@ -44,19 +44,18 @@ var callback = function(error) {
 };
 
 /*
- * Use the default configuration file in /config/thywill.json. Configuration methods
- * for thywill are synchronous, even when reading from a file.
+ * Create and configure the thywill instance.
  */ 
-thywill.configureFromFile();
+var thywill = new ThywillClass();
+thywill.configureFromFile("./thywillConfig.json");
 
 /*
  * Start thywill running. This is an asynchronous call. 
  * 
  * We can either pass thywill.startup() a callback function that will be invoked when startup is complete,
- * with an argument that is a reference to the thywill object for convenience, or we can listen for the 
- * "thywill.ready" event elsewhere in our code. Here we are passing a callback.
+ *  or we can listen for the "thywill.ready" event elsewhere in our code. Here we are passing a callback.
  * 
- * The callback has the form function(error), where error == null on a successful startup.
+ * The callback has the form function(error) {}, where error == Component.NO_ERROR == null on a successful startup.
  */
 thywill.startup(server, echoApp, callback);
 
