@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# use this for access by password
+#rsync --chmod=ug=rwX -e ssh -axv --delete --exclude-from=$DIR/scripts/rsync-exclude $THYWILL_SOURCE_DIR $THYWILL_ACCOUNT@$THYWILL_SERVER:$THYWILL_DEST_DIR
+
+# use this for access by key
+rsync --chmod=ug=rwX -axv --delete --exclude-from=$DIR/scripts/rsync-exclude -e "ssh -i $THYWILL_KEY" $THYWILL_SOURCE_DIR $THYWILL_ACCOUNT@$THYWILL_SERVER:$THYWILL_DEST_DIR
