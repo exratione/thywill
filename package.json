@@ -5,12 +5,12 @@
   "version": "v0.0.1",
   "homepage": "https://github.com/exratione/thywill",
   "author": "Reason <reason@exratione.com>",
-  "engines": {"node": ">= 0.4.0"},
+  "engines": {"node": ">= 0.5.2"},
   "dependencies": {
     "socket.io": ">= 0.7.7",
     "ejs": ">= 0.4.3",
     "async": ">= 0.1.9",
-    "express": ">= 2.4.0",
+    "express": ">= 2.4.3",
   },
   "repository" : {
     "type" : "git",
