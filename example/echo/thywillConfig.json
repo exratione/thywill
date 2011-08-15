@@ -10,7 +10,10 @@
     "component": "socketIO",
     "encoding": "utf-8",
     "basePath": "/thywill",
-    "namespace": "/thywillNamespace"
+    "namespace": "/thywillNamespace",
+    "encryption": {
+    	"key": "change this key"
+    }
   },
  
   "appInterface": {
