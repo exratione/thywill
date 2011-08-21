@@ -13,6 +13,14 @@
     "namespace": "/thywillNamespace",
     "encryption": {
     	"key": "change this key"
+    },
+    "socketConfig": {
+      "global": {
+	    "browser client minification": true,
+	    "browser client etag": true,
+	    "log level": 3,
+   	    "transports": ["websocket"]
+      }
     }
   },
  
