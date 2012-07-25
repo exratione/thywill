@@ -1,7 +1,16 @@
 #!/bin/bash
-
-
-# set environment
+ 
+# Set the environment by loading the file "environment" in the same directory.
 DIR="$( cd "$( dirname "$0" )" && pwd)"
 source $DIR/environment
-source $DIR/scripts/deploy
+ 
+if [ "$DEPLOY_KEY" == "" ]; then
+   # Access by tediously typing a password over and again.
+   rsync --chmod=ug=rwX -e ssh -axv --delete --filter="merge $DIR/rsync-filter" \
+      $DEPLOY_SOURCE_DIR $DEPLOY_ACCOUNT@$DEPLOY_SERVER:$DEPLOY_DEST_DIR
+else
+   # Access by key.
+   rsync --chmod=ug=rwX -axv --delete --filter="merge $DIR/rsync-filter" \
+      -e "ssh -i $DEPLOY_KEY" \
+      $DEPLOY_SOURCE_DIR $DEPLOY_ACCOUNT@$DEPLOY_SERVER:$DEPLOY_DEST_DIR
+fi

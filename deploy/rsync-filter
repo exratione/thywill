@@ -1,0 +1,4 @@
+exclude .git
+exclude .gitignore
+exclude .project
+exclude .settings
