@@ -2,3 +2,4 @@ exclude .git
 exclude .gitignore
 exclude .project
 exclude .settings
+protect node_modules

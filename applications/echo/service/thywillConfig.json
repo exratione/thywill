@@ -1,0 +1,48 @@
+{
+  "thywill": {
+    "launch": {
+      "port": 10080,
+  	  "groupId": "node",
+  	  "userId": "node"
+    },
+  	"prepareForShutdown": {
+      "port": 10081,
+  	  "path": "/thywill/prepareForShutdown"
+  	}
+  },
+  
+  "clientInterface": {
+    "component": "socketIO",
+    "encoding": "utf-8",
+    "basePath": "/thywill",
+    "namespace": "/thywillNamespace",
+    "encryption": {
+    	"key": "change this key"
+    },
+    "socketConfig": {
+      "global": {
+	    "browser client minification": true,
+	    "browser client etag": true,
+	    "log level": 3,
+   	    "transports": ["websocket"]
+      }
+    }
+  },
+  
+  "datastore": {
+    "component": "memory"
+  },
+  
+  "log": {
+    "component": "console",
+    "level": "debug"
+  },
+  
+  "template": {
+  	"component": "ejs"
+  },
+  
+  "resources": {
+  	"component": "useDatastore"
+  }
+}

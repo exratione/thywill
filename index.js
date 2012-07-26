@@ -1,1 +1,1 @@
-module.exports = require("./lib/thywill");
+module.exports = require("./core/lib/thywill");
