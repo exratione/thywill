@@ -22,13 +22,13 @@ var p = Log.prototype;
 // Methods
 //-----------------------------------------------------------
 
-p.debug = function(message) {
+p.debug = function (message) {
   throw new Error("Not implemented."); 
 };
-p.warning = function(message) {
+p.warning = function (message) {
   throw new Error("Not implemented."); 
 };
-p.error = function(message) {
+p.error = function (message) {
   throw new Error("Not implemented."); 
 };
 

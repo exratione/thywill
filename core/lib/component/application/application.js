@@ -35,7 +35,7 @@ var p = Application.prototype;
  * @param {Message} message
  *   Instance of the Message class.
  */
-p.send = function(message) {
+p.send = function (message) {
   this.thywill.clientInterface.send(message);
 };
 
@@ -57,9 +57,9 @@ p.send = function(message) {
  * Bootstrap resources are loaded immediately in the client. Other resources are available to be called later.
  * 
  * @param {Function} callback
- *   Of the form function(error) {}, where error == null on success.
+ *   Of the form function (error) {}, where error == null on success.
  */
-p._defineClientResources = function(callback) {
+p._defineClientResources = function (callback) {
   throw new Error("Not implemented.");
 };
 
@@ -69,7 +69,7 @@ p._defineClientResources = function(callback) {
  * @param {Message} message
  *   Instance of the Message class.
  */
-p.receive = function(message) {
+p.receive = function (message) {
   throw new Error("Not implemented.");  
 };
 
@@ -79,7 +79,7 @@ p.receive = function(message) {
  * @param {string} sessionId
  *   Unique ID of the session.
  */
-p.connection = function(sessionId) {
+p.connection = function (sessionId) {
   throw new Error("Not implemented.");  
 };
 
@@ -89,7 +89,7 @@ p.connection = function(sessionId) {
  * @param {string} sessionId
  *   Unique ID of the session.
  */
-p.disconnection = function(sessionId) {
+p.disconnection = function (sessionId) {
   throw new Error("Not implemented.");  
 };
 

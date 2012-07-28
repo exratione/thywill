@@ -6,26 +6,34 @@
   	  "userId": "node"
     },
   	"prepareForShutdown": {
-      "port": 10081,
-  	  "path": "/thywill/prepareForShutdown"
+      "port": 20080,
+  	  "path": "/echo/prepareForShutdown"
   	}
   },
   
   "clientInterface": {
     "component": "socketIO",
     "encoding": "utf-8",
-    "basePath": "/thywill",
-    "namespace": "/thywillNamespace",
+    "basePath": "/echo",
+    "namespace": "/echoNamespace",
     "encryption": {
     	"key": "change this key"
     },
     "socketConfig": {
       "global": {
-	    "browser client minification": true,
-	    "browser client etag": true,
-	    "log level": 3,
+	      "browser client minification": true,
+	      "browser client etag": true,
+	      "log level": 3,
+	      "match origin protocol": true,
+	      "resource": "/echo/socket.io",
    	    "transports": ["websocket"]
+      },
+      "production": {
+        "log level": 1
       }
+    },
+    "clientConfig": {
+      "resource": "echo/socket.io"
     }
   },
   

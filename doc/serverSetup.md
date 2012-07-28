@@ -1,11 +1,12 @@
 Thywill Server Setup for Ubuntu
 -------------------------------
 
-This document outlines setup and configuration of a Thywill server on Ubuntu:
+This document outlines the setup and configuration of a Thywill server on
+Ubuntu:
 
   * Each Thywill application runs as a separate Node.js process
-  * Each Node.js process runs as a service using Forever
-  * A Varnish proxy server passes traffic to the Thywill applications
+  * Each Node.js process runs as a service
+  * Varnish and Nginx proxies pass traffic to Thywill applications
 
 The starting point for the purposes of this guide is a bare bones Ubuntu 12.04
 server - it probably won't even have your favorite text editor installed at the
@@ -96,25 +97,52 @@ directory will typically contain the following items:
 The service script files contain paths to various files in the Thywill
 directories. These will only be correct if Node.js is installed as described in
 this document - otherwise they must be edited in order for the scripts to work.
+
+Proxy Server Arrangement
+------------------------
+
+The following arrangement of server processes is used:
+
+  * Varnish on port 80/443
+  * Nginx on port 8080
+  * Thywill Node.js applications on ports 10080+
+  
+Prior to version 1.3, Nginx cannot pass websocket traffic as a proxy, so
+Varnish is the frontend proxy. It passes websocket traffic directly to
+the appropriate Node.js backends, and all other requests to Nginx.
+
+Nginx then passes requests to Node.js for non-websocket traffic and serves
+static files, as appropriate.
   
 Set Up Varnish
 --------------
 
-Thywill uses Varnish as a proxy rather than Nginx, as Nginx cannot proxy
-websocket traffic. Varnish also allows for great flexibility in terms of load
-balancing, splitting off traffic to different destinations by URL, and so 
-forth.
-
 First, install Varnish:
 
-   apt-get install varnish
+    apt-get install varnish
    
 Next, set up the configuration as required for your server scenario. A default
-passthrough configuration is provided in
+configuration suitable for any of the example applications is provided in:
 
+    /server-config/varnish/thywill-default.vcl
+    
+Copy the contents into your Varnish configuration file /etc/varnish/default.vcl.
+Note that this configuration is far from suitable for production use - it is an
+example only, and omits most of the useful things that Varnish can do.
 
+Set Up Nginx
+------------
 
+First, install Nginx:
 
+    apt-get install nginx
+    
+Next, set up the configuration as required for your server scenario. A default
+configuration suitable for any of the example applications is provided in:
+
+    /server-config/nginx/thywill-nginx.conf
+    
+Copy the contents into your Nginx configuration file.
 
 
 

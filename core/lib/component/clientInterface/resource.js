@@ -1,10 +1,24 @@
+/**
+ * @fileOverview
+ * Resource class definition.
+ */
 
 //-----------------------------------------------------------
 // Class Definition
 //-----------------------------------------------------------
 
-/*
- * The superclass for resource types such as Javascript and CSS files, or inline Javascript and CSS.
+/**
+ * @class
+ * Instances represent resources such as CSS and Javascript.
+ * 
+ * @param {string} type
+ *   One of the defined resource types.
+ * @param {number} weight
+ *   An ordering weight: larger values go last.
+ * @param {string} path
+ *   The resource path.
+ * @data {string} data
+ *   The body of the resource.
  */
 function Resource(type, weight, path, data) {
   this.type = type;

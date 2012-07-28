@@ -22,14 +22,15 @@ var config = JSON.parse(fs.readFileSync(filepath, "utf-8"));
 // Instantiate an application object.
 var echo = new Echo("My echo application");
 
-// Optionally, define and start an Express server.
-// var server = express.createServer();
-// server.listen(10080);
-// Or just set it to null and Thywill will create a bare-bones Express server.
+// Optionally, define and start a server.
+// var express = require("express");
+// var application = express.createApplication();
+// var server = application.listen(10080);
+// Or just set it to null and Thywill will create a bare-bones HTTPServer.
 var server = null;
 
 // And off we go: launch a Thywill instance to run the the Echo application.
-Thywill.launch(config, echo, server, function(thywill, server, error) { 
+Thywill.launch(config, echo, server, function (thywill, server, error) { 
   if (error) {
     console.log("Error while launching thywill.js: " + error);
   } else {

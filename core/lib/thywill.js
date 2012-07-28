@@ -7,7 +7,7 @@ var fs = require("fs");
 var path = require("path");
 var util = require("util");
 var async = require("async");
-var express = require("express");
+var http = require("http");
 
 var Component = require("./component/component");
 
@@ -19,29 +19,8 @@ var Component = require("./component/component");
  * @class 
  * The main controlling class for thywill. 
  * 
- * To use this, first create your server:
- * 
- * var http = require("http");
- * var server = http.createServer(function(req, res) { ... server code here ... });
- * server.listen(80);
- * 
- * Then define your application object and callback function:
- * 
- * var echoAppClass = require("./lib/apps/echo");
- * var echoApp = new echoAppClass("my app ID");
- * var callback = function(error) { ... callback code here ... }
- * 
- * Then to start things running, either this:
- * 
- * var ThwyillClass = require("thywill");
- * var thywill = new ThywillClass();
- * thywill.configureFromFile().startup(server, echoApp, callback);
- * 
- * Or this:
- * 
- * var ThwyillClass = require("thywill");
- * var thywill = new ThywillClass();
- * thywill.configureFromFile().on("thywill.ready", callback).startup(server, echoApp);
+ * See the service scripts in /applications/[appName]/service/start.js for 
+ * examples of use.
  * 
  * There are other configuration methods if you'd like to use JSON, an object,
  * or a file at a specific path.
@@ -126,13 +105,14 @@ Thywill.CONFIG_TEMPLATE = {
  * @param {Application|Application[]} applications 
  *   A single application or array of application objects to be registered.
  * @param {Object} [server]
- *   An Express server instance. If not provided, a server will be created.
+ *   An HTTPServer or HTTPSServer instance. If not provided, an HTTPServer will
+ *   be created.
  * @param {Function} [callback] 
- *   Of the form function(thywill, server, error) {}, called on completion of
+ *   Of the form function (thywill, server, error) {}, called on completion of
  *   setup, where thywill is the Thywill instance, server is a the Express
  *   server used, and error == null on success.
  */
-Thywill.launch = function(config, applications, server, callback) {
+Thywill.launch = function (config, applications, server, callback) {
 
   // Create and configure the Thywill instance.
   var thywill = new Thywill();
@@ -153,8 +133,10 @@ Thywill.launch = function(config, applications, server, callback) {
     //
     // Or more sensibly, you are using an init.d script.
     //
-    var express = require("express");
-    server = express.createServer();
+    server = http.createServer(function (req, res) {
+      res.statusCode = 404;
+      res.end("No such resource."); 
+    });
     server.listen(config.thywill.launch.port);
   }
 
@@ -163,7 +145,7 @@ Thywill.launch = function(config, applications, server, callback) {
   // We can either pass thywill.startup() a callback function that will be 
   // invoked when startup is complete, or we can listen for the "thywill.ready"
   // event elsewhere in our code. Here we are passing a callback.
-  thywill.startup(server, applications, function(error) {
+  thywill.startup(server, applications, function (error) {
     // Drop the permissions of the process now that all ports are bound by
     // switching ownership to another user who still has sufficient permissions
     // to access the needed scripts.
@@ -192,7 +174,7 @@ Thywill.launch = function(config, applications, server, callback) {
  * @param {Object} config
  *   An object representation of configuration.
  */
-Thywill.prepareForShutdown = function(config) {
+Thywill.prepareForShutdown = function (config) {
   // Check the configuration with a dummy Thywill instance.
   var thywill = new Thywill();
   thywill.configureFromObject(config);
@@ -208,11 +190,11 @@ Thywill.prepareForShutdown = function(config) {
     method: "HEAD"
   };
   
-  var request = http.request(options, function(response) {
+  var request = http.request(options, function (response) {
     console.log("Thywill completed preparations for shutdown");
   });
   request.end();
-  request.on("error", function(error) {
+  request.on("error", function (error) {
     throw error;
   });
 };
@@ -239,7 +221,7 @@ Thywill.prepareForShutdown = function(config) {
  * @return {Object}
  *   The Thywill instance this function is called on.
  */
-p.configureFromObject = function(obj) {
+p.configureFromObject = function (obj) {
   if (!obj || !obj.thywill) {
     throw new Error("Thywill.configureFromObject: null, undefined, or incompete configuration object.");
   }
@@ -256,7 +238,7 @@ p.configureFromObject = function(obj) {
  * @return {Object}
  *   The Thywill instance this function is called on.
  */
-p.configureFromJSON = function(json) {
+p.configureFromJSON = function (json) {
   return this.configureFromObject(JSON.parse(json));
 };
 
@@ -268,7 +250,7 @@ p.configureFromJSON = function(json) {
  * @return {Object}
  *   The Thywill instance this function is called on.
  */
-p.configureFromFile = function(filepath) {
+p.configureFromFile = function (filepath) {
   if (!filepath) {
     filepath = path.resolve(__dirname, "../config/thywill.json");
   }
@@ -288,9 +270,9 @@ p.configureFromFile = function(filepath) {
  * @param {Application|Application[]} applications 
  *   A single application or array of application objects to be registered.
  * @param {Function} [callback] 
- *   Of the form function(error) {}, where error == null on success.
+ *   Of the form function (error) {}, where error == null on success.
  */
-p.startup = function(server, applications, callback) {
+p.startup = function (server, applications, callback) {
   if (!this.config) {
     this.announceReady("Thywill.startup(): not configured. Use one of the configuration functions before calling startup()."); 
     return;
@@ -300,24 +282,24 @@ p.startup = function(server, applications, callback) {
   this.readyCallback = callback;
   this.server = server;
   this._setupShutdownListener();
-  this._initializeComponents(applications, this.config, function(error) {
+  this._initializeComponents(applications, this.config, function (error) {
     self._announceReady(error);
   });
 };
 
 /**
- * Set up a new HTTP server to listen for shutdown preparation messages
+ * Set up a new server to listen for shutdown preparation messages
  * from localhost.
  * 
  * TODO: accept from other IP addresses.
  */
-p._setupShutdownListener = function() {
+p._setupShutdownListener = function () {
   var self = this;
-  var server = express.createServer();
+  var server = http.createServer();
   server.listen(this.config.thywill.prepareForShutdown.port);
-  server.get(this.config.thywill.prepareForShutdown.path, function(req, res) {
-    if (req.connection.remoteAddress == "127.0.0.1" || req.socket.remoteAddress == "127.0.0.1") {
-      self._managePreparationForShutdown(function() {
+  server.on("request", function (req, res) {
+    if (req.connection.remoteAddress == "127.0.0.1" && req.url == this.config.thywill.prepareForShutdown.path) {
+      self._managePreparationForShutdown(function () {
         // Don't complete the connection until the preparation is done.
         res.statusCode = 200;
         res.end();
@@ -337,21 +319,20 @@ p._setupShutdownListener = function() {
  * @param {Function} callback 
  *   Called when preparations are complete.
  */
-p._managePreparationForShutdown = function(callback) {
-
+p._managePreparationForShutdown = function (callback) {
   // Things are shut down in reverse order to the startup process.
   var self = this;
   var fns = [
-    function(asyncCallback) {
+    function (asyncCallback) {
       self.clientInterface._prepareForShutdown(asyncCallback);      
     },
-    function(asyncCallback) {
+    function (asyncCallback) {
       self.template._prepareForShutdown(asyncCallback);      
     },
-    function(asyncCallback) {
+    function (asyncCallback) {
       self.datastore._prepareForShutdown(asyncCallback);   
     },
-    function(asyncCallback) {
+    function (asyncCallback) {
       self.log._prepareForShutdown(asyncCallback); 
     },
   ];
@@ -374,21 +355,21 @@ p._managePreparationForShutdown = function(callback) {
  * @param {Object} config 
  *   An object representation of configuration data.
  * @param {Function} callback 
- *   Of the form function(error), where error == null on success.
+ *   Of the form function (error), where error == null on success.
  */
-p._initializeComponents = function(passedApplications, config, callback) {
+p._initializeComponents = function (passedApplications, config, callback) {
   var self = this;
   var fns = [
-    function(asyncCallback) {
+    function (asyncCallback) {
       self._initializeComponent("log", config, asyncCallback);      
     },
-    function(asyncCallback) {
+    function (asyncCallback) {
       self._initializeComponent("datastore", config, asyncCallback);      
     },
-    function(asyncCallback) {
+    function (asyncCallback) {
       self._initializeComponent("template", config, asyncCallback);      
     },
-    function(asyncCallback) {
+    function (asyncCallback) {
       self._initializeComponent("clientInterface", config, asyncCallback);      
     },
   ];
@@ -400,10 +381,10 @@ p._initializeComponents = function(passedApplications, config, callback) {
       passedApplications = [passedApplications];
     }
     fns.push(
-      function(asyncCallback) {
+      function (asyncCallback) {
         async.forEach(
           passedApplications,
-          function(application, innerAsyncCallback) {
+          function (application, innerAsyncCallback) {
             self._registerApplication(application, innerAsyncCallback);
           },
           asyncCallback
@@ -411,10 +392,10 @@ p._initializeComponents = function(passedApplications, config, callback) {
       }
     );
     fns.push(
-      function(asyncCallback) {
+      function (asyncCallback) {
         async.forEach(
           passedApplications,
-          function(application, innerAsyncCallback) {
+          function (application, innerAsyncCallback) {
             application._defineClientResources(innerAsyncCallback);
           },
           asyncCallback
@@ -425,7 +406,7 @@ p._initializeComponents = function(passedApplications, config, callback) {
 
   // Finish by starting up the clientInterface, which will process all the 
   // resources defined so far.
-  fns.push(function(asyncCallback) {
+  fns.push(function (asyncCallback) {
     self.clientInterface._startup(asyncCallback);      
   });
   
@@ -440,9 +421,9 @@ p._initializeComponents = function(passedApplications, config, callback) {
  * @param {Application} application 
  *   An application instance.
  * @param {Function} callback 
- *   Of the form function(error), where error == null on success.
+ *   Of the form function (error), where error == null on success.
  */
-p._registerApplication = function(application, callback) {
+p._registerApplication = function (application, callback) {
   application.thywill = this;
   this.applications[application.id] = application;
   // all of the above is synchronous (for now), so invoke the callback;
@@ -457,9 +438,9 @@ p._registerApplication = function(application, callback) {
  * @param {Object} config 
  *   An object representation of configuration.
  * @param {Function} callback 
- *   Of the form function(error), where error == null on success.
+ *   Of the form function (error), where error == null on success.
  */
-p._initializeComponent = function(componentType, config, callback) {
+p._initializeComponent = function (componentType, config, callback) {
   // Maintain only a single instance of each component.
   if (this[componentType]) {
     return this[componentType];

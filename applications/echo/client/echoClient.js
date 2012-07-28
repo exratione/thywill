@@ -12,7 +12,7 @@ var echoApplication = {
   // Functions for connecting to the serverInterface and setting up a minimal UI.
   // -----------------------------------------------------------------------------
   
-  setupInput: function() { 
+  setupInput: function () { 
     var self = this;
     jQuery("body").append(
      '<div id="sender">' +
@@ -20,7 +20,7 @@ var echoApplication = {
        '<button>Send</button>' +
      '</div>'
     );
-    jQuery("#sender button").click(function() {
+    jQuery("#sender button").click(function () {
      var inputData = $("#sender textarea").val();  
      if( inputData ) {
        var message = {
@@ -33,11 +33,11 @@ var echoApplication = {
     });
   },
 
-  setupOutput: function() {
+  setupOutput: function () {
     jQuery("body").append('<div id="poc-output" style="margin-top: 10px; width: 500px; height: 200px; overflow-y: scroll; border: 1px solid #cccccc;"></div>');
   },
   
-  setupListeners: function() {
+  setupListeners: function () {
     thywill.serverInterface.registerApplication(this.id, this);
   },
   
@@ -45,23 +45,23 @@ var echoApplication = {
   // functions called by the serverInterface
   // ------------------------------------------
   
-  messageReceived: function(message) {
+  messageReceived: function (message) {
     jQuery("#poc-output").append('<div>' + message.data + '</div>');
   },
   
-  confirmationReceived: function(confirmation) {
+  confirmationReceived: function (confirmation) {
     // noop in this case, we don't care about confirmation of receipt at the server
   },
   
-  messageError: function(error) {
+  messageError: function (error) {
     console.log(error);
   },
   
-  disconnected: function() {
+  disconnected: function () {
     
   },
   
-  reconnected: function() {
+  reconnected: function () {
     
   }
   
@@ -71,8 +71,8 @@ var echoApplication = {
  * Add a callback to be invoked when the thywill bootstrap process is complete and applications can start to do their thing.
  * That might complete before the DOM is ready, so use jQuery.ready() to make sure we wait for that.
  */
-thywill.callOnReady(function() {
-  jQuery(document).ready(function() {
+thywill.callOnReady(function () {
+  jQuery(document).ready(function () {
     echoApplication.setupListeners();
     echoApplication.setupInput();
     echoApplication.setupOutput();

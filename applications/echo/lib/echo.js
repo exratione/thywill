@@ -38,13 +38,13 @@ var p = Echo.prototype;
  * Define the resources used by the application.
  * 
  * @param {Function} callback
- *   Of the form function(error) {}, where error == null on success.
+ *   Of the form function (error) {}, where error == null on success.
  */
-p._defineClientResources = function(callback) {
+p._defineClientResources = function (callback) {
   // Setting bootstrap resources: the application code and libraries.
   var self = this;
   var fns = [
-    function(asyncCallback) {
+    function (asyncCallback) {
       var filepath = path.resolve(__dirname, "../client/thirdParty/jquery.1.7.2.min.js");
       var data = fs.readFileSync(filepath, "utf-8");  
      
@@ -52,7 +52,7 @@ p._defineClientResources = function(callback) {
       self.thywill.clientInterface.defineBootstrapResource(resource, asyncCallback);
     },
     
-    function(asyncCallback) {
+    function (asyncCallback) {
       var filepath = path.resolve(__dirname, "../client/echoClient.js");
       var data = fs.readFileSync(filepath, "utf-8");  
       
@@ -70,9 +70,9 @@ p._defineClientResources = function(callback) {
  * Perform any actions needed prior to Thywill shutdown.
  * 
  * @param {Function} callback
- *   Of the form function() {}.
+ *   Of the form function () {}.
  */
-p._prepareForShutdown = function(callback) {
+p._prepareForShutdown = function (callback) {
   // Nothing needs doing here.
   callback.call(this);
 };
@@ -88,7 +88,7 @@ p._prepareForShutdown = function(callback) {
  * @param {Message} message
  *   Instance of the Message class.
  */
-p.receive = function(message) {
+p.receive = function (message) {
   var echoMessage = new Message(message.data, message.sessionId, this.id);
   this.send(echoMessage);
 };
@@ -99,7 +99,7 @@ p.receive = function(message) {
  * @param {string} sessionId
  *   Unique ID of the session.
  */
-p.connection = function(sessionId) {
+p.connection = function (sessionId) {
   // Do nothing.
 };
 
@@ -109,7 +109,7 @@ p.connection = function(sessionId) {
  * @param {string} sessionId
  *   Unique ID of the session.
  */
-p.disconnection = function(sessionId) {
+p.disconnection = function (sessionId) {
   // Do nothing.
 };
 

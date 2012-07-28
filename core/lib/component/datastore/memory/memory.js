@@ -31,7 +31,7 @@ Memory.CONFIG_TEMPLATE = null;
 // Initialization
 //-----------------------------------------------------------
 
-p._configure = function(thywill, config, callback) {
+p._configure = function (thywill, config, callback) {
 
   // Minimal configuration - all we're doing here is storing it for posterity.
   this.thywill = thywill;
@@ -48,28 +48,26 @@ p._configure = function(thywill, config, callback) {
 // Methods
 //-----------------------------------------------------------
 
-p.store = function(key, object, callback) {
+p.store = function (key, object, callback) {
   this.data[key] = object;
   callback(this.NO_ERRORS);
 };
 
-p.remove = function(key, callback) {
+p.remove = function (key, callback) {
   var object = null;
   var error = this.NO_ERRORS;
   if( this.data[key] ) {
     object = this.data[key];
     delete this.data[key];
-  } else {
-    error = "Memory.remove(): No such key:" + key;
   } 
   callback(error, object);
 };
 
-p.load = function(key, callback) {
+p.load = function (key, callback) {
   if( this.data[key] ) { 
     callback(this.NO_ERRORS, this.data[key]);
   } else {
-    callback("Memory.load(): No such key:" + key, null);
+    callback(this.NO_ERRORS, null);
   }
 };
   

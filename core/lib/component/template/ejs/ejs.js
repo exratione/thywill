@@ -1,5 +1,5 @@
 
-var ejs = require('ejs');
+var ejs = require("ejs");
 var util = require("util");
 var Template = require("../template");
 
@@ -28,7 +28,7 @@ EJS.CONFIG_TEMPLATE = null;
 // Initialization and Shutdown
 //-----------------------------------------------------------
 
-p._configure = function(thywill, config, callback) {
+p._configure = function (thywill, config, callback) {
 
   // Minimal configuration - all we're doing here is storing it for posterity.
   this.thywill = thywill;
@@ -41,7 +41,7 @@ p._configure = function(thywill, config, callback) {
   this._announceReady(this.NO_ERRORS);
 };
 
-p._prepareForShutdown = function(callback) {
+p._prepareForShutdown = function (callback) {
   // nothing needed
   callback.call(this);
 };
@@ -50,7 +50,7 @@ p._prepareForShutdown = function(callback) {
 // Methods
 //-----------------------------------------------------------
 
-p.render = function(templateString, valuesObj) {
+p.render = function (templateString, valuesObj) {
   return ejs.render(templateString, { locals: valuesObj });
 };
 

@@ -18,7 +18,7 @@ thywill.serverInterface = {
   
   // For application client objects to make themselves known and listen for traffic
   listeningApplications: {},
-  registerApplication: function(applicationId, application) {
+  registerApplication: function (applicationId, application) {
     this.listeningApplications[applicationId] = application;
   },
   
@@ -26,7 +26,7 @@ thywill.serverInterface = {
   // functions to be defined by the clientInterface
   // ------------------------------------------------
   
-  send: function(message) {},      
+  send: function (message) {},      
   
   // ------------------------------------------------
   // functions called by the clientInterface
@@ -38,7 +38,7 @@ thywill.serverInterface = {
    * @param {Object} message
    *   Object of the form {data: data, applicationId: applicationId}.
    */
-	messageReceived: function(message) {
+	messageReceived: function (message) {
 	  if( message && message.applicationId && this.listeningApplications[message.applicationId] ) {
 	    var fn = this.listeningApplications[message.applicationId].messageReceived(message);
       if( typeof fn == "function" ) {
@@ -52,7 +52,7 @@ thywill.serverInterface = {
 	 * 
 	 * 
 	 */
-	confirmationReceived: function(confirmation) {
+	confirmationReceived: function (confirmation) {
 	  
 	  // TODO get this working.
 	  
@@ -69,7 +69,7 @@ thywill.serverInterface = {
 	 * 
 	 * 
 	 */
-	messageError: function(error) {
+	messageError: function (error) {
 	  
 	  
     if( error && error.applicationId && this.listeningApplications[error.applicationId] ) {
@@ -84,7 +84,7 @@ thywill.serverInterface = {
 	 * The connection to the server is lost for whatever reason - typically network issues.
 	 * All applications are notified.
 	 */
-	disconnected: function() {
+	disconnected: function () {
 	  this.connected = false;
 	  for( var i = 0, l = this.listeningApplications.length; i < l; i++ ) {
 	    if( typeof this.listeningApplications[i].disconnected == "function" ) {
@@ -96,7 +96,7 @@ thywill.serverInterface = {
 	/**
 	 * A lost connection is reestablished. All applications are notified.
 	 */
-  reconnected: function() {
+  reconnected: function () {
     this.connected = true;
     for( var i = 0, l = this.listeningApplications.length; i < l; i++ ) {
       if( typeof this.listeningApplications[i].reconnected == "function" ) {
@@ -111,7 +111,7 @@ thywill.serverInterface = {
  */
 thywill.bootstrap = {
 	complete: false, 
-	checkCompletion: function() {
+	checkCompletion: function () {
 		if( thywill.serverInterface.connected ) {
 		  this.complete = true;
 			for( var i = 0, l = this.listeners.length; i < l; i++ ) {
@@ -124,6 +124,6 @@ thywill.bootstrap = {
 	listeners: []
 };
 
-thywill.callOnReady = function(callback) {
+thywill.callOnReady = function (callback) {
   this.bootstrap.listeners.push(callback);
 };

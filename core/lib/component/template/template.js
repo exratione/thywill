@@ -21,7 +21,7 @@ var p = Template.prototype;
 // Methods to be implemented by subclasses.
 //-----------------------------------------------------------
 
-p.render = function(templateString, valuesObj) {
+p.render = function (templateString, valuesObj) {
   throw new Error("Not implemented.");  
 };
 

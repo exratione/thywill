@@ -43,7 +43,7 @@ Console.CONFIG_TEMPLATE = {
  *   "level": "debug"
  * }
  */
-p._configure = function(thywill, config, callback) {
+p._configure = function (thywill, config, callback) {
   
   // Minimal configuration - all we're doing here is storing it for posterity.
   this.thywill = thywill;
@@ -65,7 +65,7 @@ p._configure = function(thywill, config, callback) {
   this._announceReady(this.NO_ERRORS);
 };
 
-p._prepareForShutdown = function(callback) {
+p._prepareForShutdown = function (callback) {
   // nothing needed
   callback.call(this);
 };
@@ -74,25 +74,25 @@ p._prepareForShutdown = function(callback) {
 // Methods
 //-----------------------------------------------------------
 
-p.debug = function(message) {
+p.debug = function (message) {
   if( this.levels["debug"] >= this.level ) {
     this.log("debug", message);
   }
 };
 
-p.warning = function(message) {
+p.warning = function (message) {
   if( this.levels["warning"] >= this.level ) {
     this.log("warning", message);
   }
 };
 
-p.error = function(message) {
+p.error = function (message) {
   if( this.levels["error"] >= this.level ) {
     this.log("error", message);
   }
 };
 
-p.log = function(level, message) {
+p.log = function (level, message) {
   if( message && message.toString() ) {
     console.log("[" + level + "] " + message.toString());
   } else {

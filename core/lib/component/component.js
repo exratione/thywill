@@ -23,7 +23,7 @@ function Component() {
   this.thywill = null;
   
   // Used to make callback code a little more comprehensible, since most
-  // callbacks are of the form function(error, results...) where 
+  // callbacks are of the form function (error, results...) where 
   // error == null on success.
   this.NO_ERRORS = null;
 };
@@ -50,10 +50,10 @@ Component.CONFIG_TEMPLATE = null;
  * all asynchronous configuration and initialization tasks required for this
  * object to be used are now complete.
  * 
- * @param {Function} error 
+ * @param {string} error 
  *   Any errors generated during setup, or null on success.
  */
-p._announceReady = function(error) {
+p._announceReady = function (error) {
   if (!error) {
     this.ready = true;
   }
@@ -75,7 +75,7 @@ p._announceReady = function(error) {
  * @param {Object} config 
  *   The configuration object for this instance.
  */
-p._checkConfiguration = function(config) {
+p._checkConfiguration = function (config) {
   if (config instanceof Object && this.constructor.CONFIG_TEMPLATE instanceof Object) {
     this._checkConfigurationRecursively(config, this.constructor.CONFIG_TEMPLATE);
   }
@@ -104,7 +104,7 @@ p._checkConfiguration = function(config) {
  * @param {string} propertyChain
  *   A string to keep track of which configuration property is being inspected. 
  */
-p._checkConfigurationRecursively = function(configObj, templateObj, propertyChain) {
+p._checkConfigurationRecursively = function (configObj, templateObj, propertyChain) {
   
   for (property in templateObj) {
     
@@ -183,7 +183,7 @@ p._checkConfigurationRecursively = function(configObj, templateObj, propertyChai
  *   One of: "object", "array", "boolean", "string", "number", "integer",
  *   "undefined", "null", "function".
  */
-p._getType = function(value) {
+p._getType = function (value) {
   var type = typeof value;
   if (type == "object") {
     if (value instanceof Array) {
@@ -213,7 +213,7 @@ p._getType = function(value) {
  * @param {string} error
  *   The error in question.
  */
-p._throwConfigurationError = function(propertyChain, error) {
+p._throwConfigurationError = function (propertyChain, error) {
   throw new Error(
     "Configuration error for constructor " 
     + this.constructor.name
@@ -234,9 +234,9 @@ p._throwConfigurationError = function(propertyChain, error) {
  * @param {Object} config 
  *   An object representation ofconfiguration data.
  * @param {Function} callback 
- *   Of the form function(error) where error == null on success.
+ *   Of the form function (error) where error == null on success.
  */
-p._configure = function(thywill, config, callback) {
+p._configure = function (thywill, config, callback) {
   throw new Error("Not implemented.");
 };
 
@@ -247,7 +247,7 @@ p._configure = function(thywill, config, callback) {
  * 
  * @param {Function} callback
  */
-p._prepareForShutdown = function(callback) {
+p._prepareForShutdown = function (callback) {
   throw new Error("Not implemented."); 
 };
 

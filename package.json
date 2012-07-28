@@ -11,8 +11,7 @@
   "dependencies": {
     "socket.io": ">= 0.9",
     "ejs": ">= 0.7.2",
-    "async": ">= 0.1.22",
-    "express": ">= 2.4.3"
+    "async": ">= 0.1.22"
   },
   "repository" : {
     "type" : "git",
