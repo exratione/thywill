@@ -46,7 +46,7 @@ p._defineClientResources = function (callback) {
   var fns = [
     // Add Modernizr - comes first in the Javascript.
     function (asyncCallback) {
-      var filepath = path.resolve(__dirname, "../client/thirdParty/modernizr.2.6.1.min.js");
+      var filepath = path.resolve(__dirname, "../../../thirdParty/modernizr.2.6.1.min.js");
       var data = fs.readFileSync(filepath, "utf-8");  
       var resource = new Resource(Resource.TYPE_JAVASCRIPT, -20, "/echo/modernizr.min.js", data);
       resource.minified = true;
@@ -56,7 +56,7 @@ p._defineClientResources = function (callback) {
     // Thwyill code - having it come first is fairly necessary if you want
     // things to work rather than explode.
     function (asyncCallback) {
-      var filepath = path.resolve(__dirname, "../client/thirdParty/jquery.1.7.2.min.js");
+      var filepath = path.resolve(__dirname, "../../../thirdParty/jquery.1.7.2.min.js");
       var data = fs.readFileSync(filepath, "utf-8");  
       var resource = new Resource(Resource.TYPE_JAVASCRIPT, -10, "/echo/jquery.min.js", data);
       resource.minified = true;
@@ -69,6 +69,15 @@ p._defineClientResources = function (callback) {
       // A little templating to insert the application ID.
       data = self.thywill.template.render(data, { applicationId: self.id });
       var resource = new Resource(Resource.TYPE_JAVASCRIPT, 30, "/echo/echoClient.js", data);
+      self.thywill.clientInterface.defineBootstrapResource(resource, asyncCallback);
+    },
+    // Add the Echo client CSS.
+    function (asyncCallback) {
+      var filepath = path.resolve(__dirname, "../client/echoClient.css");
+      var data = fs.readFileSync(filepath, "utf-8");  
+      // A little templating to insert the application ID.
+      data = self.thywill.template.render(data, { applicationId: self.id });
+      var resource = new Resource(Resource.TYPE_CSS, 0, "/echo/echoClient.css", data);
       self.thywill.clientInterface.defineBootstrapResource(resource, asyncCallback);
     }
   ];

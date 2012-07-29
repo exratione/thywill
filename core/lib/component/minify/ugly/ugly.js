@@ -115,7 +115,7 @@ p.minifyResource = function (resource, callback) {
 /**
  * @see Minify#minifyResources
  */
-p.minifyResources = function (resources, minifyJavascript, minifyCSS, callback) {
+p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) {
   var self = this;
   // Build a new array of resources in which all of the CSS and JS is
   // merged down into one resource.
@@ -161,7 +161,7 @@ p.minifyResources = function (resources, minifyJavascript, minifyCSS, callback) 
           // an MD5 of the contents.
           cssResource = new Resource(Resource.TYPE_CSS, resource.weight, "", "");
           cssResource.minified = true;
-          returnResource = jsResource;
+          returnResource = cssResource;
         }
         
         cssResource.data += "\n\n";

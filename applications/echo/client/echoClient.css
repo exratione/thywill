@@ -1,0 +1,10 @@
+/*
+  Minimal CSS for the Echo client.
+*/
+
+textarea {
+	background-color: #EFEBF5;
+	border: 1px dashed #919191;
+  height: 40px;
+  width: 200px;
+}

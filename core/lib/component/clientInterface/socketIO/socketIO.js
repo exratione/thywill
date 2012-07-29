@@ -318,8 +318,10 @@ p._startup = function (callback) {
       var jsElementTemplate = '<script type="text/javascript" src="<%= path %>"></script>\n  ';
       var cssElementTemplate = '@import url("<%= path %>");\n  ';
 
-      // This Javascript resource has to be first in line, as it is supplied
-      // by Socket.io.
+      // This Javascript resource is supplied by Socket.io. 
+      // 
+      // TODO: how best to get it running as a resource rather than this ad-hoc placement?
+      //
       var js = '<script type="text/javascript" src="' + self.socketFactory.get('resource') + '/socket.io.js"></script>\n  ';
       var css= "";
       
