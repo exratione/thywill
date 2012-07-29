@@ -10,8 +10,8 @@ var fs = require("fs");
 var async = require("async");
 
 var Application = require("../../../core/lib/component/application/application");
-var Message = require("../../../core/lib/component/clientInterface/message");
-var Resource = require("../../../core/lib/component/clientInterface/resource");
+var Message = require("../../../core/lib/message");
+var Resource = require("../../../core/lib/resource");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -44,21 +44,30 @@ p._defineClientResources = function (callback) {
   // Setting bootstrap resources: the application code and libraries.
   var self = this;
   var fns = [
+    // Add Modernizr - comes first in the Javascript.
+    function (asyncCallback) {
+      var filepath = path.resolve(__dirname, "../client/thirdParty/modernizr.2.6.1.min.js");
+      var data = fs.readFileSync(filepath, "utf-8");  
+      var resource = new Resource(Resource.TYPE_JAVASCRIPT, -20, "/echo/modernizr.min.js", data);
+      resource.minified = true;
+      self.thywill.clientInterface.defineBootstrapResource(resource, asyncCallback);
+    },
+    // Add jQuery as a resource, setting it a lower weight than the default
+    // Thwyill code - having it come first is fairly necessary if you want
+    // things to work rather than explode.
     function (asyncCallback) {
       var filepath = path.resolve(__dirname, "../client/thirdParty/jquery.1.7.2.min.js");
       var data = fs.readFileSync(filepath, "utf-8");  
-     
-      var resource = new Resource(Resource.TYPE_JAVASCRIPT, 10, "/echo/jquery.js", data);
+      var resource = new Resource(Resource.TYPE_JAVASCRIPT, -10, "/echo/jquery.min.js", data);
+      resource.minified = true;
       self.thywill.clientInterface.defineBootstrapResource(resource, asyncCallback);
     },
-    
+    // Add the Echo client Javascript as a resource.
     function (asyncCallback) {
       var filepath = path.resolve(__dirname, "../client/echoClient.js");
       var data = fs.readFileSync(filepath, "utf-8");  
-      
       // A little templating to insert the application ID.
       data = self.thywill.template.render(data, { applicationId: self.id });
-      
       var resource = new Resource(Resource.TYPE_JAVASCRIPT, 30, "/echo/echoClient.js", data);
       self.thywill.clientInterface.defineBootstrapResource(resource, asyncCallback);
     }

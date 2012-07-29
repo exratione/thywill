@@ -33,8 +33,9 @@ function Thywill() {
   // Components.
   this.applications = {};
   this.clientInterface = null;
-  this.log = null;
   this.datastore = null;
+  this.log = null;
+  this.minify = null;
   this.template = null;
   this.resources = null;
 };
@@ -327,6 +328,9 @@ p._managePreparationForShutdown = function (callback) {
       self.clientInterface._prepareForShutdown(asyncCallback);      
     },
     function (asyncCallback) {
+      self.minify._prepareForShutdown(asyncCallback);      
+    },
+    function (asyncCallback) {
       self.template._prepareForShutdown(asyncCallback);      
     },
     function (asyncCallback) {
@@ -368,6 +372,9 @@ p._initializeComponents = function (passedApplications, config, callback) {
     },
     function (asyncCallback) {
       self._initializeComponent("template", config, asyncCallback);      
+    },
+    function (asyncCallback) {
+      self._initializeComponent("minify", config, asyncCallback);      
     },
     function (asyncCallback) {
       self._initializeComponent("clientInterface", config, asyncCallback);      

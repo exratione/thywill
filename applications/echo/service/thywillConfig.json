@@ -13,12 +13,17 @@
   
   "clientInterface": {
     "component": "socketIO",
-    "encoding": "utf-8",
     "basePath": "/echo",
-    "namespace": "/echoNamespace",
-    "encryption": {
-    	"key": "change this key"
+    "clientConfig": {
+      "resource": "echo/socket.io"
     },
+    "encoding": "utf-8",
+    "encryption": {
+      "key": "change this key"
+    },
+    "minifyCss": true,
+    "minifyJavascript": true,
+    "namespace": "/echoNamespace",
     "socketConfig": {
       "global": {
 	      "browser client minification": true,
@@ -31,9 +36,6 @@
       "production": {
         "log level": 1
       }
-    },
-    "clientConfig": {
-      "resource": "echo/socket.io"
     }
   },
   
@@ -44,6 +46,12 @@
   "log": {
     "component": "console",
     "level": "debug"
+  },
+  
+  "minify": {
+    "component": "ugly",
+    "cssBasePath": "/echo/css",
+    "jsBasePath": "/echo/js"
   },
   
   "template": {

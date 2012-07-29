@@ -25,6 +25,7 @@ function Resource(type, weight, path, data) {
   this.weight = weight;
   this.path = path;
   this.data = data;
+  this.minified = false;
 };
 var p = Resource.prototype;
 
