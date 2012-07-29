@@ -1,9 +1,10 @@
 /**
  * @fileOverview
- * Ugly class definition, a ad-hoc minifier.
+ * Ugly class definition, an ad-hoc minifier for CSS and Javascript.
  */
 
 var async = require("async");
+var cleanCss = require('clean-css');
 var crypto = require("crypto");
 var util = require("util");
 var uglify = require("uglify-js");
@@ -17,7 +18,7 @@ var Resource = require("../../../resource");
 /**
  * @class
  * A class for handling minification and compression of resources using
- * UglifyJS for Javascript.
+ * UglifyJS for Javascript and CleanCSS for CSS.
  */
 function Ugly() {
   Ugly.super_.call(this);
@@ -244,10 +245,7 @@ p._minifyJavascript = function (code) {
  *   Return minimized CSS.
  */
 p._minifyCss = function(css) {
-  
-  // TODO
-  
-  return css;
+  return cleanCss.process(css);
 };
 
 /**
@@ -261,7 +259,7 @@ p._minifyCss = function(css) {
  */
 p._generateMinifiedPath = function (path) {
   return path.replace(/\.(\w+)$/, ".min.$1", "i");
-}
+};
 
 //-----------------------------------------------------------
 // Exports - Class Constructor
