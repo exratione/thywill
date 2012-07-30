@@ -11,7 +11,7 @@ function Log(componentFactory) {
   this.componentType = "log";
   this.levels = [
     "debug",
-    "warning",
+    "warn",
     "error"
   ];
 };
@@ -25,7 +25,7 @@ var p = Log.prototype;
 p.debug = function (message) {
   throw new Error("Not implemented."); 
 };
-p.warning = function (message) {
+p.warn = function (message) {
   throw new Error("Not implemented."); 
 };
 p.error = function (message) {

@@ -31,7 +31,7 @@ Console.CONFIG_TEMPLATE = {
       description: "The mimimum level of message that will be logged.",
       types: "string",
       required: true,
-      allowedValues: ['debug', 'warning', 'error']
+      allowedValues: ['debug', 'warn', 'error']
     } 
   }
 };
@@ -95,9 +95,9 @@ p.debug = function (message) {
 /**
  * @see Log#warning
  */
-p.warning = function (message) {
-  if( this.levels["warning"] >= this.level ) {
-    this.log("warning", message);
+p.warn = function (message) {
+  if( this.levels["warn"] >= this.level ) {
+    this.log("warn", message);
   }
 };
 

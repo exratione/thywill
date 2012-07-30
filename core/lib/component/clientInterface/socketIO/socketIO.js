@@ -51,15 +51,6 @@ SocketIO.CONFIG_TEMPLATE = {
        required: true
      } 
   },
-  encryption: {
-    key: {
-      _configInfo: {
-        description: "An encryption key.",
-        types: "string",
-        required: true
-      } 
-    }
-  },
   minifyCss: {
     _configInfo: {
        description: "If true, merge and minify CSS resources.",
@@ -110,19 +101,29 @@ SocketIO.CONFIG_TEMPLATE = {
  * 
  * {
  *   "component": "socketIO",
+ *   "basePath": "/echo",
  *   "encoding": "utf-8",
- *   "basePath": "/thywill",
- *   "namespace": "/thywillNamespace",
+ *   "minifyCss": false,
+ *   "minifyJavascript": false,
+ *   "namespace": "/echoNamespace",
+ *   "socketClientConfig": {
+ *     "resource": "echo/socket.io",
+ *     
+ *     ... Socket.IO client configuration ...
+ *     
+ *   },
  *   "socketConfig": {
- *      "environmentName" | "global": {
- *        any socket.io configuration parameters - e.g. "log level": 3
- *      }, 
+ *     "global": {
+ *       "resource": "/echo/socket.io",
  *      
- *      ...
- *      
- *      other socket.io environment configurations, if necessary
+ *       ... global Socket.IO configuration ...
+ *       
+ *     },
+ *     "production": {
+ *       ... environment-specific Socket.IO configuration ...
+ *     },
+ *     ...
  *   }
- * }
  * 
  * @param {Thywill} thywill
  *   A Thwyill instance.

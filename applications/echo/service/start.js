@@ -15,27 +15,22 @@ var path = require("path");
 var Thywill = require("thywill");
 var Echo = require("../lib/echo");
 
-// Load and parse the configuration.
-var config = null;
-try {
-  var filepath = path.resolve(__dirname, "./thywillConfig.json");
-  var config = JSON.parse(fs.readFileSync(filepath, "utf-8"));
-} catch (e) {
-  throw new Error("Failed to parse Thywill JSON configuration:\n" + e.message);
-}
+// Load the Thywill core configuration.
+var thywillConfig = require("./thywillConfig");
 
 // Instantiate an application object.
 var echo = new Echo("My echo application");
 
-// Optionally, define and start a server.
+// Optionally, define and start a server. For example:
 // var express = require("express");
 // var application = express.createApplication();
 // var server = application.listen(10080);
-// Or just set it to null and Thywill will create a bare-bones HTTPServer.
+// Or just set it to null and Thywill will create its own bare-bones 
+// HTTPServer.
 var server = null;
 
 // And off we go: launch a Thywill instance to run the the Echo application.
-Thywill.launch(config, echo, server, function (thywill, server, error) { 
+Thywill.launch(thywillConfig, echo, server, function (thywill, server, error) { 
   if (error) {
     console.log("Error while launching thywill.js: " + error);
   } else {
