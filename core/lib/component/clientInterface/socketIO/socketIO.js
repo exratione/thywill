@@ -21,8 +21,12 @@ var Thywill = require("thywill");
 
 /**
  * @class
- * A web browser client interface built on top of socket.io: see 
+ * A web browser client interface built on top of Socket.IO: see 
  * http://socket.io/ for details.
+ * 
+ * This manages passing messages back and forth between a web browser and
+ * Thywill. This involves setting up resources for the initial page load,
+ * and then interfacing with the client Javascript after the page has loaded.
  */
 function SocketIO() {
   SocketIO.super_.call(this);
@@ -39,7 +43,7 @@ var p = SocketIO.prototype;
 SocketIO.CONFIG_TEMPLATE = {
   basePath: {
     _configInfo: {
-       description: "The base path for all thywill URLs with a leading but no trailing slash. e.g. '/thywill'.",
+       description: "The base path for all Thywill URLs with a leading but no trailing slash. e.g. '/thywill'.",
        types: "string",
        required: true
      } 
@@ -124,6 +128,10 @@ SocketIO.CONFIG_TEMPLATE = {
  *     },
  *     ...
  *   }
+ * }
+ * 
+ * For Socket.IO configuration, see: 
+ * https://github.com/LearnBoost/Socket.IO/wiki/Configuring-Socket.IO
  * 
  * @param {Thywill} thywill
  *   A Thwyill instance.
@@ -349,11 +357,7 @@ p._startup = function (callback) {
 };
 
 /**
- * Called when the application will be shutdown: do everything that needs to be
- * done, and call the callback function ONLY WHEN EVERYTHING YOU NEED TO DO 
- * IS COMPLETE.
- * 
- * @param {Function} callback
+ * @see Component#_prepareForShutdown
  */
 p._prepareForShutdown = function (callback) {
   // Leave everything running to allow other components to do things as a part
@@ -430,7 +434,7 @@ p._handleResourceRequest = function (req, res) {
   
   
   // TODO: consider a caching layer to prevent this going to the resourceManager
-  // every time - not that it matters of in-memory implementations, but it
+  // every time - not that it matters for in-memory implementations, but it
   // will later.
  
   
@@ -455,10 +459,7 @@ p._handleResourceRequest = function (req, res) {
 };
 
 /**
- * Send a message out to a particular client.
- * 
- * @param {Message} message
- *   A Message instance.
+ * @see ClientInterface#send
  */
 p.send = function (message) {
   var socketId = message.sessionId;

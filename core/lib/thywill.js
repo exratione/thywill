@@ -507,20 +507,67 @@ p._initializeComponent = function (componentType, config, callback) {
     return this[componentType];
   }
   
-  // If there is no instance configured, then set it up.
-  if (!config[componentType] || !config[componentType].component) {
+  // If there is no instance configured, then set it up. But do we have the
+  // necessary configuration?
+  if (!config[componentType] || typeof config[componentType].implementation != "object") {
     callback.call(this, "Thywill._initializeComponent: missing " + componentType + " component definition in configuration."); 
     return;
   }
 
-  var componentPath = "./component/" + componentType + "/" + config[componentType].component + "/" + config[componentType].component;
-  try {
-    require.resolve(componentPath);
-  } catch (e) {
-    callback.call(this, "Thywill._initializeComponent: unsupported component '" + config[componentType].component + "' of type '" + componentType + "'");
+  // There are two types of definition, core and package. Core looks like:
+  //
+  // implementation: {
+  //   type: "core",
+  //   name: "someImplementationName"
+  // }
+  //
+  // Package looks like this:
+  //
+  // implementation: {
+  //   type: "core",
+  //   name: "somePackageName",
+  //   property: "optionalProperty"
+  // }
+  //
+  var implementation = config[componentType].implementation;
+  var ComponentConstructor = null;
+  if (implementation.type == "core") {
+    // Loading a constructor for a core component implementation.
+    var componentPath = "./component/" + componentType + "/" + implementation.name + "/" + implementation.name;
+    try {
+      require.resolve(componentPath);
+    } catch (e) {
+      callback.call(this, "Thywill._initializeComponent: unsupported core component implementation '" + implementation.name + "' of type '" + componentType + "'");
+      return;
+    }
+    ComponentConstructor = require(componentPath);
+  } else if (implementation.type == "package") {
+    // Loading a constructor for a component implementation provided by another package.
+    try {
+      require.resolve(implementation.name);
+    } catch (e) {
+      callback.call(this, "Thywill._initializeComponent: missing component implementation package '" + implementation.name + "' of type '" + componentType + "'");
+      return;
+    }
+    // Optionally, the constructor is in a property of this package export.
+    var exported = require(implementation.name);
+    if (implementation.property) {
+      ComponentConstructor = exported[property];  
+    } else {
+      ComponentConstructor = exported;
+    }
+  } else {
+    callback.call(this, "Thywill._initializeComponent: invalid implementation type '" + implementation.type + "' for " + componentType + " component definition."); 
     return;
   }
-  var ComponentConstructor = require(componentPath);
+  
+  // Did we get a function? I hope so.
+  if (typeof ComponentConstructor != "function") {
+    callback.call(this, "Thywill._initializeComponent: component implementation definition for " + componentType + " did not yield a constructor function");
+    return; 
+  }
+  
+  // Now create the component, finally.
   this[componentType] = new ComponentConstructor();
   
   // Check the configuration: this will throw errors, unlike most of 
