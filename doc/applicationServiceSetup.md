@@ -19,12 +19,13 @@ are using, expecting you to have followed the instructions in
 If your Node.js installation differs, you will have to change (at a minimum)
 some of the paths in the various scripts used here.
 
-Service Setup With an Init.d Script on Fedora, Red Hat, Etc.
-------------------------------------------------------------
+Option 1: init.d and Forever on RPM-based Linux
+-----------------------------------------------
 
-Running as a service on Fedora, Red Hat, and similar Linux distributions is
-best accomplished through the Forever package. After building your server as
-described in /doc/server-setup.md, install Forever globally via NPM:
+Running as a service on Fedora, Red Hat, and similar RPM-based Linux 
+distributions is best accomplished through the Forever package. After building
+your server as described in /doc/server-setup.md, install Forever globally via 
+NPM:
 
     npm -g install forever
 
@@ -41,15 +42,15 @@ the application:
     /etc/init.d/my-application start
     /etc/init.d/my-application stop
 
-Service Setup With Upstart
---------------------------
+Option 2: Upstart on Debian-based Linux
+---------------------------------------
 
 Most Linux distributions can use Upstart to manage a Thywill application as a
 service. Ubuntu has Upstart installed by default. After building your server
 as described in /doc/server-setup.md, take the following steps:
 
   * Install the Thywill package if you haven't done so already
-  * Copy the upstart script to /etc/init
+  * Copy the upstart script for the application to /etc/init
   * Make sure the script has permissions of 0644
   * Make sure that the paths in the script are correct
 

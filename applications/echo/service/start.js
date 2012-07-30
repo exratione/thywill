@@ -16,8 +16,13 @@ var Thywill = require("thywill");
 var Echo = require("../lib/echo");
 
 // Load and parse the configuration.
-var filepath = path.resolve(__dirname, "./thywillConfig.json");
-var config = JSON.parse(fs.readFileSync(filepath, "utf-8"));
+var config = null;
+try {
+  var filepath = path.resolve(__dirname, "./thywillConfig.json");
+  var config = JSON.parse(fs.readFileSync(filepath, "utf-8"));
+} catch (e) {
+  throw new Error("Failed to parse Thywill JSON configuration:\n" + e.message);
+}
 
 // Instantiate an application object.
 var echo = new Echo("My echo application");

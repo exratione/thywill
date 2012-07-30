@@ -8,8 +8,8 @@ var cleanCss = require('clean-css');
 var crypto = require("crypto");
 var util = require("util");
 var uglify = require("uglify-js");
-var Minify = require("../minify");
-var Resource = require("../../../resource");
+
+var Thywill = require("thywill");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -23,7 +23,7 @@ var Resource = require("../../../resource");
 function Ugly() {
   Ugly.super_.call(this);
 };
-util.inherits(Ugly, Minify);
+util.inherits(Ugly, Thywill.getBaseClass("Minify"));
 var p = Ugly.prototype;
 
 //-----------------------------------------------------------
@@ -84,26 +84,25 @@ p._prepareForShutdown = function (callback) {
 p.minifyResource = function (resource, callback) {
   var newResource = resource;
   var error = this.NO_ERRORS;
+  var resourceManager = this.thywill.resourceManager;
   
   // Only minify if not already minified.
-  if (resource.minified) {
+  if (resource.attributes.minified) {
     callback.call(this, error, resource);
     return;
   }
   
   try {
-    if (resource.type == Resource.TYPE_JAVASCRIPT) {
+    if (resource.type == resourceManager.types.JAVASCRIPT) {
       // Javascript minification.
       var minifiedJs = this._minifyJavascript(resource.data);
-      newResource = new Resource(resource.type, resource.weight, resource.path, minifiedJs);
+      newResource = resourceManager.createResource(resource.type, resource.weight, resource.path, minifiedJs, {minified: true});
       newResource.path = this._generateMinifiedPath(newResource.path);
-      resource.minified = true;
-    } else if (resource.type == Resource.TYPE_CSS) {
+    } else if (resource.type == resourceManager.types.CSS) {
       // CSS minification.
       var minifiedCss = this._minifyCss(resource.data);
-      newResource = new Resource(resource.type, resource.weight, resource.path, minifiedCss);
+      newResource = resourceManager.createResource(resource.type, resource.weight, resource.path, minifiedCss, {minified: true});
       newResource.path = this._generateMinifiedPath(newResource.path);
-      resource.minified = true;
     }
   } catch (e) {
     error = "Ugly.minifyResource failed for resource of type [" + resource.type + "] and path [" + resource.path + "] with error: " + e.message;
@@ -118,6 +117,7 @@ p.minifyResource = function (resource, callback) {
  */
 p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) {
   var self = this;
+  var resourceManager = this.thywill.resourceManager;
   // Build a new array of resources in which all of the CSS and JS is
   // merged down into one resource.
   var cssResource = null;
@@ -131,14 +131,13 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
     function (resource, asyncCallback) {
       var error = self.NO_ERRORS;
       var returnResource = null;
-      if (resource.type == Resource.TYPE_JAVASCRIPT && minifyJavascript) {
+      if (resource.type == resourceManager.types.JAVASCRIPT && minifyJavascript) {
         // Create the single Javascript-holding resource if not yet done. Give
         // it the same weight as this first Javascript resource in the array.
         if (!jsResource) {
           // Path is empty - set it at the end of this process so we can get
           // an MD5 of the contents.
-          jsResource = new Resource(Resource.TYPE_JAVASCRIPT, resource.weight, "", "");
-          jsResource.minified = true;
+          jsResource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, resource.weight, "", "", {minified: true});
           returnResource = jsResource;
         }
         
@@ -154,14 +153,13 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
             self.thywill.log.error(error);
           }
         }
-      } else if (resource.type == Resource.TYPE_CSS && minifyCss) {
+      } else if (resource.type == resourceManager.types.CSS && minifyCss) {
         // Create the single CSS-holding resource if not yet done. Give
         // it the same weight as this first Javascript resource in the array.
         if (!cssResource) {
           // Path is empty - set it at the end of this process so we can get
           // an MD5 of the contents.
-          cssResource = new Resource(Resource.TYPE_CSS, resource.weight, "", "");
-          cssResource.minified = true;
+          cssResource = resourceManager.createResource(resourceManager.types.CSS, resource.weight, "", "", {minified: true});
           returnResource = cssResource;
         }
         

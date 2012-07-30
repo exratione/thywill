@@ -17,15 +17,17 @@
  *   An ordering weight: larger values go last.
  * @param {string} path
  *   The resource path.
- * @data {string} data
+ * @param {string} data
  *   The body of the resource.
+ * @param {Object} attributes
+ *   Other attributes of this resource.
  */
-function Resource(type, weight, path, data) {
+function Resource(type, weight, path, data, attributes) {
   this.type = type;
   this.weight = weight;
   this.path = path;
   this.data = data;
-  this.minified = false;
+  this.attributes = attributes || {};
 };
 var p = Resource.prototype;
 
@@ -33,9 +35,11 @@ var p = Resource.prototype;
 // "Static" values
 //-----------------------------------------------------------
 
-Resource.TYPE_JAVASCRIPT = "application/javascript";
-Resource.TYPE_CSS = "text/css";
-Resource.TYPE_HTML = "text/html";
+Resource.TYPES = {
+  JAVASCRIPT: "application/javascript",
+  CSS: "text/css",
+  HTML: "text/html"
+};
 
 //-----------------------------------------------------------
 // Exports - Class Constructor

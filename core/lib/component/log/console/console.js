@@ -1,19 +1,24 @@
+/**
+ * @fileOverview
+ * Console class definition. 
+ */
 
 var util = require("util");
-var Log = require("../log");
+var Thywill = require("thywill");
 
 //-----------------------------------------------------------
 // Class Definition
 //-----------------------------------------------------------
 
-/*
+/**
+ * @class
  * A trivial logger that sends everything to console.log().
  */
 function Console(componentFactory) {
   Console.super_.call(this, componentFactory);
   this.level = this.levels.indexOf("debug");
 };
-util.inherits(Console, Log);
+util.inherits(Console, Thywill.getBaseClass("Log"));
 var p = Console.prototype;
 
 //-----------------------------------------------------------
@@ -35,26 +40,27 @@ Console.CONFIG_TEMPLATE = {
 // Initialization and Shutdown
 //-----------------------------------------------------------
 
-/*
+/**
  * The config object is expected to have the following form:
  * 
  * {
  *   "component": "console",
  *   "level": "debug"
  * }
+ * 
+ * @see Component#_configure
  */
 p._configure = function (thywill, config, callback) {
-  
   // Minimal configuration - all we're doing here is storing it for posterity.
   this.thywill = thywill;
   this.config = config; 
   this.readyCallback = callback;
   
-  if( this.config.level ) {
-    if( this.levels.indexOf(this.config.level) != -1 ) {
+  if (this.config.level) {
+    if (this.levels.indexOf(this.config.level) != -1) {
       this.level = this.levels.indexOf(this.config.level);
     } else {
-      this._announceReady("thywill: invalid log level in configuration: " + this.config.level);
+      this._announceReady("Invalid log level in configuration: " + this.config.level);
       return;
     }
   }
@@ -65,8 +71,11 @@ p._configure = function (thywill, config, callback) {
   this._announceReady(this.NO_ERRORS);
 };
 
+/**
+ * @see Component#prepareForShutdown
+ */
 p._prepareForShutdown = function (callback) {
-  // nothing needed
+  // Nothing needed here.
   callback.call(this);
 };
 
@@ -74,26 +83,38 @@ p._prepareForShutdown = function (callback) {
 // Methods
 //-----------------------------------------------------------
 
+/**
+ * @see Log#debug
+ */
 p.debug = function (message) {
   if( this.levels["debug"] >= this.level ) {
     this.log("debug", message);
   }
 };
 
+/**
+ * @see Log#warning
+ */
 p.warning = function (message) {
   if( this.levels["warning"] >= this.level ) {
     this.log("warning", message);
   }
 };
 
+/**
+ * @see Log#error
+ */
 p.error = function (message) {
-  if( this.levels["error"] >= this.level ) {
+  if (this.levels["error"] >= this.level) {
     this.log("error", message);
   }
 };
 
+/**
+ * @see Log#log
+ */
 p.log = function (level, message) {
-  if( message && message.toString() ) {
+  if (message && message.toString) {
     console.log("[" + level + "] " + message.toString());
   } else {
     console.log("[" + level + "] " + message);

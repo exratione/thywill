@@ -1,11 +1,11 @@
 /**
  * @fileOverview
- * EJS class definition, a template implementation.
+ * InMemory class definition.
  */
 
-var ejs = require("ejs");
 var util = require("util");
 var Thywill = require("thywill");
+var InMemoryResource = require("./inMemoryResource");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -13,29 +13,30 @@ var Thywill = require("thywill");
 
 /**
  * @class
- * A class to interface with the ejs templating system. See:
- * https://github.com/visionmedia/ejs
+ * A trivial synchronous in-memory resource manager.
  */
-function EJS(componentFactory) {
-  EJS.super_.call(this, componentFactory);
+function InMemory() {
+  InMemory.super_.call(this);
+  this.data = {};
 };
-util.inherits(EJS, Thywill.getBaseClass("Template"));
-var p = EJS.prototype;
+util.inherits(InMemory, Thywill.getBaseClass("ResourceManager"));
+var p = InMemory.prototype;
 
 //-----------------------------------------------------------
 // "Static" parameters
 //-----------------------------------------------------------
 
-EJS.CONFIG_TEMPLATE = null;
+InMemory.CONFIG_TEMPLATE = null;
 
 //-----------------------------------------------------------
-// Initialization and Shutdown
+// Initialization
 //-----------------------------------------------------------
 
 /**
  * @see Component#_configure
  */
 p._configure = function (thywill, config, callback) {
+
   // Minimal configuration - all we're doing here is storing it for posterity.
   this.thywill = thywill;
   this.config = config; 
@@ -51,23 +52,55 @@ p._configure = function (thywill, config, callback) {
  * @see Component#_prepareForShutdown
  */
 p._prepareForShutdown = function (callback) {
-  // nothing needed
+  // Nothing needed here.
   callback.call(this);
 };
-
+  
 //-----------------------------------------------------------
 // Methods
 //-----------------------------------------------------------
 
 /**
- * @see Template#render
+ * @see ResourceManager#createResource
  */
-p.render = function (templateString, valuesObj) {
-  return ejs.render(templateString, {locals: valuesObj});
+p.createResource = function(type, weight, path, data, attributes) {
+  return new InMemoryResource(type, weight, path, data, attributes);
+};
+
+/**
+ * @see ResourceManager#store
+ */
+p.store = function (key, resource, callback) {
+  this.data[key] = resource;
+  callback(this.NO_ERRORS);
+};
+
+/**
+ * @see ResourceManager#remove
+ */
+p.remove = function (key, callback) {
+  var resource = null;
+  var error = this.NO_ERRORS;
+  if (this.data[key]) {
+    resource = this.data[key];
+    delete this.data[key];
+  } 
+  callback(error, resource);
+};
+
+/**
+ * @see ResourceManager#load
+ */
+p.load = function (key, callback) {
+  if (this.data[key]) { 
+    callback(this.NO_ERRORS, this.data[key]);
+  } else {
+    callback(this.NO_ERRORS, null);
+  }
 };
 
 //-----------------------------------------------------------
 // Exports - Class Constructor
 //-----------------------------------------------------------
 
-module.exports = EJS;
+module.exports = InMemory;

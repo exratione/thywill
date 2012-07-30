@@ -9,14 +9,11 @@ var crypto = require("crypto");
 var urlHelpers = require("url");
 var pathHelpers = require("path");
 
-var express = require("express");
 var async = require("async");
 var ejs = require("ejs");
 var io = require("socket.io");
 
-var ClientInterface = require("../clientInterface");
-var Message = require("../../../message");
-var Resource = require("../../../resource");
+var Thywill = require("thywill");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -32,7 +29,7 @@ function SocketIO() {
   this.socketFactory = null;
   this.bootstrapResourcePaths = [];
 };
-util.inherits(SocketIO, ClientInterface);
+util.inherits(SocketIO, Thywill.getBaseClass("ClientInterface"));
 var p = SocketIO.prototype;
 
 //-----------------------------------------------------------
@@ -46,13 +43,6 @@ SocketIO.CONFIG_TEMPLATE = {
        types: "string",
        required: true
      } 
-  },
-  clientConfig: {
-    _configInfo: {
-      description: "Container object for Socket.IO client configuration parameters.",
-      types: "object",
-      required: false
-    }     
   },
   encoding: {
     _configInfo: {
@@ -90,6 +80,13 @@ SocketIO.CONFIG_TEMPLATE = {
        types: "string",
        required: true
      } 
+  },
+  socketClientConfig: {
+    _configInfo: {
+      description: "Container object for Socket.IO client configuration parameters.",
+      types: "object",
+      required: false
+    }     
   },
   socketConfig: {
     _configInfo: {
@@ -177,7 +174,7 @@ p._startup = function (callback) {
   // This first set is server configuration - client configuration happens
   // later on, and must be put into a resource file using templates.
   var socketConfig = this.config.socketConfig;
-  var clientConfig = this.config.clientConfig;
+  var socketClientConfig = this.config.socketClientConfig;
   var resourceSettings = [];
   if (socketConfig) {
     if (socketConfig.global && socketConfig.global instanceof Object) {
@@ -228,6 +225,7 @@ p._startup = function (callback) {
   // Set up an array of functions to be executed in series that will build the 
   // array of bootstrap resources needed for the main Thywill page.
   var resources = [];
+  var resourceManager = this.thywill.resourceManager;
   // Helper function.
   var readFromFile = function(relativePath) {
     var filepath = pathHelpers.resolve(__dirname, relativePath);
@@ -244,7 +242,7 @@ p._startup = function (callback) {
     // Main client-side Thywill Javascript.      
     function (asyncCallback) {
       var js = readFromFile("../../../../client/thywill.js");
-      var resource = new Resource(Resource.TYPE_JAVASCRIPT, 0, self.config.basePath + "/thywill.js", js);
+      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 0, self.config.basePath + "/thywill.js", js);
       setResourceAndContinue(resource, asyncCallback);
     },
     // Client-side Javascript for this clientInterface component.    
@@ -254,20 +252,21 @@ p._startup = function (callback) {
       // configuration values. Use EJS rather than the configured template
       // engine for core files.
       var templateParams = {
-        namespace: self.config.namespace
+        namespace: self.config.namespace,
+        config: {}
       };
-      if (clientConfig) {
-        templateParams.config = JSON.stringify(clientConfig);
+      if (socketClientConfig) {
+        templateParams.config = JSON.stringify(socketClientConfig);
       } 
       js = ejs.render(js, {locals: templateParams}); 
-      var resource = new Resource(Resource.TYPE_JAVASCRIPT, 0, self.config.basePath + "/serverInterface.js", js);
+      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 0, self.config.basePath + "/serverInterface.js", js);
       setResourceAndContinue(resource, asyncCallback);
     },
     // Define a Javascript resource that needs to be loaded after all other
     // Javascript resources.
     function (asyncCallback) {
       var js = readFromFile("../../../../client/thywillLoadLast.js");
-      var resource = new Resource(Resource.TYPE_JAVASCRIPT, 999999, self.config.basePath + "/thywillLoadLast.js", js);
+      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 999999, self.config.basePath + "/thywillLoadLast.js", js);
       setResourceAndContinue(resource, asyncCallback); 
     },
     // Load up bootstrap resources defined here and elsewhere (i.e. in 
@@ -327,11 +326,11 @@ p._startup = function (callback) {
       
       // Now set up the rest of the resources, typically from the applications.
       for (var i = 0, length = resources.length; i < length; i++) {
-        if (resources[i].type == Resource.TYPE_JAVASCRIPT) {
+        if (resources[i].type == resourceManager.types.JAVASCRIPT) {
           js += ejs.render(jsElementTemplate, {
             locals: {path: resources[i].path}
           });
-        } else if (resources[i].type == Resource.TYPE_CSS) {
+        } else if (resources[i].type == resourceManager.types.CSS) {
           css += ejs.render(cssElementTemplate, {
             locals: {path: resources[i].path}
           });
@@ -342,7 +341,7 @@ p._startup = function (callback) {
       mainPage = ejs.render(mainPage, {
         locals: {js: js, css: css, encoding: self.config.encoding}
       });
-      self.defineResource(new Resource(Resource.TYPE_HTML, 0, self.config.basePath + "/", mainPage), asyncCallback);
+      self.defineResource(resourceManager.createResource(resourceManager.types.HTML, 0, self.config.basePath + "/", mainPage), asyncCallback);
     },
   ];
   async.series(fns, callback);  
@@ -392,7 +391,7 @@ p._initializeConnection = function (socket) {
    */ 
   socket.on("messageFromClient", function (messageObj) { 
     if (messageObj && messageObj.data && messageObj.data.data) {
-      self.receive(new Message(
+      self.receive(self.thywill.messageManager.createMessage(
         messageObj.data.data, 
         socket.id,
         messageObj.data.applicationId
@@ -429,7 +428,7 @@ p._handleResourceRequest = function (req, res) {
   var requestData = urlHelpers.parse(req.url);
   
   
-  // TODO: consider a caching layer to prevent this going to the datastore
+  // TODO: consider a caching layer to prevent this going to the resourceManager
   // every time - not that it matters of in-memory implementations, but it
   // will later.
  
@@ -513,7 +512,7 @@ p.getBootstrapResources = function (callback) {
  */
 p.defineResource = function (resource, callback) {
   var self = this;
-  this.thywill.datastore.store(resource.path, resource, function (error) {
+  this.thywill.resourceManager.store(resource.path, resource, function (error) {
     callback.call(this, error);
   });
 };
@@ -522,7 +521,7 @@ p.defineResource = function (resource, callback) {
  * @see ClientInterface#getResource
  */
 p.getResource = function (path, callback) {
-  this.thywill.datastore.load(path, callback);
+  this.thywill.resourceManager.load(path, callback);
 };
 
 //-----------------------------------------------------------

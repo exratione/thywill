@@ -8,10 +8,7 @@ var path = require("path");
 var fs = require("fs");
 
 var async = require("async");
-
-var Application = require("../../../core/lib/component/application/application");
-var Message = require("../../../core/lib/message");
-var Resource = require("../../../core/lib/resource");
+var Thywill = require("thywill");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -27,7 +24,7 @@ var Resource = require("../../../core/lib/resource");
 function Echo(id) {
   Echo.super_.call(this, id);
 };
-util.inherits(Echo, Application);
+util.inherits(Echo, Thywill.getBaseClass("Application"));
 var p = Echo.prototype;
 
 //-----------------------------------------------------------
@@ -43,14 +40,15 @@ var p = Echo.prototype;
 p._defineClientResources = function (callback) {
   // Setting bootstrap resources: the application code and libraries.
   var self = this;
+  var resourceManager = this.thywill.resourceManager;
+  var clientInterface = this.thywill.clientInterface;
   var fns = [
     // Add Modernizr - comes first in the Javascript.
     function (asyncCallback) {
       var filepath = path.resolve(__dirname, "../../../thirdParty/modernizr.2.6.1.min.js");
       var data = fs.readFileSync(filepath, "utf-8");  
-      var resource = new Resource(Resource.TYPE_JAVASCRIPT, -20, "/echo/modernizr.min.js", data);
-      resource.minified = true;
-      self.thywill.clientInterface.defineBootstrapResource(resource, asyncCallback);
+      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, -20, "/echo/modernizr.min.js", data, {minified: true});
+      clientInterface.defineBootstrapResource(resource, asyncCallback);
     },
     // Add jQuery as a resource, setting it a lower weight than the default
     // Thwyill code - having it come first is fairly necessary if you want
@@ -58,9 +56,8 @@ p._defineClientResources = function (callback) {
     function (asyncCallback) {
       var filepath = path.resolve(__dirname, "../../../thirdParty/jquery.1.7.2.min.js");
       var data = fs.readFileSync(filepath, "utf-8");  
-      var resource = new Resource(Resource.TYPE_JAVASCRIPT, -10, "/echo/jquery.min.js", data);
-      resource.minified = true;
-      self.thywill.clientInterface.defineBootstrapResource(resource, asyncCallback);
+      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, -10, "/echo/jquery.min.js", data, {minified: true});
+      clientInterface.defineBootstrapResource(resource, asyncCallback);
     },
     // Add the Echo client Javascript as a resource.
     function (asyncCallback) {
@@ -68,8 +65,8 @@ p._defineClientResources = function (callback) {
       var data = fs.readFileSync(filepath, "utf-8");  
       // A little templating to insert the application ID.
       data = self.thywill.template.render(data, { applicationId: self.id });
-      var resource = new Resource(Resource.TYPE_JAVASCRIPT, 30, "/echo/echoClient.js", data);
-      self.thywill.clientInterface.defineBootstrapResource(resource, asyncCallback);
+      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 30, "/echo/echoClient.js", data);
+      clientInterface.defineBootstrapResource(resource, asyncCallback);
     },
     // Add the Echo client CSS.
     function (asyncCallback) {
@@ -77,8 +74,8 @@ p._defineClientResources = function (callback) {
       var data = fs.readFileSync(filepath, "utf-8");  
       // A little templating to insert the application ID.
       data = self.thywill.template.render(data, { applicationId: self.id });
-      var resource = new Resource(Resource.TYPE_CSS, 0, "/echo/echoClient.css", data);
-      self.thywill.clientInterface.defineBootstrapResource(resource, asyncCallback);
+      var resource = resourceManager.createResource(resourceManager.types.CSS, 0, "/echo/echoClient.css", data);
+      clientInterface.defineBootstrapResource(resource, asyncCallback);
     }
   ];
   async.parallel(fns, callback);
@@ -107,7 +104,7 @@ p._prepareForShutdown = function (callback) {
  *   Instance of the Message class.
  */
 p.receive = function (message) {
-  var echoMessage = new Message(message.data, message.sessionId, this.id);
+  var echoMessage = this.thywill.messageManager.createMessage(message.data, message.sessionId, this.id);
   this.send(echoMessage);
 };
 
@@ -118,7 +115,8 @@ p.receive = function (message) {
  *   Unique ID of the session.
  */
 p.connection = function (sessionId) {
-  // Do nothing.
+  // Do nothing except log it.
+  this.thywill.log.debug("Client connected: " + sessionId);
 };
 
 /**
@@ -128,7 +126,8 @@ p.connection = function (sessionId) {
  *   Unique ID of the session.
  */
 p.disconnection = function (sessionId) {
-  // Do nothing.
+  // Do nothing except log it.
+  this.thywill.log.debug("Client disconnected: " + sessionId);
 };
 
 //-----------------------------------------------------------

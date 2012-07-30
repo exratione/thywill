@@ -5,30 +5,33 @@
   	  "groupId": "node",
   	  "userId": "node"
     },
-  	"prepareForShutdown": {
-      "port": 20080,
-  	  "path": "/echo/prepareForShutdown"
+  	"adminInterface": {
+  	  "ipAddresses": ["127.0.0.1"],
+  	  "paths": {
+  	    "prepareForShutdown": "/prepareForShutdown"
+  	  },
+      "port": 20080
   	}
   },
   
   "clientInterface": {
     "component": "socketIO",
     "basePath": "/echo",
-    "clientConfig": {
-      "resource": "echo/socket.io"
-    },
     "encoding": "utf-8",
     "encryption": {
       "key": "change this key"
     },
-    "minifyCss": true,
-    "minifyJavascript": true,
+    "minifyCss": false,
+    "minifyJavascript": false,
     "namespace": "/echoNamespace",
+    "socketClientConfig": {
+      "resource": "echo/socket.io"
+    },
     "socketConfig": {
       "global": {
 	      "browser client minification": true,
 	      "browser client etag": true,
-	      "log level": 3,
+	      "log level": 1,
 	      "match origin protocol": true,
 	      "resource": "/echo/socket.io",
    	    "transports": ["websocket"]
@@ -39,13 +42,17 @@
     }
   },
   
-  "datastore": {
-    "component": "memory"
+  "resourceManager": {
+    "component": "inMemory"
   },
   
   "log": {
     "component": "console",
     "level": "debug"
+  },
+  
+  "messageManager": {
+    "component": "simple"
   },
   
   "minify": {
@@ -59,6 +66,6 @@
   },
   
   "resources": {
-  	"component": "useDatastore"
+  	"component": "useResourceManager"
   }
 }

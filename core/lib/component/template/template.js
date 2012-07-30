@@ -1,6 +1,10 @@
+/**
+ * @fileOverview
+ * Template class definition.
+ */
 
 var util = require("util");
-var Component = require("../component");
+var Thywill = require("thywill");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -8,20 +12,32 @@ var Component = require("../component");
 
 /**
  * @class
- * The superclass for interfaces to templating systems.
+ * The superclass for classes that act as interfaces to templating systems.
  */
 function Template(componentFactory) {
   Template.super_.call(this, componentFactory);
   this.componentType = "template";
 };
-util.inherits(Template, Component);
+util.inherits(Template, Thywill.getBaseClass("Component"));
 var p = Template.prototype;
 
 //-----------------------------------------------------------
 // Methods to be implemented by subclasses.
 //-----------------------------------------------------------
 
-p.render = function (templateString, valuesObj) {
+/**
+ * Render a template based on a string and replacement tokens.
+ * 
+ * @param {string} template
+ *   The template string, e.g. something along the lines of
+ *   "Insert this value: <%= value %>" - but dependent on the implementation
+ *   of course.
+ * @param {Object} values
+ *   An object of key-value pairs to insert into the template.
+ * @return {string}
+ *   The rendered template.
+ */
+p.render = function (template, values) {
   throw new Error("Not implemented.");  
 };
 

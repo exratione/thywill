@@ -1,6 +1,6 @@
 
 var util = require("util");
-var Component = require("../component");
+var Thywill = require("thywill");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -15,7 +15,7 @@ function Log(componentFactory) {
     "error"
   ];
 };
-util.inherits(Log, Component);
+util.inherits(Log, Thywill.getBaseClass("Component"));
 var p = Log.prototype;
 
 //-----------------------------------------------------------

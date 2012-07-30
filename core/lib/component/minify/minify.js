@@ -4,7 +4,7 @@
  */
 
 var util = require("util");
-var Component = require("../component");
+var Thywill = require("thywill");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -18,22 +18,16 @@ function Minify() {
   Minify.super_.call(this);
   this.componentType = "minify";
 };
-util.inherits(Minify, Component);
+util.inherits(Minify, Thywill.getBaseClass("Component"));
 var p = Minify.prototype;
-
-//-----------------------------------------------------------
-// Methods
-//-----------------------------------------------------------
-
-
 
 //-----------------------------------------------------------
 // Methods to be implemented by subclasses.
 //-----------------------------------------------------------
 
 /**
- * Minify the contents of a resource object. The new resources is not stored in
- * the datastore.
+ * Minify the contents of a resource object. The new resources is not yet
+ * stored by the resourceManager.
  * 
  * @param {Resource} resource
  *   A Resource instance.
@@ -47,8 +41,8 @@ p.minifyResource = function (resource, callback) {
 };
 
 /**
- * Minify and merge an array of resources. Newly created resources are not
- * stored in the datastore.
+ * Minify and merge an array of resources. Newly created resources are not yet
+ * stored by the resourceManager.
  * 
  * @param {Resource[]} resource
  *   A resource instance.

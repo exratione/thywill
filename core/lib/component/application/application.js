@@ -3,8 +3,8 @@
  * Application class definition.
  */
 
-var Component = require("../component");
 var util = require("util");
+var Thywill = require("thywill");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -22,7 +22,7 @@ function Application(id) {
   this.componentType = "application";
   this.id = id;
 };
-util.inherits(Application, Component);
+util.inherits(Application, Thywill.getBaseClass("Component"));
 var p = Application.prototype;
 
 //-----------------------------------------------------------

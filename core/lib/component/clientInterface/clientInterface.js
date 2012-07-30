@@ -4,7 +4,7 @@
  */
 
 var util = require("util");
-var Component = require("../component");
+var Thywill = require("thywill");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -19,7 +19,7 @@ function ClientInterface() {
   ClientInterface.super_.call(this);
   this.componentType = "clientInterface";
 };
-util.inherits(ClientInterface, Component);
+util.inherits(ClientInterface, Thywill.getBaseClass("Component"));
 var p = ClientInterface.prototype;
 
 //-----------------------------------------------------------

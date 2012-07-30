@@ -21,9 +21,6 @@ var Component = require("./component/component");
  * 
  * See the service scripts in /applications/[appName]/service/start.js for 
  * examples of use.
- * 
- * There are other configuration methods if you'd like to use JSON, an object,
- * or a file at a specific path.
  */
 function Thywill() {
   Thywill.super_.call(this, null);  
@@ -33,11 +30,11 @@ function Thywill() {
   // Components.
   this.applications = {};
   this.clientInterface = null;
-  this.datastore = null;
   this.log = null;
+  this.messageManager = null;
   this.minify = null;
+  this.resourceManager = null;
   this.template = null;
-  this.resources = null;
 };
 util.inherits(Thywill, Component);
 var p = Thywill.prototype;
@@ -73,18 +70,27 @@ Thywill.CONFIG_TEMPLATE = {
       } 
     }
   },
-  prepareForShutdown: {
-    port: {
+  adminInterface: {
+    ipAddresses: {
       _configInfo: {
-         description: "The port to listen on for HTTP shutdown requests from localhost.",
-         types: "integer",
+         description: "IP addresses permitted to connect to the administrative interface.",
+         types: "array",
          required: true
        } 
     },
-    path: {
+    paths: {
+      prepareForShutdown: {
+        _configInfo: {
+           description: "The full path that an HTTP shutdown request must hit. e.g. '/thywill/prepareForShutdown'",
+           types: "string",
+           required: true
+         } 
+      }
+    },
+    port: {
       _configInfo: {
-         description: "The full path that an HTTP shutdown request must hit. e.g. '/thywill/prepareForShutdown'",
-         types: "string",
+         description: "The port to listen on.",
+         types: "integer",
          required: true
        } 
     }
@@ -92,7 +98,7 @@ Thywill.CONFIG_TEMPLATE = {
 };
 
 //-----------------------------------------------------------
-//"Static" methods
+// "Static" methods
 //-----------------------------------------------------------
 
 /**
@@ -186,8 +192,8 @@ Thywill.prepareForShutdown = function (config) {
   
   var options = {
     host: "localhost",
-    port: config.thywill.prepareForShutdown.port,
-    path: config.thywill.prepareForShutdown.path,
+    port: config.thywill.adminInterface.port,
+    path: config.thywill.adminInterface.paths.prepareForShutdown,
     method: "HEAD"
   };
   
@@ -200,23 +206,56 @@ Thywill.prepareForShutdown = function (config) {
   });
 };
 
+/**
+ * Various base classes must be easily available as a result of using
+ * require("thywill"), so that other packages can build on them. We can't
+ * just attach them to Thywill because the class definitions have 
+ * require("thywill") in them.
+ * 
+ * @param {string} className
+ *   The name of a Thywill base class.
+ */
+Thywill.getBaseClass = (function () {
+  // Encapsulate this object and return an accessor. The various class
+  // constructors will be stored, here out of sight.
+  var baseClasses = {};
+  return function (className) {
+    if (!baseClasses[className]) {
+      switch (className) {
+        case "Component":
+          baseClasses[className] = Component;
+          break;
+        case "Application":
+        case "ClientInterface":
+        case "Log":
+        case "MessageManager":
+        case "Minify":
+        case "ResourceManager":
+        case "Template":
+          var pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
+          baseClasses[className] = require("./component/" + pathElement + "/" + pathElement);
+          break;
+        case "Message":
+          baseClasses[className] = require("./component/messageManager/message");
+          break;
+        case "Resource":
+          baseClasses[className] = require("./component/resourceManager/resource");
+          break;
+        default:
+          throw new Error("No such base class: " + className);
+      }
+    }
+    return baseClasses[className];
+  };
+} ());
+
 //-----------------------------------------------------------
 // Configuration - Synchronous Methods
 //-----------------------------------------------------------
 
 /** 
  * Configure this Thywill instance.
- * 
- * The expected section of the global configuration object pertaining to the
- * Thywill class has the following format:
- * 
- * {
- *   "prepareForShutdown": {
- *     "port": 10080,
- *     "path": "/thywill/prepareForShutdown"
- *   }
- * }
- * 
+ *
  * @param {Object} obj 
  *   An object representation of configuration parameters.
  * @return {Object}
@@ -252,9 +291,6 @@ p.configureFromJSON = function (json) {
  *   The Thywill instance this function is called on.
  */
 p.configureFromFile = function (filepath) {
-  if (!filepath) {
-    filepath = path.resolve(__dirname, "../config/thywill.json");
-  }
   return this.configureFromJSON(fs.readFileSync(filepath, "utf-8"));
 };
 
@@ -282,7 +318,7 @@ p.startup = function (server, applications, callback) {
   var self = this; 
   this.readyCallback = callback;
   this.server = server;
-  this._setupShutdownListener();
+  this._setupAdminInterfaceListener();
   this._initializeComponents(applications, this.config, function (error) {
     self._announceReady(error);
   });
@@ -291,23 +327,27 @@ p.startup = function (server, applications, callback) {
 /**
  * Set up a new server to listen for shutdown preparation messages
  * from localhost.
- * 
- * TODO: accept from other IP addresses.
  */
-p._setupShutdownListener = function () {
+p._setupAdminInterfaceListener = function () {
   var self = this;
+  var config = this.config.thywill.adminInterface;
   var server = http.createServer();
-  server.listen(this.config.thywill.prepareForShutdown.port);
+  server.listen(config.port);
   server.on("request", function (req, res) {
-    if (req.connection.remoteAddress == "127.0.0.1" && req.url == this.config.thywill.prepareForShutdown.path) {
+    if (config.ipAddresses.indexOf(req.connection.remoteAddress) == -1) {
+      res.statusCode = 500;
+      res.end("No access permitted from: " + req.connection.remoteAddress);
+      return;
+    }
+    if (req.url == config.paths.prepareForShutdown) {
       self._managePreparationForShutdown(function () {
         // Don't complete the connection until the preparation is done.
         res.statusCode = 200;
-        res.end();
+        res.end("Prepared for shutdown.");
       });
     } else {
       res.statusCode = 500;
-      res.end();
+      res.end("Unknown admin function.");
     }
   });
 };
@@ -334,7 +374,10 @@ p._managePreparationForShutdown = function (callback) {
       self.template._prepareForShutdown(asyncCallback);      
     },
     function (asyncCallback) {
-      self.datastore._prepareForShutdown(asyncCallback);   
+      self.messageManager._prepareForShutdown(asyncCallback);   
+    },
+    function (asyncCallback) {
+      self.resourceManager._prepareForShutdown(asyncCallback);   
     },
     function (asyncCallback) {
       self.log._prepareForShutdown(asyncCallback); 
@@ -349,8 +392,10 @@ p._managePreparationForShutdown = function (callback) {
  * initialization. The order is:
  * 
  * log
- * datastore
+ * resourceManager
+ * messageManager
  * template 
+ * minify
  * applications     - which set various resources
  * clientInterface  - which needs to know about all the resources
  * 
@@ -368,7 +413,10 @@ p._initializeComponents = function (passedApplications, config, callback) {
       self._initializeComponent("log", config, asyncCallback);      
     },
     function (asyncCallback) {
-      self._initializeComponent("datastore", config, asyncCallback);      
+      self._initializeComponent("resourceManager", config, asyncCallback);      
+    },
+    function (asyncCallback) {
+      self._initializeComponent("messageManager", config, asyncCallback);      
     },
     function (asyncCallback) {
       self._initializeComponent("template", config, asyncCallback);      
@@ -484,3 +532,22 @@ p._initializeComponent = function (componentType, config, callback) {
 //-----------------------------------------------------------
 
 module.exports = Thywill;
+
+
+
+
+
+// Component must be defined first, due to the circularities of including
+// these items that in turn require Thywill.
+/*
+Thywill.baseClasses.Component = Component;
+Thywill.baseClasses.Application = require("./component/application/application");
+Thywill.baseClasses.ClientInterface = require("./component/clientInterface/clientInterface");
+Thywill.baseClasses.Log = require("./log");
+Thywill.baseClasses.Message = require("./component/messageManager/message");
+Thywill.baseClasses.MessageManager = require("./component/messageManager/messageManager");
+Thywill.baseClasses.Minify = require("./component/minify/minify");
+Thywill.baseClasses.Resource = require("./component/resourceManager/resource");
+Thywill.baseClasses.ResourceManager = require("./component/resourceManager/resourceManager");
+Thywill.baseClasses.Template = require("./component/template/template");
+*/

@@ -5,8 +5,14 @@
 # intended to help set up Thywill for development and show how Varnish
 # can be set up for use with Thywill.
 #
+# Important note: this configuration disables all Varnish caching! It
+# only illustrates how to use Varnish to divide websocket and non-websocket
+# traffic arriving at a single port, and sent to off to different backends.
+#
 # For more comprehensive Varnish configurations that handle additional
-# functionality unrelated to Node.js and websockets, you might look at:
+# functionality unrelated to Node.js and websockets, but which is
+# nonetheless absolutely vital for any serious use of Varnish in a 
+# production environment, you might look at:
 #
 # https://github.com/mattiasgeniar/varnish-3.0-configuration-templates/
 #
@@ -105,7 +111,10 @@ sub vcl_recv {
     return (pass);
   }
   
-  return (lookup);
+  # If we were caching at all, then this next line would return lookup rather
+  # than pass. Return pass disables all caching for all backends.
+  # return (lookup);
+  return (pass);
 }
 
 sub vcl_pipe {

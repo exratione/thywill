@@ -12,7 +12,7 @@ var util = require("util");
 
 /**
  * @class 
- * The superclass for the thywill framework component classes.
+ * The superclass for most core Thywill classes.
  */
 function Component() {
   Component.super_.call(this);
@@ -105,7 +105,6 @@ p._checkConfiguration = function (config) {
  *   A string to keep track of which configuration property is being inspected. 
  */
 p._checkConfigurationRecursively = function (configObj, templateObj, propertyChain) {
-  
   for (property in templateObj) {
     
     if (propertyChain) { 
@@ -187,9 +186,9 @@ p._getType = function (value) {
   var type = typeof value;
   if (type == "object") {
     if (value instanceof Array) {
-      type == "array";
+      type = "array";
     } else if(value == null) {
-      type == "null";
+      type = "null";
     }
   } else if(type == "number") {
     if (value % 1 == 0) {
