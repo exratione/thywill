@@ -207,18 +207,24 @@ Thywill.prepareForShutdown = function (config) {
 };
 
 /**
+ * Obtain one of the Thywill base class constructors.
+ * 
  * Various base classes must be easily available as a result of using
  * require("thywill"), so that other packages can build on them. We can't
- * just attach them to Thywill because the class definitions have 
- * require("thywill") in them.
+ * just attach them to the Thywill constructor because the base class
+ * definitions also have require("thywill") in them - that would create
+ * circular references.
+ * 
+ * So instead, allow loading through this function.
  * 
  * @param {string} className
  *   The name of a Thywill base class.
  */
 Thywill.getBaseClass = (function () {
   // Encapsulate this object and return an accessor. The various class
-  // constructors will be stored, here out of sight.
+  // constructors will be stored here, out of sight.
   var baseClasses = {};
+  // Accessor function for the encapsulated object.
   return function (className) {
     if (!baseClasses[className]) {
       switch (className) {
@@ -532,22 +538,3 @@ p._initializeComponent = function (componentType, config, callback) {
 //-----------------------------------------------------------
 
 module.exports = Thywill;
-
-
-
-
-
-// Component must be defined first, due to the circularities of including
-// these items that in turn require Thywill.
-/*
-Thywill.baseClasses.Component = Component;
-Thywill.baseClasses.Application = require("./component/application/application");
-Thywill.baseClasses.ClientInterface = require("./component/clientInterface/clientInterface");
-Thywill.baseClasses.Log = require("./log");
-Thywill.baseClasses.Message = require("./component/messageManager/message");
-Thywill.baseClasses.MessageManager = require("./component/messageManager/messageManager");
-Thywill.baseClasses.Minify = require("./component/minify/minify");
-Thywill.baseClasses.Resource = require("./component/resourceManager/resource");
-Thywill.baseClasses.ResourceManager = require("./component/resourceManager/resourceManager");
-Thywill.baseClasses.Template = require("./component/template/template");
-*/
