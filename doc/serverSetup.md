@@ -8,7 +8,8 @@ Node.js act as backend servers to provide static and dynamic content:
   * All content is served over SSL
   * Stunnel decrypts SSL connections and passes plain data to Varnish
   * Varnish manages distribution of traffic between Node.js and Nginx backends
-  * Nginx serves static files only
+  * Nginx serves static files for Thywill
+  * Nginx can also be used to serve an unrelated website
   * Each Thywill application runs as a separate Node.js backend process
   * Node.js processes are managed as services
 
@@ -113,9 +114,11 @@ The following arrangement of server processes is used:
   * Thywill Node.js applications on ports 10080+
   
 Prior to version 1.3, Nginx cannot pass websocket traffic as a proxy, so
-Varnish is the frontend proxy. It passes websocket traffic directly to
-the appropriate Node.js backends and static file requests to Nginx. Varnish
-doesn't handle SSL traffic, however, so Stunnel is used to terminate HTTPS
+Varnish is the frontend proxy. It passes websocket traffic and other relevant
+URLs directly to the appropriate Node.js backends, and remaining traffic to
+Nginx.
+
+Varnish doesn't handle SSL traffic, so Stunnel is used to terminate HTTPS
 requests and pass them on as HTTP requests to Varnish.
 
 Set Up Stunnel
@@ -190,16 +193,49 @@ rather than the default 6081:
 Set Up Nginx
 ------------
 
-First, install Nginx:
+Nginx will be set up here to serve both normal website content and Thywill
+static files in their subfolders. Varnish will split traffic between the two
+uses. First, install Nginx:
 
     apt-get install nginx
+
+Since Nginx will be used to serve static files set out by Thywill applications,
+permissions will have to be arranged so that both Node.js processes and Nginx
+have access to the portion of the webroot used for these files. There are many
+different ways of arranging this, and this is only one of them:
+
+  * Nginx runs as the www-data user and has its webroot in /var/www
+  * Thywill applications will write static files to /home/node/thywill-static
+  * A symlink runs from /var/www/thywill-static to /home/node/thywill-static
+  * The www-data user is given read permission on /home/node/thywill-static
+
+Create the static folder and symlink as root and give them the appropriate
+ownership and permissions:
+
+    mkdir /var/www
+    chown www-data:www-data /var/www
+    mkdir /home/node/thywill-static
+    ln -s /home/node/thywill-static /var/www/thywill-static
+    chown node:www-data /home/node/thywill-static
+    chmod 755 /home/node/thywill-static
+
+There is a very simplistic default site configuration for Nginx on port 8080
+in the following location:
+
+    /serverConfig/nginx/thywill-default.conf
     
-Next, set up the configuration as required for your server scenario. A default
-configuration suitable for any of the example applications is provided in:
+Make a backup of /etc/nginx/sites-available/default and the copy the above
+configuration file over the original /etc/nginx/sites-available/default. This
+should already be symlinked in /etc/nginx/sites-enabled and thus active.
 
-    /serverConfig/nginx/thywill-nginx.conf
+Restart Everything
+------------------
+
+You'll most likely have to restart Varnish, Nginx, and Stunnel after you are
+done with all the configuration.
+
+    service stunnel restart
+    service varnish restart
+    service nginx restart
     
-Copy the contents into your Nginx configuration file.
-
-
-
+And also restart the example Thywill applications you are looking over.

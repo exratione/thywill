@@ -89,6 +89,12 @@ sub vcl_recv {
     set req.backend = thywill_echo;
     return (pipe);
   }
+  
+  # Send everything else known to be served by Thywill to the relevant Node.js
+  # backend.
+  if (req.url ~ "^/echo/") {
+    set req.backend = thywill_echo;
+  }
 
   # Normalize Accept-Encoding header. This is straight from the manual: 
   # https://www.varnish-cache.org/docs/3.0/tutorial/vary.html

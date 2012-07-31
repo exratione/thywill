@@ -67,3 +67,4 @@ of the following, depending on whether "property" is specified.
     require(packageName);
     // Property specified.
     require(packageName).propertyName;
+
