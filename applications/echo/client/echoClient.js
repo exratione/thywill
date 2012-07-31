@@ -12,13 +12,22 @@ var echoApplication = {
   // Functions for connecting to the serverInterface and setting up a minimal UI.
   // -----------------------------------------------------------------------------
   
-  setupInput: function () { 
+  setupUI: function () { 
     var self = this;
-    jQuery("body").append(
-     '<div id="sender">' +
-       '<textarea></textarea>' +
-       '<button>Send</button>' +
-     '</div>'
+    // Rudimentary DOM manipulation. Smarter to template, but so simple there
+    // doesn't seem to be much call for that in an example application.
+    jQuery("body").append('<div id="echo-wrapper"></div>');
+    jQuery("#echo-wrapper").append(
+      '<div id="title">Thywill: Echo</div>' +
+      '<div id="sender">' +
+        '<textarea></textarea>' +
+        '<button>Send</button>' +
+      '</div>' +
+      '<div id="echo-output"></div>' +
+      '<div id="instructions">' +
+      "Enter text into the upper box and it will be passed through Thywill to the Echo application and back again to appear in the lower box. " +
+      "Since this is an example application only there is nothing stopping you from entering page-breaking HTML - so have it at." +
+      '</div>'
     );
     jQuery("#sender button").click(function () {
      var inputData = $("#sender textarea").val();  
@@ -31,10 +40,7 @@ var echoApplication = {
        $("#sender textarea").val("");
      }
     });
-  },
-
-  setupOutput: function () {
-    jQuery("body").append('<div id="poc-output" style="margin-top: 10px; width: 500px; height: 200px; overflow-y: scroll; border: 1px solid #cccccc;"></div>');
+    jQuery("#echo-wrapper").append('');
   },
   
   setupListeners: function () {
@@ -46,11 +52,15 @@ var echoApplication = {
   // ------------------------------------------
   
   messageReceived: function (message) {
-    jQuery("#poc-output").append('<div>' + message.data + '</div>');
+    // Add the message content to the output div, and fade it in.
+    // No attempt is made to protect against bad content! It's an example
+    // application only.
+    jQuery('<div>' + message.data + '</div>').hide().appendTo("#echo-output").fadeIn();
   },
   
   confirmationReceived: function (confirmation) {
-    // noop in this case, we don't care about confirmation of receipt at the server
+    // NOOP in this case, as we don't care about confirmation of receipt at the
+    // server.
   },
   
   messageError: function (error) {
@@ -67,14 +77,13 @@ var echoApplication = {
   
 };
   
-/*
+/**
  * Add a callback to be invoked when the thywill bootstrap process is complete and applications can start to do their thing.
  * That might complete before the DOM is ready, so use jQuery.ready() to make sure we wait for that.
  */
 thywill.callOnReady(function () {
   jQuery(document).ready(function () {
     echoApplication.setupListeners();
-    echoApplication.setupInput();
-    echoApplication.setupOutput();
+    echoApplication.setupUI();
   });
 });

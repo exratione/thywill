@@ -20,4 +20,5 @@ interface to:
   * Send and receive messages through Thywill
   * Add Javascript, CSS, and other resources for loading when a client connects
 
-The example applications demonstrate how this is accomplished.
+The example applications demonstrate how this is accomplished by extending the
+Application class.
