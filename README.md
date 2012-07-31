@@ -22,3 +22,14 @@ interface to:
 
 The example applications demonstrate how this is accomplished by extending the
 Application class.
+
+A Work in Progress
+------------------
+
+Thywill is very much a work in progress, proceeding at a sedate pace. It
+remains skeletal at this time, with much to be done. Nonetheless, the core
+functions - it is possible to write applications on top of Thywill, should
+you so feel the urge.
+
+You will want to read through the material in /doc, and if interested take
+a look at the example applications in /applications.

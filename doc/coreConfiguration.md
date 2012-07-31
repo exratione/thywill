@@ -1,32 +1,29 @@
-Thywill Core Configuration JSON
--------------------------------
+Thywill Core Configuration
+--------------------------
 
 At launch, Thywill requires an object or JSON representation of its core
 configuration parameters. This applies only to the core components (e.g.
 ClientInterface, Log, etc), specifying which implementations to use and the
 configuration for each specific implementation. 
 
-An applications is expected to be configured via its own chosen methodology
-rather than via the core Thywill configuration.
+An application is expected to be configured via its own chosen methodology
+rather than through the core Thywill configuration object.
 
 Thywill is typically launched from a Node.js script in this way:
 
     // Omitting setup of application, server, and callback variables.
-    //
     // Load configuration.
-    var config = require("./path/to/config");
+    var config = require("./path/to/config/file");
     // Launch!
     Thywill.launch(config, application, server, callback);
     
 The config variable is a Javascript object containing various other nested 
-objects and properties.
-
-Each example application contains a commented configuration file as a part of
-its service scripts. See, for example:
+objects and properties. Each example application contains a commented 
+configuration file as a part of its service scripts. See, for example:
 
     /applications/echo/service/thywillConfig.js
 
-These examples should adequately explain the format.
+The comments in this example should adequately explain the format.
 
 Specifying a Non-Core Component Implementation
 ----------------------------------------------

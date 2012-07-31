@@ -89,15 +89,14 @@ code but still otherwise treat it as an installed package.
 Set Up a Thywill Application to Run as a Service
 ------------------------------------------------
 
-To set up an application as a service, follow the instructions in the
-readme file contained in the application's service directory. The service
-directory will typically contain the following items:
+To set up an application as a service, follow the instructions in
+/doc/applicationServiceSetup.md. An applications's service directory will
+typically contain the following items:
 
   * Start Node.js script
   * Shutdown preparation Node.js script
   * Service scripts that will have to be copied /etc/init.d or /etc/init
-  * Default configuration JSON file
-  * Readme file containing setup instructions
+  * Default configuration Javascript file
   
 The service script files contain paths to various files in the Thywill
 directories. These will only be correct if Node.js is installed as described in
@@ -185,10 +184,10 @@ Now alter these lines in /etc/default/varnish to tell Varnish to run on port 80
 rather than the default 6081:
 
     DAEMON_OPTS="-a :80 \
-    -T localhost:6082 \
-    -f /etc/varnish/default.vcl \
-    -S /etc/varnish/secret \
-    -s malloc,256m"
+      -T localhost:6082 \
+      -f /etc/varnish/default.vcl \
+      -S /etc/varnish/secret \
+      -s malloc,256m"
 
 Set Up Nginx
 ------------
@@ -238,4 +237,4 @@ done with all the configuration.
     service varnish restart
     service nginx restart
     
-And also restart the example Thywill applications you are looking over.
+And also restart the example Thywill applications you have set up as services.
