@@ -6,7 +6,7 @@ Ubuntu, which uses Stunnel and Varnish as frontend servers, while Nginx and
 Node.js act as backend servers to provide static and dynamic content:
 
   * All content is served over SSL
-  * Stunnel decrypts SSL connections and passes plain data to Varnish
+  * Stunnel decrypts HTTPS traffic and passes HTTP traffic to Varnish
   * Varnish manages distribution of traffic between Node.js and Nginx backends
   * Nginx serves static files for Thywill
   * Nginx can also be used to serve an unrelated website
@@ -118,7 +118,10 @@ URLs directly to the appropriate Node.js backends, and remaining traffic to
 Nginx.
 
 Varnish doesn't handle SSL traffic, so Stunnel is used to terminate HTTPS
-requests and pass them on as HTTP requests to Varnish.
+requests and pass them on as HTTP requests to Varnish. It is possible to
+distinguish between HTTP connections proxied by Stunnel and HTTP connections
+arriving directly from a client: Varnish redirects all such direct HTTP
+connections to HTTPS.
 
 Set Up Stunnel
 --------------

@@ -44,7 +44,27 @@ backend thywill_echo {
 # Varnish Functions
 # -----------------------------------
 
+# Set a local ACL.
+acl localhost {
+  "localhost";
+}
+
 sub vcl_recv {
+  # Before anything else, redirect all HTTP traffic arriving from the outside
+  # world to port 80 to port 443.
+  #
+  # This works because we are using Stunnel to terminate HTTPS connections and
+  # pass them as HTTP to Varnish. These will arrive with client.ip = localhost
+  # and with an X-Forward-For header - you will only see both of those 
+  # conditions for traffic passed through Stunnel. Therefore if we don't see
+  # both of these conditions, redirect.
+  #
+  # See vcl_error() for the actual redirecting.
+  if (!req.http.X-Forward-For && client.ip !~ localhost) {
+    set req.http.x-Redir-Url = "https://" + req.http.host + req.url;
+    error 750 req.http.x-Redir-Url;
+  }
+  
   set req.backend = default;
   set req.grace = 30s;
   
@@ -121,6 +141,16 @@ sub vcl_recv {
   # than pass. Return pass disables all caching for all backends.
   # return (lookup);
   return (pass);
+}
+
+sub vcl_error {
+  # For redirecting traffic from HTTP to HTTPS - see where error 750 is set in
+  # vcl_recv().
+  if (obj.status == 750) {
+    set obj.http.Location = obj.response;
+    set obj.status = 302;
+    return (deliver);
+  }
 }
 
 sub vcl_pipe {
