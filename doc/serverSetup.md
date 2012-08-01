@@ -142,7 +142,7 @@ starts). Note that this is probably not going to be suitable for production
 use, or for anything other than running the Thywill example applications.
  
 You must obtain and upload your SSL certificate and key as a single
-concatenated file - key then certificate - and change the default Pound
+concatenated file - key then certificate - and change the default Stunnel
 configuration to point to that file.
 
 If you are working on a development server, then setting up a self-signed
