@@ -56,8 +56,11 @@ sub vcl_recv {
   # This works because we are using Stunnel to terminate HTTPS connections and
   # pass them as HTTP to Varnish. These will arrive with client.ip = localhost
   # and with an X-Forward-For header - you will only see both of those 
-  # conditions for traffic passed through Stunnel. Therefore if we don't see
-  # both of these conditions, redirect.
+  # conditions for traffic passed through Stunnel. 
+  #
+  # We want to allow local traffic to access port 80 directly, however - so 
+  # check client.ip against the local ACL and the existence of 
+  # req.http.X-Forward-For.
   #
   # See vcl_error() for the actual redirecting.
   if (!req.http.X-Forward-For && client.ip !~ localhost) {
