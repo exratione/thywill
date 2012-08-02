@@ -10,7 +10,7 @@ var urlHelpers = require("url");
 var pathHelpers = require("path");
 
 var async = require("async");
-var ejs = require("ejs");
+var handlebars = require("handlebars");
 var io = require("socket.io");
 
 var Thywill = require("thywill");
@@ -32,6 +32,7 @@ function SocketIO() {
   SocketIO.super_.call(this);
   this.socketFactory = null;
   this.bootstrapResourcePaths = [];
+  this.resourceCache = null;
 };
 util.inherits(SocketIO, Thywill.getBaseClass("ClientInterface"));
 var p = SocketIO.prototype;
@@ -73,6 +74,13 @@ SocketIO.CONFIG_TEMPLATE = {
     _configInfo: {
        description: "Socket.IO allows connection multiplexing by assigning a namespace; this is generally a good idea.",
        types: "string",
+       required: true
+     } 
+  },
+  resourceCacheLength: {
+    _configInfo: {
+       description: "Maximum number of items held by the cache for resources served by the client interface. This should be at least twice the count of bootstrap resources defined in applications.",
+       types: "integer",
        required: true
      } 
   },
@@ -134,7 +142,7 @@ SocketIO.CONFIG_TEMPLATE = {
  * https://github.com/LearnBoost/Socket.IO/wiki/Configuring-Socket.IO
  * 
  * @param {Thywill} thywill
- *   A Thwyill instance.
+ *   A Thywill instance.
  * @param {Object} config
  *   An object representation of the configuration for this component.
  * @param {Function} [callback] 
@@ -144,6 +152,10 @@ p._configure = function (thywill, config, callback) {
   var self = this;
   this.thywill = thywill;
   this.config = config; 
+  
+  // Create a cache for resources served through this interface.
+  this.resourceCache = this.thywill.cacheManager.createCache("socketIO", this.config.resourceCacheLength);
+  
   this.readyCallback = callback;
   this._announceReady(this.NO_ERRORS);
 };
@@ -254,25 +266,29 @@ p._startup = function (callback) {
       var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 0, self.config.basePath + "/thywill.js", js);
       setResourceAndContinue(resource, asyncCallback);
     },
-    // Client-side Javascript for this clientInterface component.    
+    // Client-side Javascript for this clientInterface component. This one
+    // needs minor templating to add in Socket.io client configuration values.
+    // Use Handlebar.js rather than the configured template engine for core
+    // files.
     function (asyncCallback) {
-      var js = readFromFile("../../../../client/component/clientInterface/socketIO/serverInterface.js");
-      // This one needs minor templating to add in Socket.io client
-      // configuration values. Use EJS rather than the configured template
-      // engine for core files.
-      var templateParams = {
+      var serverInterfaceTemplate = readFromFile("../../../../client/component/clientInterface/socketIO/serverInterface.js");
+      var serverInterfaceTemplate = handlebars.compile(serverInterfaceTemplate);
+      
+      var params = {
         namespace: self.config.namespace,
-        config: {}
+        config: JSON.stringify({})
       };
       if (socketClientConfig) {
-        templateParams.config = JSON.stringify(socketClientConfig);
+        params.config = JSON.stringify(socketClientConfig);
       } 
-      js = ejs.render(js, {locals: templateParams}); 
-      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 0, self.config.basePath + "/serverInterface.js", js);
+      var serverInterface = serverInterfaceTemplate(params); 
+      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 0, self.config.basePath + "/serverInterface.js", serverInterface);
       setResourceAndContinue(resource, asyncCallback);
     },
     // Define a Javascript resource that needs to be loaded after all other
-    // Javascript resources.
+    // Javascript resources. We can't use things like jQuery(document).ready()
+    // for this because core Thywill doesn't assume any such framework is 
+    // present.
     function (asyncCallback) {
       var js = readFromFile("../../../../client/thywillLoadLast.js");
       var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 999999, self.config.basePath + "/thywillLoadLast.js", js);
@@ -320,35 +336,40 @@ p._startup = function (callback) {
       });
     },
     // Template the main thywill HTML page, adding the necessary CSS and 
-    // Javascript resources.
+    // Javascript resources. Again using Handlebar.js rather than the
+    // configured template engine.
     function (asyncCallback) {
-      var mainPage = readFromFile("../../../../client/thywill.html");
-      var jsElementTemplate = '<script type="text/javascript" src="<%= path %>"></script>\n  ';
-      var cssElementTemplate = '@import url("<%= path %>");\n  ';
+      var mainPageTemplate = readFromFile("../../../../client/thywill.html");
+      var mainPageTemplate = handlebars.compile(mainPageTemplate);
+      
+      // Split out the assembled resources into arrays by type.
+      var resourcesByType = {};
+      for (var i = 0, length = resources.length; i < length; i++) {
+        if (!resourcesByType[resources[i].type]) {
+          resourcesByType[resources[i].type] = [];
+        }
+        resourcesByType[resources[i].type].push(resources[i]);
+      }
 
-      // This Javascript resource is supplied by Socket.io. 
+      // This Javascript resource is supplied by Socket.io, so we don't have the content. 
       // 
       // TODO: how best to get it running as a resource rather than this ad-hoc placement?
       //
-      var js = '<script type="text/javascript" src="' + self.socketFactory.get('resource') + '/socket.io.js"></script>\n  ';
-      var css= "";
-      
-      // Now set up the rest of the resources, typically from the applications.
-      for (var i = 0, length = resources.length; i < length; i++) {
-        if (resources[i].type == resourceManager.types.JAVASCRIPT) {
-          js += ejs.render(jsElementTemplate, {
-            locals: {path: resources[i].path}
-          });
-        } else if (resources[i].type == resourceManager.types.CSS) {
-          css += ejs.render(cssElementTemplate, {
-            locals: {path: resources[i].path}
-          });
-        }
+      if (!resourcesByType[resourceManager.types.JAVASCRIPT]) {
+        resourcesByType[resourceManager.types.JAVASCRIPT] = [];
       }
+      // This is a fake resource object with only the data needed here. Sketchy.
+      // It has to be first, or at least very near the top.
+      resourcesByType[resourceManager.types.JAVASCRIPT].unshift({
+        path: self.socketFactory.get('resource') + '/socket.io.js',
+        type: resourceManager.types.JAVASCRIPT,
+        attributes: {}
+      });
       
-      // Create and store the rendered result.
-      mainPage = ejs.render(mainPage, {
-        locals: {js: js, css: css, encoding: self.config.encoding}
+      // Render the template and stash it as a resource.
+      var mainPage = mainPageTemplate({
+        resources: resourcesByType,
+        encoding: self.config.encoding
       });
       self.defineResource(resourceManager.createResource(resourceManager.types.HTML, 0, self.config.basePath + "/", mainPage), asyncCallback);
     },
@@ -431,31 +452,37 @@ p._initializeConnection = function (socket) {
 p._handleResourceRequest = function (req, res) {
   var self = this;
   var requestData = urlHelpers.parse(req.url);
+  // Helper function to pass a resource to the client.
+  var sendResourceToClient = function(resource) {
+    res.writeHead(200, {
+      "Content-Type": resource.type,
+      "Content-Length": resource.data.length
+    });
+    res.end(resource.data);
+  };
   
-  
-  // TODO: consider a caching layer to prevent this going to the resourceManager
-  // every time - not that it matters for in-memory implementations, but it
-  // will later.
- 
-  
-  this.getResource(requestData.pathname, function (error, resource) {
-    if (error) {
-      self.thywill.log.error(error);
-      res.statusCode = 500;
-      res.end("Error on loading resource.");   
-    } else if (resource) {
-      // We have a resource, so send it to the client.
-      var headers = {
-        "Content-Type": resource.type,
-        "Content-Length": resource.data.length
-      };
-      res.writeHead(200, headers);
-      res.end(resource.data);
-    } else {
-      res.statusCode = 404;
-      res.end("No such resource.");      
-    } 
-  });
+  // Is this cached?
+  var resource = this.resourceCache.get(requestData.pathname);
+  if (resource) {
+    sendResourceToClient(resource);
+  } else {
+    // Load the resource.
+    this.getResource(requestData.pathname, function (error, resource) {
+      if (error) {
+        self.thywill.log.error(error);
+        res.statusCode = 500;
+        res.end("Error on loading resource.");   
+      } else if (resource) {
+        // We have a resource, so drop it into the cache and send it to the
+        // client.
+        self.resourceCache.set(requestData.pathname, resource);
+        sendResourceToClient(resource);
+      } else {
+        res.statusCode = 404;
+        res.end("No such resource.");      
+      } 
+    });
+  }
 };
 
 /**
@@ -463,7 +490,6 @@ p._handleResourceRequest = function (req, res) {
  */
 p.send = function (message) {
   var socketId = message.sessionId;
-
   if (message.isValid()) {
     var destinationSocket = this.socketFactory.of(this.config.namespace).socket(socketId);
     if (destinationSocket) {

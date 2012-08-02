@@ -32,51 +32,93 @@ var p = Echo.prototype;
 //-----------------------------------------------------------
 
 /**
- * Define the resources used by the application.
+ * Define the resources used by the application: the application client code
+ * and libraries.
  * 
  * @param {Function} callback
  *   Of the form function (error) {}, where error == null on success.
  */
 p._defineClientResources = function (callback) {
-  // Setting bootstrap resources: the application code and libraries.
   var self = this;
   var resourceManager = this.thywill.resourceManager;
   var clientInterface = this.thywill.clientInterface;
+  
+  // IDs for UI templates.
+  var uiTemplateId = "echo-template-ui";
+  var messageTemplateId = "echo-template-message";
+  
+  // Helper function.
+  var loadFromFile = function(relativePath) {
+    var filepath = path.resolve(__dirname, relativePath);
+    return fs.readFileSync(filepath, "utf-8");  
+  };
+  // Helper function.
+  var createBootstrapResource = function(type, weight, path, data, attributes, callback) {
+    var resource = resourceManager.createResource(type, weight, path, data, attributes);
+    clientInterface.defineBootstrapResource(resource, callback);
+  };
+  
   var fns = [
     // Add Modernizr - comes first in the Javascript.
     function (asyncCallback) {
-      var filepath = path.resolve(__dirname, "../../../thirdParty/modernizr.2.6.1.min.js");
-      var data = fs.readFileSync(filepath, "utf-8");  
-      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, -20, "/echo/modernizr.min.js", data, {minified: true});
-      clientInterface.defineBootstrapResource(resource, asyncCallback);
+      var data = loadFromFile("../../../thirdParty/modernizr.2.6.1.min.js");
+      createBootstrapResource(resourceManager.types.JAVASCRIPT, -20, "/echo/js/modernizr.min.js", data, {minified: true}, asyncCallback);
     },
     // Add jQuery as a resource, setting it a lower weight than the default
     // Thwyill code - having it come first is fairly necessary if you want
     // things to work rather than explode.
     function (asyncCallback) {
-      var filepath = path.resolve(__dirname, "../../../thirdParty/jquery.1.7.2.min.js");
-      var data = fs.readFileSync(filepath, "utf-8");  
-      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, -10, "/echo/jquery.min.js", data, {minified: true});
-      clientInterface.defineBootstrapResource(resource, asyncCallback);
+      var data = loadFromFile("../../../thirdParty/jquery.1.7.2.min.js");
+      createBootstrapResource(resourceManager.types.JAVASCRIPT, -10, "/echo/js/jquery.min.js", data, {minified: true}, asyncCallback);
+    },
+    // Add json2.js, required by Backbone.js.
+    function (asyncCallback) {
+      var data = loadFromFile("../../../thirdParty/json2.js");
+      createBootstrapResource(resourceManager.types.JAVASCRIPT, 10, "/echo/js/json2.js", data, {}, asyncCallback);
+    },
+    // Add Underscore.js, required by Backbone.js.
+    function (asyncCallback) {
+      var data = loadFromFile("../../../thirdParty/underscore.1.3.3.min.js");
+      createBootstrapResource(resourceManager.types.JAVASCRIPT, 20, "/echo/js/underscore.min.js", data, {minified: true}, asyncCallback);
+    },
+    // Add Backbone.js.
+    function (asyncCallback) {
+      var data = loadFromFile("../../../thirdParty/backbone.0.9.2.min.js");
+      createBootstrapResource(resourceManager.types.JAVASCRIPT, 30, "/echo/js/backbone.min.js", data, {minified: true}, asyncCallback);
+    },
+    // Add Handlebars.js.
+    function (asyncCallback) {
+      var data = loadFromFile("../../../thirdParty/handlebars.1.0.0.beta.6.js");
+      createBootstrapResource(resourceManager.types.JAVASCRIPT, 40, "/echo/js/handlebars.js", data, {}, asyncCallback);
     },
     // Add the Echo client Javascript as a resource.
     function (asyncCallback) {
-      var filepath = path.resolve(__dirname, "../client/echoClient.js");
-      var data = fs.readFileSync(filepath, "utf-8");  
+      var data = loadFromFile("../client/js/echoClient.js");
       // A little templating to insert the application ID.
-      data = self.thywill.template.render(data, {applicationId: self.id});
-      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 30, "/echo/echoClient.js", data);
-      clientInterface.defineBootstrapResource(resource, asyncCallback);
+      data = self.thywill.template.render(data, {
+        applicationId: self.id,
+        uiTemplateId: uiTemplateId,
+        messageTemplateId: messageTemplateId
+      });
+      createBootstrapResource(resourceManager.types.JAVASCRIPT, 40, "/echo/js/client.js", data, {}, asyncCallback);
     },
     // Add the Echo client CSS.
     function (asyncCallback) {
-      var filepath = path.resolve(__dirname, "../client/echoClient.css");
-      var data = fs.readFileSync(filepath, "utf-8");  
-      // A little templating to insert the application ID.
-      data = self.thywill.template.render(data, { applicationId: self.id });
-      var resource = resourceManager.createResource(resourceManager.types.CSS, 0, "/echo/echoClient.css", data);
-      clientInterface.defineBootstrapResource(resource, asyncCallback);
-    }
+      var data = loadFromFile("../client/css/echoClient.css");
+      createBootstrapResource(resourceManager.types.CSS, 0, "/echo/css/client.css", data, {}, asyncCallback);
+    },
+    // Add the Echo client UI template. Note that this won't be loaded over 
+    // HTTP, but rather included into the application main page.
+    function (asyncCallback) {
+      var data = loadFromFile("../client/template/ui.tpl");
+      createBootstrapResource(resourceManager.types.TEMPLATE, 0, "/echo/tpl/ui.tpl", data, {id: uiTemplateId}, asyncCallback);
+    },
+    // Add the Echo client message display template. Note that this won't be
+    // loaded over HTTP, but rather included into the application main page.
+    function (asyncCallback) {
+      var data = loadFromFile("../client/template/message.tpl");
+      createBootstrapResource(resourceManager.types.TEMPLATE, 0, "/echo/tpl/message.tpl", data, {id: messageTemplateId}, asyncCallback);
+    },
   ];
   async.parallel(fns, callback);
 };

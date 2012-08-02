@@ -8,30 +8,25 @@ var echoApplication = {
   // engine.
   id: "{{{applicationId}}}",
   
+  // For storing Handlebars.js templates.
+  templates: {},
+  
   // -----------------------------------------------------------------------------
   // Functions for connecting to the serverInterface and setting up a minimal UI.
   // -----------------------------------------------------------------------------
 
   setupUI: function () { 
-    var self = this;
-    // Rudimentary DOM manipulation. Smarter to template, but so simple there
-    // doesn't seem to be much call for that in an example application.
-    jQuery("body").append('<div id="echo-wrapper"></div>');
-    jQuery("#echo-wrapper").append(
-      '<div id="title">Thywill: Echo</div>' +
-      '<div id="sender">' +
-        '<textarea></textarea>' +
-        '<button>Send</button>' +
-      '</div>' +
-      '<div id="echo-output"></div>' +
-      '<div id="instructions">' +
-      "Enter text into the upper box and it will be passed through Thywill to the Echo application and back again to appear in the lower box. " +
-      "Since this is an example application only there is nothing stopping you from entering page-breaking HTML - so have it at." +
-      '</div>'
-    );
+    this.templates.uiTemplate = Handlebars.compile(jQuery("#{{{uiTemplateId}}}").html());
+    this.templates.messageTemplate = Handlebars.compile(jQuery("#{{{messageTemplateId}}}").html());
+
+    jQuery("body").append(this.templates.uiTemplate({
+      title: "Thywill: Echo",
+      buttonText: "Send"
+    }));
+    
     jQuery("#sender button").click(function () {
      var inputData = $("#sender textarea").val();  
-     if( inputData ) {
+     if (inputData) {
        var message = {
          applicationId: self.id,
          data: inputData
@@ -48,14 +43,15 @@ var echoApplication = {
   },
   
   // ------------------------------------------
-  // functions called by the serverInterface
+  // Functions called by the serverInterface.
   // ------------------------------------------
   
   messageReceived: function (message) {
     // Add the message content to the output div, and fade it in.
     // No attempt is made to protect against bad content! It's an example
     // application only.
-    jQuery('<div>' + message.data + '</div>').hide().appendTo("#echo-output").fadeIn();
+    var rendered = this.templates.messageTemplate(message);
+    jQuery(rendered).hide().appendTo("#echo-output").fadeIn();
   },
   
   confirmationReceived: function (confirmation) {

@@ -12,9 +12,17 @@
 <html class="no-js" lang="en">
 <!--<![endif]--> 
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=<%= encoding %>" /> 
-  <style type="text/css" media="all"><%- css %></style>
-  <%- js %>
+  <meta http-equiv="Content-Type" content="text/html; charset={{{encoding}}}" /> 
+  <style type="text/css" media="all">
+  {{#resources.[text/css]}}  @import url("{{{path}}}");
+  {{/resources.[text/css] }}</style>
+  {{#resources.[application/javascript]}}<script type="text/javascript" src="{{{path}}}"></script>
+  {{/resources.[application/javascript]}}
+  {{#resources.[text/template]}}<script type="text/template" id="{{{attributes.id}}}">
+    {{{data}}}
+  </script>
+  {{/resources.[text/template]}}
 </head>
-<body></body>
+<body>
+</body>
 </html>

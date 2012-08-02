@@ -38,7 +38,9 @@ var p = Resource.prototype;
 Resource.TYPES = {
   JAVASCRIPT: "application/javascript",
   CSS: "text/css",
-  HTML: "text/html"
+  HTML: "text/html",
+  // For templates used by Underscore.js, Handlebars.js, etc.
+  TEMPLATE: "text/template"
 };
 
 //-----------------------------------------------------------

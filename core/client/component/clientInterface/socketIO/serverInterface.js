@@ -4,7 +4,7 @@
  * manages the interface between thywill.serverInferface and socket.IO.
  */
 
-var socket = io.connect("<%= namespace %>", <%- config %>);
+var socket = io.connect("{{{namespace}}}", {{{config}}});
 
 socket.on("connect", function () {  
   thywill.serverInterface.connected = true;

@@ -5,10 +5,7 @@
 
 var crypto = require("crypto");
 var util = require("util");
-
 var handlebars = require("handlebars");
-var LRU = require("lru-cache");
-
 var Thywill = require("thywill");
 
 //-----------------------------------------------------------
@@ -22,7 +19,7 @@ var Thywill = require("thywill");
  */
 function Handlebars() {
   Handlebars.super_.call(this);
-  // An LRU cache to hold compiled templates.
+  // A cache to hold compiled templates.
   this.cache = null;
 };
 util.inherits(Handlebars, Thywill.getBaseClass("Template"));
@@ -55,9 +52,8 @@ p._configure = function (thywill, config, callback) {
   this.config = config; 
   this.readyCallback = callback;
   
-  // Create an LRU cache for compiled templates. This cache has no timeout
-  // and is limited by number of entries, not by size of entry.
-  this.cache = LRU(config.templateCacheLength);
+  // Create a cache with no timeout for compiled templates.
+  this.cache = this.thywill.cacheManager.createCache("handlebars", config.templateCacheLength);
   
   // There are no asynchronous initialization functions here or in the 
   // superclasses. So we can just call them and forge ahead without having

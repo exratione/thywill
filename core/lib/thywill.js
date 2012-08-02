@@ -29,6 +29,7 @@ function Thywill() {
   
   // Components.
   this.applications = {};
+  this.cacheManager = null;
   this.clientInterface = null;
   this.log = null;
   this.messageManager = null;
@@ -232,6 +233,7 @@ Thywill.getBaseClass = (function () {
           baseClasses[className] = Component;
           break;
         case "Application":
+        case "CacheManager":
         case "ClientInterface":
         case "Log":
         case "MessageManager":
@@ -240,6 +242,9 @@ Thywill.getBaseClass = (function () {
         case "Template":
           var pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
           baseClasses[className] = require("./component/" + pathElement + "/" + pathElement);
+          break;
+        case "Cache":
+          baseClasses[className] = require("./component/cacheManager/cache");
           break;
         case "Message":
           baseClasses[className] = require("./component/messageManager/message");
@@ -386,6 +391,9 @@ p._managePreparationForShutdown = function (callback) {
       self.resourceManager._prepareForShutdown(asyncCallback);   
     },
     function (asyncCallback) {
+      self.cacheManager._prepareForShutdown(asyncCallback);   
+    },
+    function (asyncCallback) {
       self.log._prepareForShutdown(asyncCallback); 
     },
   ];
@@ -417,6 +425,9 @@ p._initializeComponents = function (passedApplications, config, callback) {
   var fns = [
     function (asyncCallback) {
       self._initializeComponent("log", config, asyncCallback);      
+    },
+    function (asyncCallback) {
+      self._initializeComponent("cacheManager", config, asyncCallback);      
     },
     function (asyncCallback) {
       self._initializeComponent("resourceManager", config, asyncCallback);      

@@ -47,6 +47,16 @@ module.exports = {
   	}
   },
   
+  // The cache manager in an interface for creating and managing (usually 
+  // in-memory) caches.
+  cacheManager: {
+    // Here we specify the use of the core LRU implementation.
+    implementation: {
+      type: "core",
+      name: "lru"
+    }
+  },
+  
   // The client interface component manages communication between web browser
   // and server, and thus will usually have a fairly large set of configuration
   // parameters.
@@ -73,6 +83,10 @@ module.exports = {
     // Socket.IO applications to run on the same server in their own, separate
     // namespaces.
     namespace: "/echoNamespace",
+    // The number of items that can be held in the cache of resources served by
+    // the client interface - which should be at a minimum twice the number of
+    // bootstrap and other resources defined by applications.
+    resourceCacheLength: 100,
     // Configuration to apply to the Socket.IO client on setup. This is
     // used as-is. See:
     // https://github.com/LearnBoost/Socket.IO/wiki/Configuring-Socket.IO

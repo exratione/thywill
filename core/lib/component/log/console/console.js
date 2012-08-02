@@ -87,7 +87,7 @@ p._prepareForShutdown = function (callback) {
  * @see Log#debug
  */
 p.debug = function (message) {
-  if( this.levels["debug"] >= this.level ) {
+  if (this.levels.indexOf("debug") >= this.level) {
     this.log("debug", message);
   }
 };
@@ -96,7 +96,7 @@ p.debug = function (message) {
  * @see Log#warning
  */
 p.warn = function (message) {
-  if( this.levels["warn"] >= this.level ) {
+  if (this.levels.indexOf("warn") >= this.level) {
     this.log("warn", message);
   }
 };
@@ -105,7 +105,7 @@ p.warn = function (message) {
  * @see Log#error
  */
 p.error = function (message) {
-  if (this.levels["error"] >= this.level) {
+  if (this.levels.indexOf("error") >= this.level) {
     this.log("error", message);
   }
 };

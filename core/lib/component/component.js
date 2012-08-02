@@ -58,10 +58,18 @@ p._announceReady = function (error) {
     this.ready = true;
   }
   if (this.componentType == "thywill") {
+    // Set a suitable event name.
     var eventName = "thywill.ready";
+    var log = this.log;
   } else {
     var eventName = "thywill." + this.componentType + ".ready";
+    var log = this.thywill.log;
   }
+  // Log if there is a log to log to.
+  if (log && !error) {
+    log.debug("Initialized component: " + this.componentType);
+  }
+  // Emit and invoke the callback.
   this.emit(eventName, error);
   if (this.readyCallback) {
     this.readyCallback.call(this, error);
