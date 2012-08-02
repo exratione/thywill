@@ -6,8 +6,8 @@ var Thywill = require("thywill");
 // Class Definition
 //-----------------------------------------------------------
 
-function Log(componentFactory) {
-  Log.super_.call(this, componentFactory);
+function Log() {
+  Log.super_.call(this);
   this.componentType = "log";
   this.levels = [
     "debug",

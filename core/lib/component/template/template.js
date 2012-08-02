@@ -14,8 +14,8 @@ var Thywill = require("thywill");
  * @class
  * The superclass for classes that act as interfaces to templating systems.
  */
-function Template(componentFactory) {
-  Template.super_.call(this, componentFactory);
+function Template() {
+  Template.super_.call(this);
   this.componentType = "template";
 };
 util.inherits(Template, Thywill.getBaseClass("Component"));

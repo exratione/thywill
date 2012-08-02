@@ -64,7 +64,7 @@ p._defineClientResources = function (callback) {
       var filepath = path.resolve(__dirname, "../client/echoClient.js");
       var data = fs.readFileSync(filepath, "utf-8");  
       // A little templating to insert the application ID.
-      data = self.thywill.template.render(data, { applicationId: self.id });
+      data = self.thywill.template.render(data, {applicationId: self.id});
       var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 30, "/echo/echoClient.js", data);
       clientInterface.defineBootstrapResource(resource, asyncCallback);
     },

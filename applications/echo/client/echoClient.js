@@ -4,14 +4,14 @@
  */
 
 var echoApplication = {
-  
-  // will be populated with the application ID
-  id: "<%= applicationId %>",
+  // Will be populated with the application ID via the Handlebars template 
+  // engine.
+  id: "{{{applicationId}}}",
   
   // -----------------------------------------------------------------------------
   // Functions for connecting to the serverInterface and setting up a minimal UI.
   // -----------------------------------------------------------------------------
-  
+
   setupUI: function () { 
     var self = this;
     // Rudimentary DOM manipulation. Smarter to template, but so simple there
@@ -78,8 +78,9 @@ var echoApplication = {
 };
   
 /**
- * Add a callback to be invoked when the thywill bootstrap process is complete and applications can start to do their thing.
- * That might complete before the DOM is ready, so use jQuery.ready() to make sure we wait for that.
+ * A callback to be invoked when the Thywill bootstrap process is complete
+ * and applications can start to do their thing. That might complete before the
+ * DOM is ready, so use jQuery.ready() to make sure we wait for that.
  */
 thywill.callOnReady(function () {
   jQuery(document).ready(function () {

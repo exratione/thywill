@@ -3,10 +3,11 @@
  * Ugly class definition, an ad-hoc minifier for CSS and Javascript.
  */
 
-var async = require("async");
-var cleanCss = require('clean-css');
 var crypto = require("crypto");
 var util = require("util");
+
+var async = require("async");
+var cleanCss = require("clean-css");
 var uglify = require("uglify-js");
 
 var Thywill = require("thywill");

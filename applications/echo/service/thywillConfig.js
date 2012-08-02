@@ -172,11 +172,12 @@ module.exports = {
   // The template component provides an interface to a templating engine,
   // always useful when slinging around HTML and Javascript.
   template: {
-    // Specify the EJS implementation, which uses the EJS templating engine
-    // under the hood.
+    // Specify the Handlebars templating engine implementation.
     implementation: {
       type: "core",
-      name: "ejs"
-    }
+      name: "handlebars"
+    },
+    // The maximum number of compiled templates to retain in an LRU cache.
+    templateCacheLength: 100
   }
 };

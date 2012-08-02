@@ -14,8 +14,8 @@ var Thywill = require("thywill");
  * @class
  * A trivial logger that sends everything to console.log().
  */
-function Console(componentFactory) {
-  Console.super_.call(this, componentFactory);
+function Console() {
+  Console.super_.call(this);
   this.level = this.levels.indexOf("debug");
 };
 util.inherits(Console, Thywill.getBaseClass("Log"));
