@@ -3,19 +3,32 @@
  * Client Javascript for the Echo application.
  */
 
-var echoApplication = {
-  // Will be populated with the application ID via the Handlebars template 
-  // engine.
-  id: "{{{applicationId}}}",
+(function () {
   
-  // For storing Handlebars.js templates.
-  templates: {},
+  // ------------------------------------------
+  // Define an Echo application class.
+  // ------------------------------------------
   
-  // -----------------------------------------------------------------------------
-  // Functions for connecting to the serverInterface and setting up a minimal UI.
-  // -----------------------------------------------------------------------------
-
-  setupUI: function () { 
+  /**
+   * @class
+   * An implementation of Thywill.ApplicationInterface for the Echo
+   * application.
+   * 
+   * @see Thywill.ApplicationInterface
+   */
+  var EchoApplication = function (applicationId) {
+    Thywill.ApplicationInterface.call(this, applicationId);
+    // For storing Handlebars.js templates.
+    this.templates = {};  
+  };
+  jQuery.extend(EchoApplication.prototype, Thywill.ApplicationInterface.prototype);
+  var p = EchoApplication.prototype;
+  
+  /**
+   * Create the application user interface and its event listeners.
+   */
+  p.setupUI = function () { 
+    var self = this;
     this.templates.uiTemplate = Handlebars.compile(jQuery("#{{{uiTemplateId}}}").html());
     this.templates.messageTemplate = Handlebars.compile(jQuery("#{{{messageTemplateId}}}").html());
 
@@ -27,60 +40,90 @@ var echoApplication = {
     jQuery("#sender button").click(function () {
      var inputData = $("#sender textarea").val();  
      if (inputData) {
-       var message = {
-         applicationId: self.id,
-         data: inputData
-       };
-       thywill.serverInterface.send(message);
+       // Thywill.Message(data, fromApplicationId, toApplicationId). Sending
+       // this message to the server side of the same application.
+       var message = new Thywill.Message(inputData, self.applicationId, self.applicationId);
+       self.send(message);
        $("#sender textarea").val("");
      }
     });
     jQuery("#echo-wrapper").append('');
-  },
+  };
   
-  setupListeners: function () {
-    thywill.serverInterface.registerApplication(this.id, this);
-  },
+  /**
+   * Rudimentary logging.
+   * 
+   * @param {string} logThis
+   *   String to log.
+   */
+  p.log = function (logThis) {
+    console.log(logThis);
+  };
   
-  // ------------------------------------------
-  // Functions called by the serverInterface.
-  // ------------------------------------------
-  
-  messageReceived: function (message) {
+  /**
+   * @see Thywill.ApplicationInterface#received
+   */
+  p.received = function (message) {
     // Add the message content to the output div, and fade it in.
-    // No attempt is made to protect against bad content! It's an example
-    // application only.
     var rendered = this.templates.messageTemplate(message);
     jQuery(rendered).hide().appendTo("#echo-output").fadeIn();
   },
   
-  confirmationReceived: function (confirmation) {
-    // NOOP in this case, as we don't care about confirmation of receipt at the
-    // server.
-  },
-  
-  messageError: function (error) {
-    console.log(error);
-  },
-  
-  disconnected: function () {
+  /**
+   * @see Thywill.ApplicationInterface#connectionFailure
+   */
+  p.connectionFailure = function () {
     
-  },
-  
-  reconnected: function () {
     
-  }
+    // TODO: something UI.
+
+    this.log("Client failed to connect to the server.");
+  };
   
-};
+  /**
+   * @see Thywill.ApplicationInterface#disconnected
+   */  
+  p.disconnected = function () {
+    
+    
+    
+    // TODO: something UI.
+    
+    
+    this.log("Client disconnected.");
+  };
   
-/**
- * A callback to be invoked when the Thywill bootstrap process is complete
- * and applications can start to do their thing. That might complete before the
- * DOM is ready, so use jQuery.ready() to make sure we wait for that.
- */
-thywill.callOnReady(function () {
-  jQuery(document).ready(function () {
-    echoApplication.setupListeners();
-    echoApplication.setupUI();
+  /**
+   * @see Thywill.ApplicationInterface#reconnected
+   */   
+  p.reconnected = function () {
+    
+    
+    
+    
+    // TODO: something UI.
+    
+    
+    this.log("Client reconnected.");
+  };
+  
+  // ----------------------------------------------------------
+  // Create an application instance and set up ready callbacks.
+  // ----------------------------------------------------------
+  
+  // Create the application instance. The application ID will be populated 
+  // by the backend via the Handlebars template engine when this Javascript
+  // file is prepared as a resource.
+  var app = new EchoApplication("{{{applicationId}}}");
+  
+  // Set a callback to be invoked when the Thywill bootstrap process is 
+  // complete and applications can start to do their thing. That might complete
+  // before the DOM is ready, so use jQuery.ready() to make sure we wait for
+  // that.
+  Thywill.addReadyCallback(function () {
+    Thywill.ServerInterface.registerApplication(app);
+    jQuery(document).ready(function () {
+      app.setupUI();
+    });
   });
-});
+})();

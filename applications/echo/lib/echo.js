@@ -18,8 +18,8 @@ var Thywill = require("thywill");
  * @class
  * A trivial example application.
  * 
- * This does nothing but provide a UI to enter messages, 
- * and echo back all received messages with the same content.
+ * This application provides a UI for the client to enter messages, and echoes
+ * back all entered messages with the same content.
  */
 function Echo(id) {
   Echo.super_.call(this, id);
@@ -61,34 +61,39 @@ p._defineClientResources = function (callback) {
   var fns = [
     // Add Modernizr - comes first in the Javascript.
     function (asyncCallback) {
-      var data = loadFromFile("../../../thirdParty/modernizr.2.6.1.min.js");
-      createBootstrapResource(resourceManager.types.JAVASCRIPT, -20, "/echo/js/modernizr.min.js", data, {minified: true}, asyncCallback);
+      var data = loadFromFile("../../../thirdParty/modernizr/modernizr.2.6.1.min.js");
+      createBootstrapResource(resourceManager.types.JAVASCRIPT, -30, "/echo/js/modernizr.min.js", data, {minified: true}, asyncCallback);
     },
     // Add jQuery as a resource, setting it a lower weight than the default
     // Thwyill code - having it come first is fairly necessary if you want
     // things to work rather than explode.
     function (asyncCallback) {
-      var data = loadFromFile("../../../thirdParty/jquery.1.7.2.min.js");
-      createBootstrapResource(resourceManager.types.JAVASCRIPT, -10, "/echo/js/jquery.min.js", data, {minified: true}, asyncCallback);
+      var data = loadFromFile("../../../thirdParty/jquery/jquery.1.7.2.min.js");
+      createBootstrapResource(resourceManager.types.JAVASCRIPT, -20, "/echo/js/jquery.min.js", data, {minified: true}, asyncCallback);
     },
+    // Add the plugins.js code from HTML5 Boilerplate.
+    function (asyncCallback) {
+      var data = loadFromFile("../../../thirdParty/html5boilerplate/plugins.js");
+      createBootstrapResource(resourceManager.types.JAVASCRIPT, -10, "/echo/js/plugins.js", data, {}, asyncCallback);
+    },    
     // Add json2.js, required by Backbone.js.
     function (asyncCallback) {
-      var data = loadFromFile("../../../thirdParty/json2.js");
+      var data = loadFromFile("../../../thirdParty/json/json2.js");
       createBootstrapResource(resourceManager.types.JAVASCRIPT, 10, "/echo/js/json2.js", data, {}, asyncCallback);
     },
     // Add Underscore.js, required by Backbone.js.
     function (asyncCallback) {
-      var data = loadFromFile("../../../thirdParty/underscore.1.3.3.min.js");
+      var data = loadFromFile("../../../thirdParty/underscore.js/underscore.1.3.3.min.js");
       createBootstrapResource(resourceManager.types.JAVASCRIPT, 20, "/echo/js/underscore.min.js", data, {minified: true}, asyncCallback);
     },
     // Add Backbone.js.
     function (asyncCallback) {
-      var data = loadFromFile("../../../thirdParty/backbone.0.9.2.min.js");
+      var data = loadFromFile("../../../thirdParty/backbone.js/backbone.0.9.2.min.js");
       createBootstrapResource(resourceManager.types.JAVASCRIPT, 30, "/echo/js/backbone.min.js", data, {minified: true}, asyncCallback);
     },
     // Add Handlebars.js.
     function (asyncCallback) {
-      var data = loadFromFile("../../../thirdParty/handlebars.1.0.0.beta.6.js");
+      var data = loadFromFile("../../../thirdParty/handlebars.js/handlebars.1.0.0.beta.6.js");
       createBootstrapResource(resourceManager.types.JAVASCRIPT, 40, "/echo/js/handlebars.js", data, {}, asyncCallback);
     },
     // Add the Echo client Javascript as a resource.
@@ -102,10 +107,15 @@ p._defineClientResources = function (callback) {
       });
       createBootstrapResource(resourceManager.types.JAVASCRIPT, 40, "/echo/js/client.js", data, {}, asyncCallback);
     },
+    // Add HTML5 Boilerplate CSS.
+    function (asyncCallback) {
+      var data = loadFromFile("../../../thirdParty/html5boilerplate/html5boilerplate.css");
+      createBootstrapResource(resourceManager.types.CSS, 0, "/echo/css/html5boilerplate.css", data, {}, asyncCallback);
+    },
     // Add the Echo client CSS.
     function (asyncCallback) {
       var data = loadFromFile("../client/css/echoClient.css");
-      createBootstrapResource(resourceManager.types.CSS, 0, "/echo/css/client.css", data, {}, asyncCallback);
+      createBootstrapResource(resourceManager.types.CSS, 10, "/echo/css/client.css", data, {}, asyncCallback);
     },
     // Add the Echo client UI template. Note that this won't be loaded over 
     // HTTP, but rather included into the application main page.
@@ -146,7 +156,15 @@ p._prepareForShutdown = function (callback) {
  *   Instance of the Message class.
  */
 p.receive = function (message) {
-  var echoMessage = this.thywill.messageManager.createMessage(message.data, message.sessionId, this.id);
+  this.thywill.log.debug("Echo.receive(): Message for echoing: " + message.encode());
+  var messageManager = this.thywill.messageManager;
+  var echoMessage = messageManager.createMessage(
+    message.data, 
+    message.sessionId,
+    messageManager.origins.SERVER,
+    messageManager.destinations.CLIENT,
+    this.id
+  );
   this.send(echoMessage);
 };
 
@@ -158,7 +176,7 @@ p.receive = function (message) {
  */
 p.connection = function (sessionId) {
   // Do nothing except log it.
-  this.thywill.log.debug("Client connected: " + sessionId);
+  this.thywill.log.debug("Echo: Client connected: " + sessionId);
 };
 
 /**
@@ -169,7 +187,7 @@ p.connection = function (sessionId) {
  */
 p.disconnection = function (sessionId) {
   // Do nothing except log it.
-  this.thywill.log.debug("Client disconnected: " + sessionId);
+  this.thywill.log.debug("Echo: Client disconnected: " + sessionId);
 };
 
 //-----------------------------------------------------------

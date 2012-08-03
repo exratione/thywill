@@ -263,7 +263,7 @@ p._startup = function (callback) {
     // Main client-side Thywill Javascript.      
     function (asyncCallback) {
       var js = readFromFile("../../../../client/thywill.js");
-      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 0, self.config.basePath + "/thywill.js", js);
+      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 0, self.config.basePath + "/js/thywill.js", js);
       setResourceAndContinue(resource, asyncCallback);
     },
     // Client-side Javascript for this clientInterface component. This one
@@ -282,7 +282,7 @@ p._startup = function (callback) {
         params.config = JSON.stringify(socketClientConfig);
       } 
       var serverInterface = serverInterfaceTemplate(params); 
-      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 0, self.config.basePath + "/serverInterface.js", serverInterface);
+      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 1, self.config.basePath + "/js/serverInterface.js", serverInterface);
       setResourceAndContinue(resource, asyncCallback);
     },
     // Define a Javascript resource that needs to be loaded after all other
@@ -291,7 +291,7 @@ p._startup = function (callback) {
     // present.
     function (asyncCallback) {
       var js = readFromFile("../../../../client/thywillLoadLast.js");
-      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 999999, self.config.basePath + "/thywillLoadLast.js", js);
+      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 999999, self.config.basePath + "/js/thywillLoadLast.js", js);
       setResourceAndContinue(resource, asyncCallback); 
     },
     // Load up bootstrap resources defined here and elsewhere (i.e. in 
@@ -402,26 +402,21 @@ p._initializeConnection = function (socket) {
   var self = this;
   
   /**
-   * A message arrives and the raw data object from socket.io code is passed
-   * in, which in 0.7 should look like:
-   * 
-   * {
-   *   data:{
-   *     applicationId: applicationId,
-   *     data: myMessageData
-   *   }
-   * }
-   * 
-   * We just want the inner object data and target applicationId, if it is
-   * present.
+   * A message arrives and the raw data object from Socket.IO code is passed
+   * in.
    */ 
   socket.on("messageFromClient", function (messageObj) { 
-    if (messageObj && messageObj.data && messageObj.data.data) {
-      self.receive(self.thywill.messageManager.createMessage(
-        messageObj.data.data, 
+    if (messageObj && messageObj.data) {
+      var messageManager = self.thywill.messageManager;
+      var message = messageManager.createMessage(
+        messageObj.data, 
         socket.id,
-        messageObj.data.applicationId
-      ));
+        messageManager.origins.CLIENT,
+        messageManager.destinations.SERVER,
+        messageObj.fromApplicationId,
+        messageObj.toApplicationId
+      );
+      self.receive(message);
     } else {
       self.thywill.log.debug("Empty or broken message received from session: " + socket.id);
     }
@@ -491,12 +486,29 @@ p._handleResourceRequest = function (req, res) {
 p.send = function (message) {
   var socketId = message.sessionId;
   if (message.isValid()) {
-    var destinationSocket = this.socketFactory.of(this.config.namespace).socket(socketId);
-    if (destinationSocket) {
-      destinationSocket.emit("messageToClient", {data: message.data, applicationId: message.applicationId});
-    } else {
-      this.thywill.log.debug("SocketIO.send: invalid socketId: " + socketId + " for sessionId: " + message.sessionId);
+    var messageManager = this.thywill.messageManager;
+    // Is this a message for the server rather than the client? It's always
+    // possible we'll have server applications talking to each other this 
+    // way.
+    if (message.destination == messageManager.destinations.SERVER) {
+      this.receive(message);
+    } 
+    // Otherwise it's for a client browser, so send it out through the 
+    // pertinent socket instance.
+    else {  
+      var destinationSocket = this.socketFactory.of(this.config.namespace).socket(socketId);
+      if (destinationSocket) {
+        destinationSocket.emit("messageToClient", {
+          data: message.data, 
+          fromApplicationId: message.fromApplicationId,
+          toApplicationId: message.toApplicationId
+        });
+      } else {
+        this.thywill.log.debug("SocketIO.send(): invalid socketId / sessionId: " + socketId);
+      }
     }
+  } else {
+    this.thywill.log.debug("SocketIO.send(): invalid Message: " + message.encode());
   }
 };
 

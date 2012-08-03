@@ -19,7 +19,7 @@ var Echo = require("../lib/echo");
 var thywillConfig = require("./thywillConfig");
 
 // Instantiate an application object.
-var echo = new Echo("My echo application");
+var echo = new Echo("echo");
 
 // Optionally, define and start a server. For example:
 // var express = require("express");

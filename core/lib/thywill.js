@@ -141,11 +141,14 @@ Thywill.launch = function (config, applications, server, callback) {
     //
     // Or more sensibly, you are using an init.d script.
     //
+    console.log("No server provided: starting HTTPServer on port " + config.thywill.launch.port);
     server = http.createServer(function (req, res) {
       res.statusCode = 404;
       res.end("No such resource."); 
     });
     server.listen(config.thywill.launch.port);
+    console.log("Server started.");
+    
   }
 
   // Start thywill running. 

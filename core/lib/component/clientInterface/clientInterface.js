@@ -34,14 +34,15 @@ var p = ClientInterface.prototype;
  */
 p.receive = function (message) {
   var self = this;
-  if (!message.applicationId) {
+  // Send to all applications if no toApplicationId specified.
+  if (!message.toApplicationId) {
     for (id in this.thywill.applications) {
       process.nextTick(function () {
         self.thywill.applications[id].receive(message);
       });
     }    
-  } else if (this.thywill.applications[message.applicationId]) {
-    this.thywill.applications[message.applicationId].receive(message); 
+  } else if (this.thywill.applications[message.toApplicationId]) {
+    this.thywill.applications[message.toApplicationId].receive(message); 
   }
 };
 

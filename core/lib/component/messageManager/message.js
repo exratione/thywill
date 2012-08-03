@@ -17,15 +17,35 @@ var Thywill = require("thywill");
  *   The body of the message.
  * @param {string} sessionId
  *   The ID of the client, whether sender or recipient.
- * @param {string} applicationId
+ * @param {string} origin
+ *   Whether the message originated from server or client.
+ * @param {string} destination
+ *   Whether the message is delivered to server or client.
+ * @param {string} fromApplicationId
+ *   The ID of the originating application.
+ * @param {string} [toApplicationId]
  *   If not null, the message is flagged for delivery to this application only.
  */
-function Message(data, sessionId, applicationId) {
+function Message(data, sessionId, origin, destination, fromApplicationId, toApplicationId) {
   this.data = data;
-  this.applicationId = applicationId;
   this.sessionId = sessionId;
+  this.origin = origin;
+  this.destination = destination;
+  this.fromApplicationId = fromApplicationId;
+  this.toApplicationId = toApplicationId;
 };
 var p = Message.prototype;
+
+//-----------------------------------------------------------
+// "Static" parameters
+//-----------------------------------------------------------
+
+Message.ORIGINS = {
+  SERVER: "server",
+  CLIENT: "client"
+};
+
+Message.DESTINATIONS = Message.ORIGINS;
 
 //-----------------------------------------------------------
 // Methods
@@ -48,13 +68,18 @@ p.encode = function () {
 
 /**
  * A valid message has at least values for data and sessionId. A null 
- * applicationId implies delivery to all applications, but is still valid.
+ * toApplicationId implies delivery to all applications, but is still valid.
  * 
  * @return {boolean}
  *   True if this instance is a valid message.
  */
 p.isValid = function () {
-  return (this.data && this.sessionId);
+  // TODO more rigorous check.
+  return (
+   this.data 
+   && this.sessionId 
+   && this.fromApplicationId
+  );
 };
 
 //-----------------------------------------------------------

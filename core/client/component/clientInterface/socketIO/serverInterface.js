@@ -4,40 +4,70 @@
  * manages the interface between thywill.serverInferface and socket.IO.
  */
 
-var socket = io.connect("{{{namespace}}}", {{{config}}});
+// --------------------------------------------------------
+// Override necessary functions in Thywill.ServerInterface.
+// --------------------------------------------------------
 
-socket.on("connect", function () {  
-  thywill.serverInterface.connected = true;
-  
-  // Set up any necessary functions in the thywill object.
-  //
-  // Sending function
-  thywill.serverInterface.send = function (message, applicationId) {
-    socket.emit("messageFromClient", {data: message, applicationId: applicationId});
-  };
-});
+/**
+ * Send a message to the server.
+ * 
+ * @see Thywill.ServerInterface#send
+ */
+Thywill.ServerInterface.send = function (message) { 
+  Thywill.socket.emit("messageFromClient", message);
+};
+
+// Create the socket and connect. The parameters here are provided by
+// Handlebars.js templating when this Javascript file is turned into a
+// resource by the server.
+Thywill.socket = io.connect("{{{namespace}}}", {{{config}}});
 
 //------------------------------------
 // serverInterface interaction
 //------------------------------------
 
 /**
- * Functions to associate this implementation with thywill.serverInterface. That will
- * in turn convey messages and events to the various running applications.
+ * Functions to associate this implementation with Thywill.ServerInterface.
+ * That will in turn convey messages and events to the various running 
+ * and registered applications.
  */
 
-socket.on("messageToClient", function (message) {  
-  thywill.serverInterface.messageReceived(message);
+// Initial connection succeeds.
+Thywill.socket.on("connect", function () {  
+  Thywill.ServerInterface.connected = true;
 });
 
-socket.on("disconnect", function (){  
-  thywill.serverInterface.disconnected();
+// Initial connection failed with timeout.
+Thywill.socket.on("connect_failed", function() {
+  Thywill.ServerInterface.connectionFailure();
 });
 
-socket.on("reconnecting", function (){  
+//Client is trying to initially connect.
+Thywill.socket.on("connecting", function (transport_type) {  
   // Do nothing.
 });
 
-socket.on("reconnect", function (){  
-  thywill.serverInterface.reconnected();
+// Client is disconnected.
+Thywill.socket.on("disconnect", function () { 
+  Thywill.ServerInterface.disconnected();
+});
+
+// Message received from the server.
+Thywill.socket.on("messageToClient", function (message) {  
+  Thywill.ServerInterface.received(message);
+});
+
+// Client manages to reconnect after disconnection.
+Thywill.socket.on("reconnect", function (transport_type, reconnectionAttempts) {  
+  Thywill.ServerInterface.reconnected();
+});
+
+// Attempts to reconnect are abandoned, timed out.
+Thywill.socket.on("reconnect_failed", function() {
+  Thywill.ServerInterface.connectionFailure();
+});
+
+// Client is trying to reconnect after disconnection.
+Thywill.socket.on("reconnecting", function (reconnectionDelay, reconnectionAttempts) {  
+  // Do nothing.
 });

@@ -62,8 +62,8 @@ p._prepareForShutdown = function (callback) {
 /**
  * @see MessageManager#createMessage
  */
-p.createMessage = function(data, sessionId, applicationId) {
-  return new SimpleMessage(data, sessionId, applicationId);
+p.createMessage = function(data, sessionId, origin, destination, fromApplicationId, toApplicationId) {
+  return new SimpleMessage(data, sessionId, origin, destination, fromApplicationId, toApplicationId);
 };
 
 //-----------------------------------------------------------
