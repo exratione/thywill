@@ -33,9 +33,11 @@
     this.templates.messageTemplate = Handlebars.compile(jQuery("#{{{messageTemplateId}}}").html());
 
     jQuery("body").append(this.templates.uiTemplate({
-      title: "Thywill: Echo",
+      title: "Thywill: Echo Application",
       buttonText: "Send"
     }));
+    
+    jQuery("#sender textarea").focus();
     
     jQuery("#sender button").click(function () {
      var inputData = $("#sender textarea").val();  
@@ -64,9 +66,13 @@
    * @see Thywill.ApplicationInterface#received
    */
   p.received = function (message) {
-    // Add the message content to the output div, and fade it in.
+    // Set scroll top, or else the new message might not push down content
+    // correctly.
+    jQuery("#echo-output").scrollTop(0);
+    // Render the message HTML.
     var rendered = this.templates.messageTemplate(message);
-    jQuery(rendered).hide().appendTo("#echo-output").fadeIn();
+    // Add the message content to the output div, and slide it in.
+    jQuery(rendered).hide().prependTo("#echo-output").slideDown();
   },
   
   /**
