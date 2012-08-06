@@ -24,7 +24,7 @@ var shapes = new Shapes("shapes");
 var server = null;
 
 // And off we go: launch a Thywill instance to run the the application.
-Thywill.launch(thywillConfig, shapes, server, function (thywill, server, error) { 
+Thywill.launch(thywillConfig, shapes, server, function (error, thywill, server) { 
   if (error) {
     console.log("Thywill launch failed with error: " + error);
     process.exit(1);

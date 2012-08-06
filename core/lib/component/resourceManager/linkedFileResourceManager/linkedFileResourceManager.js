@@ -263,7 +263,7 @@ p.writeResourceToFile = function(resource, callback) {
       var stream = fs.createWriteStream({
         // Overwrite an existing file.
         flags: "w",
-        // Defaults to the encoding of whatever is passed in.
+        // Writing out buffers, so no encoding needed.
         encoding: null,
         mode: 0644
       });

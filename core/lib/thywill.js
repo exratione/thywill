@@ -23,9 +23,15 @@ var Component = require("./component/component");
  * examples of use.
  */
 function Thywill() {
-  Thywill.super_.call(this, null);  
+  Thywill.super_.call(this);  
   this.componentType = "thywill";
   this.server = null;
+  this.adminInterfaceServer = null;
+  
+  // Was this Thywill instance provided with an http.Server (true) or did it
+  // create a default http.Server as a part of launch and configuration
+  // (false)?
+  this.providedServer = true;
   
   // Components.
   this.applications = {};
@@ -111,18 +117,18 @@ Thywill.CONFIG_TEMPLATE = {
  * @param {Object} config
  *   An object representation of configuration.
  * @param {Application|Application[]} applications 
- *   A single application or array of application objects to be registered.
+ *   A single Application or array of Application instances to be registered.
  * @param {Object} [server]
- *   An HTTPServer or HTTPSServer instance. If not provided, an HTTPServer will
+ *   An http.Server or https.Server instance. If not provided, an HTTPServer will
  *   be created.
  * @param {Function} [callback] 
- *   Of the form function (thywill, server, error) {}, called on completion of
+ *   Of the form function (error, thywill, server) {}, called on completion of
  *   setup, where thywill is the Thywill instance, server is a the Express
  *   server used, and error == null on success.
  */
 Thywill.launch = function (config, applications, server, callback) {
   console.log("Beginning Thywill initialization and launch.");
-
+  var self = this;
   // Create and configure the Thywill instance.
   var thywill = new Thywill();
   thywill.configureFromObject(config);
@@ -134,6 +140,8 @@ Thywill.launch = function (config, applications, server, callback) {
   }
   
   if (!server) {
+    thywill.providedServer = false;
+    
     // Start up an HTTP server. Note that this will need sufficient privileges
     // to bind to a privileged port of < 1024. E.g. you are running the script
     // while logged in as root or through sudo via something like:
@@ -170,7 +178,7 @@ Thywill.launch = function (config, applications, server, callback) {
     // Pass out the Thywill instance, the server, and any error message in the
     // callback.
     if (callback) {
-      callback.call(this, thywill, server, error);
+      callback.call(self, error, thywill, server);
     }
   });
 };
@@ -184,30 +192,34 @@ Thywill.launch = function (config, applications, server, callback) {
  * 
  * @param {Object} config
  *   An object representation of configuration.
+ * @param {Function) callback
+ *   Of the form
  */
-Thywill.prepareForShutdown = function (config) {
+Thywill.prepareForShutdown = function (config, callback) {
+  var self = this;
   // Check the configuration with a dummy Thywill instance.
   var thywill = new Thywill();
   thywill.configureFromObject(config);
   
   // Now go on to send a request to what is hopefully a running Thywill
   // instance and tell it to prepare for impending shutdown.
-  console.log("Instructing Thywill to prepare for shutdown");
+  console.log("Instructing Thywill to prepare for shutdown.");
   
   var options = {
     host: "localhost",
     port: config.thywill.adminInterface.port,
     path: config.thywill.adminInterface.paths.prepareForShutdown,
-    method: "HEAD"
+    method: "GET"
   };
-  
   var request = http.request(options, function (response) {
-    console.log("Thywill completed preparations for shutdown");
+    console.log("Thywill has completed preparations for shutdown.");
+    callback.call(self, thywill.NO_ERRORS);
+  });
+  request.on("error", function (error) {
+    console.log("Error on requesting preparation for shutdown: " + error);
+    callback.call(self, error);
   });
   request.end();
-  request.on("error", function (error) {
-    throw error;
-  });
 };
 
 /**
@@ -345,9 +357,12 @@ p.startup = function (server, applications, callback) {
 p._setupAdminInterfaceListener = function () {
   var self = this;
   var config = this.config.thywill.adminInterface;
-  var server = http.createServer();
-  server.listen(config.port);
-  server.on("request", function (req, res) {
+  this.adminInterfaceServer = http.createServer();
+  this.adminInterfaceServer.listen(config.port);
+  
+  // TODO: better admin responses, actual HTML.
+  
+  this.adminInterfaceServer.on("request", function (req, res) {
     if (config.ipAddresses.indexOf(req.connection.remoteAddress) == -1) {
       res.statusCode = 500;
       res.end("No access permitted from: " + req.connection.remoteAddress);
@@ -379,25 +394,41 @@ p._managePreparationForShutdown = function (callback) {
   var self = this;
   var fns = [
     function (asyncCallback) {
-      self.clientInterface._prepareForShutdown(asyncCallback);      
+      // If the http.Server instance was created by Thywill, shut it
+      // down.
+      if (!self.providedServer) {
+        self.log.debug("Closing http.Server instance.");
+        self.server.on("close", asyncCallback);
+        self.server.close();
+      }
+    },        
+    function (asyncCallback) {
+      self.log.debug("Preparing clientInterface for shutdown.");
+      self.clientInterface._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
-      self.minifier._prepareForShutdown(asyncCallback);      
+      self.log.debug("Preparing minifier for shutdown.");
+      self.minifier._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
-      self.templateEngine._prepareForShutdown(asyncCallback);      
+      self.log.debug("Preparing templateEngine for shutdown.");
+      self.templateEngine._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
-      self.messageManager._prepareForShutdown(asyncCallback);   
+      self.log.debug("Preparing messageManager for shutdown.");
+      self.messageManager._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
-      self.resourceManager._prepareForShutdown(asyncCallback);   
+      self.log.debug("Preparing resourceManager for shutdown.");
+      self.resourceManager._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
-      self.cacheManager._prepareForShutdown(asyncCallback);   
+      self.log.debug("Preparing cacheManager for shutdown.");
+      self.cacheManager._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
-      self.log._prepareForShutdown(asyncCallback); 
+      self.log.debug("Preparing log for shutdown.");
+      self.log._prepareForShutdown(asyncCallback);
     },
   ];
   async.series(fns, callback);
