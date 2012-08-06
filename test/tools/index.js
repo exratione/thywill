@@ -9,13 +9,11 @@ var baseConfig = require("./baseTestThywillConfig");
 var Thywill = require("thywill");
 
 var tools = {
-    
   // Populated with a Thywill instance by the thywillVowsSuite.
   thywill: null,
   // Base configuration.
   config: baseConfig,
   
-    
   /**
    * Create a partially formed Vows suite that launches a Thywill instance as
    * its first batch.
@@ -49,7 +47,6 @@ var tools = {
     });
     return suite;
   },
-  
   
   /**
    * Add batches to a Thywill test suite that shut down the servers, so as to

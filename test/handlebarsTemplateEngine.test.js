@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * Vows tests for the EJSTemplateEngine component.
+ * Vows tests for the HandlebarsTemplateEngine component.
  */
 
 var assert = require("assert");
@@ -9,17 +9,18 @@ var tools = require("./tools");
 tools.config.templateEngine = {
   implementation: {
     type: "core",
-    name: "ejsTemplateEngine"
-  }
+    name: "handlebarsTemplateEngine"
+  },
+  templateCacheLength: 100
 };
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuite("templateEngine/ejsTemplateEngine", tools.config);
+var suite = tools.createVowsSuite("templateEngine/handlebarsTemplateEngine", tools.config);
 
 suite.addBatch({
-  "ejsTemplateEngine#render": {
+  "handlebarsTemplateEngine#render": {
     topic: function () {
-      template = "<div><%= name %></div>";
+      template = "<div>{{name}}</div>";
       return tools.thywill.templateEngine.render(template, {
         name: "value"
       });
