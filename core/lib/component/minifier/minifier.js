@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * Minify class definition. 
+ * Minifier class definition. 
  */
 
 var util = require("util");
@@ -14,12 +14,12 @@ var Thywill = require("thywill");
  * @class
  * Superclass for handling minification and compression of resources.
  */
-function Minify() {
-  Minify.super_.call(this);
+function Minifier() {
+  Minifier.super_.call(this);
   this.componentType = "minify";
 };
-util.inherits(Minify, Thywill.getBaseClass("Component"));
-var p = Minify.prototype;
+util.inherits(Minifier, Thywill.getBaseClass("Component"));
+var p = Minifier.prototype;
 
 //-----------------------------------------------------------
 // Methods to be implemented by subclasses.
@@ -70,4 +70,4 @@ p.minifyResources = function(resources, minifyJavascript, minifyCSS, callback) {
 // Exports - Class Constructor
 //-----------------------------------------------------------
 
-module.exports = Minify;
+module.exports = Minifier;

@@ -1,15 +1,13 @@
 /**
  * @fileOverview
- * Ugly class definition, an ad-hoc minifier for CSS and Javascript.
+ * UglyMinifier class definition, an ad-hoc minifier for CSS and Javascript.
  */
 
 var crypto = require("crypto");
 var util = require("util");
-
 var async = require("async");
 var cleanCss = require("clean-css");
 var uglify = require("uglify-js");
-
 var Thywill = require("thywill");
 
 //-----------------------------------------------------------
@@ -21,26 +19,26 @@ var Thywill = require("thywill");
  * A class for handling minification and compression of resources using
  * UglifyJS for Javascript and CleanCSS for CSS.
  */
-function Ugly() {
-  Ugly.super_.call(this);
+function UglyMinifier() {
+  UglyMinifier.super_.call(this);
 };
-util.inherits(Ugly, Thywill.getBaseClass("Minify"));
-var p = Ugly.prototype;
+util.inherits(UglyMinifier, Thywill.getBaseClass("Minifier"));
+var p = UglyMinifier.prototype;
 
 //-----------------------------------------------------------
 //"Static" parameters
 //-----------------------------------------------------------
 
-Ugly.CONFIG_TEMPLATE = {
+UglyMinifier.CONFIG_TEMPLATE = {
   jsBasePath: {
-   _configInfo: {
+    _configInfo: {
       description: "The base path for merged Javascript resources.",
       types: "string",
       required: true
     } 
   },
   cssBasePath: {
-   _configInfo: {
+    _configInfo: {
       description: "The base path for merged CSS resources.",
       types: "string",
       required: true
@@ -88,7 +86,7 @@ p.minifyResource = function (resource, callback) {
   var resourceManager = this.thywill.resourceManager;
   
   // Only minify if not already minified.
-  if (resource.attributes.minified) {
+  if (resource.minified) {
     callback.call(this, error, resource);
     return;
   }
@@ -264,4 +262,4 @@ p._generateMinifiedPath = function (path) {
 // Exports - Class Constructor
 //-----------------------------------------------------------
 
-module.exports = Ugly;
+module.exports = UglyMinifier;

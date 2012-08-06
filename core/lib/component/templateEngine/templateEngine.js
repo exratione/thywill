@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * Template class definition.
+ * TemplateEngine class definition.
  */
 
 var util = require("util");
@@ -12,14 +12,14 @@ var Thywill = require("thywill");
 
 /**
  * @class
- * The superclass for classes that act as interfaces to templating systems.
+ * The superclass for interfaces to templating systems.
  */
-function Template() {
-  Template.super_.call(this);
+function TemplateEngine() {
+  TemplateEngine.super_.call(this);
   this.componentType = "template";
 };
-util.inherits(Template, Thywill.getBaseClass("Component"));
-var p = Template.prototype;
+util.inherits(TemplateEngine, Thywill.getBaseClass("Component"));
+var p = TemplateEngine.prototype;
 
 //-----------------------------------------------------------
 // Methods to be implemented by subclasses.
@@ -45,4 +45,4 @@ p.render = function (template, values) {
 // Exports - Class Constructor
 //-----------------------------------------------------------
 
-module.exports = Template;
+module.exports = TemplateEngine;

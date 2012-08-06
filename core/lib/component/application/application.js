@@ -12,7 +12,7 @@ var Thywill = require("thywill");
 
 /**
  * @class
- * The superclass for applications built on thywill.js.
+ * The superclass for applications running on Thywill.
  */
 function Application(id) {
   Application.super_.call(this);
@@ -30,7 +30,7 @@ var p = Application.prototype;
 //-----------------------------------------------------------
 
 /**
- * Send a message to a specific client.
+ * Send a message, usually to one specific client.
  * 
  * @param {Message} message
  *   Instance of the Message class.
@@ -44,22 +44,22 @@ p.send = function (message) {
 //-----------------------------------------------------------
 
 /**
- * Called when the application is first registered with thywill.js. Use it to initialize
- * resources and pass them to the resources component. 
+ * This method is invoked when the application is first registered on Thywill
+ * server startup. It should be used to define the resources that will be
+ * loaded by a client immediately on connection. These will typically include
+ * third party libraries and the core Javascript client code that starts an
+ * application running, renders a user interface, and so on.
  * 
- * var resource = new Resource(type, weight, path, data);
- * this.thywill.clientInterface.defineResource(resource);
+ * These bootstrap resources are defined via the resourceManager and
+ * clientInterface components:
  * 
- * or
- * 
- * this.thywill.clientInterface.defineBootstrapResource(resource);
- * 
- * Bootstrap resources are loaded immediately in the client. Other resources are available to be called later.
+ * var resource = this.thywill.resourceManager.createResource(type, ...);
+ * this.thywill.clientInterface.storeBootstrapResource(resource, callback);
  * 
  * @param {Function} callback
  *   Of the form function (error) {}, where error == null on success.
  */
-p._defineClientResources = function (callback) {
+p._defineBootstrapResources = function (callback) {
   throw new Error("Not implemented.");
 };
 

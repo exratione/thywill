@@ -2,18 +2,18 @@
 
 /**
  * @fileOverview 
- * A script to launches a Thywill server process running the Echo example
+ * A script to launches a Thywill server process running the Shapes example
  * application.
  */
 
 var Thywill = require("thywill");
-var Echo = require("../lib/echo");
+var Shapes = require("../lib/shapes");
 
 // Load the Thywill core configuration.
 var thywillConfig = require("./thywillConfig");
 
 // Instantiate an application object.
-var echo = new Echo("echo");
+var shapes = new Shapes("shapes");
 
 // Optionally, define and start a server. For example:
 // var express = require("express");
@@ -24,7 +24,7 @@ var echo = new Echo("echo");
 var server = null;
 
 // And off we go: launch a Thywill instance to run the the application.
-Thywill.launch(thywillConfig, echo, server, function (thywill, server, error) { 
+Thywill.launch(thywillConfig, shapes, server, function (thywill, server, error) { 
   if (error) {
     console.log("Thywill launch failed with error: " + error);
     process.exit(1);

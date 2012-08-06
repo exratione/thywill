@@ -33,9 +33,9 @@ function Thywill() {
   this.clientInterface = null;
   this.log = null;
   this.messageManager = null;
-  this.minify = null;
+  this.minifier = null;
   this.resourceManager = null;
-  this.template = null;
+  this.templateEngine = null;
 };
 util.inherits(Thywill, Component);
 var p = Thywill.prototype;
@@ -74,26 +74,26 @@ Thywill.CONFIG_TEMPLATE = {
   adminInterface: {
     ipAddresses: {
       _configInfo: {
-         description: "IP addresses permitted to connect to the administrative interface.",
-         types: "array",
-         required: true
-       } 
+        description: "IP addresses permitted to connect to the administrative interface.",
+        types: "array",
+        required: true
+      } 
     },
     paths: {
       prepareForShutdown: {
         _configInfo: {
-           description: "The full path that an HTTP shutdown request must hit. e.g. '/thywill/prepareForShutdown'",
-           types: "string",
-           required: true
-         } 
+          description: "The full path that an HTTP shutdown request must hit. e.g. '/thywill/prepareForShutdown'",
+          types: "string",
+          required: true
+        } 
       }
     },
     port: {
       _configInfo: {
-         description: "The port to listen on.",
-         types: "integer",
-         required: true
-       } 
+        description: "The port to listen on.",
+        types: "integer",
+        required: true
+      } 
     }
   }
 };
@@ -121,6 +121,7 @@ Thywill.CONFIG_TEMPLATE = {
  *   server used, and error == null on success.
  */
 Thywill.launch = function (config, applications, server, callback) {
+  console.log("Beginning Thywill initialization and launch.");
 
   // Create and configure the Thywill instance.
   var thywill = new Thywill();
@@ -141,14 +142,13 @@ Thywill.launch = function (config, applications, server, callback) {
     //
     // Or more sensibly, you are using an init.d script.
     //
-    console.log("No server provided: starting HTTPServer on port " + config.thywill.launch.port);
+    console.log("No server provided: starting http.Server on port " + config.thywill.launch.port);
     server = http.createServer(function (req, res) {
       res.statusCode = 404;
       res.end("No such resource."); 
     });
     server.listen(config.thywill.launch.port);
-    console.log("Server started.");
-    
+    console.log("http.Server started.");
   }
 
   // Start thywill running. 
@@ -240,9 +240,9 @@ Thywill.getBaseClass = (function () {
         case "ClientInterface":
         case "Log":
         case "MessageManager":
-        case "Minify":
+        case "Minifier":
         case "ResourceManager":
-        case "Template":
+        case "TemplateEngine":
           var pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
           baseClasses[className] = require("./component/" + pathElement + "/" + pathElement);
           break;
@@ -382,10 +382,10 @@ p._managePreparationForShutdown = function (callback) {
       self.clientInterface._prepareForShutdown(asyncCallback);      
     },
     function (asyncCallback) {
-      self.minify._prepareForShutdown(asyncCallback);      
+      self.minifier._prepareForShutdown(asyncCallback);      
     },
     function (asyncCallback) {
-      self.template._prepareForShutdown(asyncCallback);      
+      self.templateEngine._prepareForShutdown(asyncCallback);      
     },
     function (asyncCallback) {
       self.messageManager._prepareForShutdown(asyncCallback);   
@@ -439,10 +439,10 @@ p._initializeComponents = function (passedApplications, config, callback) {
       self._initializeComponent("messageManager", config, asyncCallback);      
     },
     function (asyncCallback) {
-      self._initializeComponent("template", config, asyncCallback);      
+      self._initializeComponent("templateEngine", config, asyncCallback);      
     },
     function (asyncCallback) {
-      self._initializeComponent("minify", config, asyncCallback);      
+      self._initializeComponent("minifier", config, asyncCallback);      
     },
     function (asyncCallback) {
       self._initializeComponent("clientInterface", config, asyncCallback);      
@@ -471,7 +471,7 @@ p._initializeComponents = function (passedApplications, config, callback) {
         async.forEach(
           passedApplications,
           function (application, innerAsyncCallback) {
-            application._defineClientResources(innerAsyncCallback);
+            application._defineBootstrapResources(innerAsyncCallback);
           },
           asyncCallback
         );

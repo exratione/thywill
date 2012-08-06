@@ -1,11 +1,11 @@
 /**
  * @fileOverview
- * Simple class definition, a message manager implementation.
+ * InMemoryResourceManager class definition.
  */
 
 var util = require("util");
 var Thywill = require("thywill");
-var SimpleMessage = require("./simpleMessage");
+var Resource = require("../resource");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -15,18 +15,18 @@ var SimpleMessage = require("./simpleMessage");
  * @class
  * A trivial synchronous in-memory resource manager.
  */
-function Simple() {
-  Simple.super_.call(this);
+function InMemoryResourceManager() {
+  InMemoryResourceManager.super_.call(this);
   this.data = {};
 };
-util.inherits(Simple, Thywill.getBaseClass("MessageManager"));
-var p = Simple.prototype;
+util.inherits(InMemoryResourceManager, Thywill.getBaseClass("ResourceManager"));
+var p = InMemoryResourceManager.prototype;
 
 //-----------------------------------------------------------
 // "Static" parameters
 //-----------------------------------------------------------
 
-Simple.CONFIG_TEMPLATE = null;
+InMemoryResourceManager.CONFIG_TEMPLATE = null;
 
 //-----------------------------------------------------------
 // Initialization
@@ -60,14 +60,47 @@ p._prepareForShutdown = function (callback) {
 //-----------------------------------------------------------
 
 /**
- * @see MessageManager#createMessage
+ * @see ResourceManager#createResource
  */
-p.createMessage = function(data, sessionId, origin, destination, fromApplicationId, toApplicationId) {
-  return new SimpleMessage(data, sessionId, origin, destination, fromApplicationId, toApplicationId);
+p.createResource = function(buffer, attributes) {
+  return new Resource(buffer, attributes);
+};
+
+/**
+ * @see ResourceManager#store
+ */
+p.store = function (key, resource, callback) {
+  this.data[key] = resource;
+  resource.stored = true;
+  callback(this.NO_ERRORS);
+};
+
+/**
+ * @see ResourceManager#remove
+ */
+p.remove = function (key, callback) {
+  var resource = null;
+  var error = this.NO_ERRORS;
+  if (this.data[key]) {
+    resource = this.data[key];
+    delete this.data[key];
+  } 
+  callback(error, resource);
+};
+
+/**
+ * @see ResourceManager#load
+ */
+p.load = function (key, callback) {
+  if (this.data[key]) { 
+    callback(this.NO_ERRORS, this.data[key]);
+  } else {
+    callback(this.NO_ERRORS, null);
+  }
 };
 
 //-----------------------------------------------------------
 // Exports - Class Constructor
 //-----------------------------------------------------------
 
-module.exports = Simple;
+module.exports = InMemoryResourceManager;

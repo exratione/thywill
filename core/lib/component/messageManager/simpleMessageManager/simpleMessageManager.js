@@ -1,11 +1,11 @@
 /**
  * @fileOverview
- * InMemory class definition.
+ * SimpleMessageManager class definition, a message manager implementation.
  */
 
 var util = require("util");
 var Thywill = require("thywill");
-var InMemoryResource = require("./inMemoryResource");
+var Message = require("../message");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -15,18 +15,18 @@ var InMemoryResource = require("./inMemoryResource");
  * @class
  * A trivial synchronous in-memory resource manager.
  */
-function InMemory() {
-  InMemory.super_.call(this);
+function SimpleMessageManager() {
+  SimpleMessageManager.super_.call(this);
   this.data = {};
 };
-util.inherits(InMemory, Thywill.getBaseClass("ResourceManager"));
-var p = InMemory.prototype;
+util.inherits(SimpleMessageManager, Thywill.getBaseClass("MessageManager"));
+var p = SimpleMessageManager.prototype;
 
 //-----------------------------------------------------------
 // "Static" parameters
 //-----------------------------------------------------------
 
-InMemory.CONFIG_TEMPLATE = null;
+SimpleMessageManager.CONFIG_TEMPLATE = null;
 
 //-----------------------------------------------------------
 // Initialization
@@ -36,7 +36,6 @@ InMemory.CONFIG_TEMPLATE = null;
  * @see Component#_configure
  */
 p._configure = function (thywill, config, callback) {
-
   // Minimal configuration - all we're doing here is storing it for posterity.
   this.thywill = thywill;
   this.config = config; 
@@ -61,46 +60,14 @@ p._prepareForShutdown = function (callback) {
 //-----------------------------------------------------------
 
 /**
- * @see ResourceManager#createResource
+ * @see MessageManager#createMessage
  */
-p.createResource = function(type, weight, path, data, attributes) {
-  return new InMemoryResource(type, weight, path, data, attributes);
-};
-
-/**
- * @see ResourceManager#store
- */
-p.store = function (key, resource, callback) {
-  this.data[key] = resource;
-  callback(this.NO_ERRORS);
-};
-
-/**
- * @see ResourceManager#remove
- */
-p.remove = function (key, callback) {
-  var resource = null;
-  var error = this.NO_ERRORS;
-  if (this.data[key]) {
-    resource = this.data[key];
-    delete this.data[key];
-  } 
-  callback(error, resource);
-};
-
-/**
- * @see ResourceManager#load
- */
-p.load = function (key, callback) {
-  if (this.data[key]) { 
-    callback(this.NO_ERRORS, this.data[key]);
-  } else {
-    callback(this.NO_ERRORS, null);
-  }
+p.createMessage = function(data, sessionId, origin, destination, fromApplicationId, toApplicationId) {
+  return new Message(data, sessionId, origin, destination, fromApplicationId, toApplicationId);
 };
 
 //-----------------------------------------------------------
 // Exports - Class Constructor
 //-----------------------------------------------------------
 
-module.exports = InMemory;
+module.exports = SimpleMessageManager;

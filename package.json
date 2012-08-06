@@ -14,6 +14,7 @@
     "ejs": ">= 0.7.2",
     "handlebars": ">= 1.0",
     "lru-cache": ">= 1.1.1",
+    "node-fs": ">= 0.1.4",
     "socket.io": ">= 0.9",
     "uglify-js": ">= 1.3.3"
   },

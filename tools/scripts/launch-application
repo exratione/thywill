@@ -17,7 +17,7 @@ export NODE_PATH=$NODE_PATH:/home/node/local/node/lib/node_modules;
 export NODE_HOME=/home/node/local/node
 
 if [ -f $NODE_HOME/lib/node_modules/thywill/applications/$1/service/start.js ]; then
-  $NODE_HOME/bin/node $NODE_HOME/lib/node_modules/thywill/applications/$1/service/start.js &
+  $NODE_HOME/bin/node $NODE_HOME/lib/node_modules/thywill/applications/$1/service/start.js 2>&1 &
 else 
   echo "Application $1 does not exist or has no service/start.js file."
   exit 1

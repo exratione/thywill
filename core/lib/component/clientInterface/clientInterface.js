@@ -99,7 +99,7 @@ p._startup = function (callback) {
  * @param {Function} [callback] 
  *   Of the form function (error) {}, where error == null on success.
  */
-p.defineBootstrapResource = function (resource, callback) {
+p.storeBootstrapResource = function (resource, callback) {
   throw new Error("Not implemented.");
 };
 
@@ -119,7 +119,7 @@ p.getBootstrapResources = function (callback) {
  * @param {Function} [callback] 
  *   Of the form function (error) {}, where error == null on success.
  */
-p.defineResource = function (resource, callback) {
+p.storeResource = function (resource, callback) {
   throw new Error("Not implemented.");
 };
 

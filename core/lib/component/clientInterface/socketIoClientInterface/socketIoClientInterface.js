@@ -8,11 +8,9 @@ var fs = require("fs");
 var crypto = require("crypto");
 var urlHelpers = require("url");
 var pathHelpers = require("path");
-
 var async = require("async");
 var handlebars = require("handlebars");
 var io = require("socket.io");
-
 var Thywill = require("thywill");
 
 //-----------------------------------------------------------
@@ -28,61 +26,61 @@ var Thywill = require("thywill");
  * Thywill. This involves setting up resources for the initial page load,
  * and then interfacing with the client Javascript after the page has loaded.
  */
-function SocketIO() {
-  SocketIO.super_.call(this);
+function SocketIoClientInterface() {
+  SocketIoClientInterface.super_.call(this);
   this.socketFactory = null;
   this.bootstrapResourcePaths = [];
   this.resourceCache = null;
 };
-util.inherits(SocketIO, Thywill.getBaseClass("ClientInterface"));
-var p = SocketIO.prototype;
+util.inherits(SocketIoClientInterface, Thywill.getBaseClass("ClientInterface"));
+var p = SocketIoClientInterface.prototype;
 
 //-----------------------------------------------------------
 // "Static" parameters
 //-----------------------------------------------------------
 
-SocketIO.CONFIG_TEMPLATE = {
+SocketIoClientInterface.CONFIG_TEMPLATE = {
   basePath: {
     _configInfo: {
-       description: "The base path for all Thywill URLs with a leading but no trailing slash. e.g. '/thywill'.",
-       types: "string",
-       required: true
-     } 
-  },
-  encoding: {
-    _configInfo: {
-       description: "The content encoding for text and web pages.",
-       types: "string",
-       required: true
-     } 
+      description: "The base path for all Thywill URLs with a leading but no trailing slash. e.g. '/thywill'.",
+      types: "string",
+      required: true
+    } 
   },
   minifyCss: {
     _configInfo: {
-       description: "If true, merge and minify CSS resources.",
-       types: "boolean",
-       required: true
-     } 
+      description: "If true, merge and minify CSS resources.",
+      types: "boolean",
+      required: true
+    } 
   },
   minifyJavascript: {
     _configInfo: {
-       description: "If true, merge and minify Javascript resources.",
-       types: "boolean",
-       required: true
-     } 
+      description: "If true, merge and minify Javascript resources.",
+      types: "boolean",
+      required: true
+    } 
   },
   namespace: {
     _configInfo: {
-       description: "Socket.IO allows connection multiplexing by assigning a namespace; this is generally a good idea.",
-       types: "string",
-       required: true
-     } 
+      description: "Socket.IO allows connection multiplexing by assigning a namespace; this is generally a good idea.",
+      types: "string",
+      required: true
+    } 
+  },
+  pageEncoding: {
+    _configInfo: {
+      description: "The content encoding for the web page provided by the client interface.",
+      types: "string",
+      required: true
+    } 
   },
   resourceCacheLength: {
     _configInfo: {
-       description: "Maximum number of items held by the cache for resources served by the client interface. This should be at least twice the count of bootstrap resources defined in applications.",
-       types: "integer",
-       required: true
-     } 
+      description: "Maximum number of items held by the cache for resources served by the client interface. This should be at least twice the count of bootstrap resources defined in applications.",
+      types: "integer",
+      required: true
+    } 
   },
   socketClientConfig: {
     _configInfo: {
@@ -97,6 +95,13 @@ SocketIO.CONFIG_TEMPLATE = {
       types: "object",
       required: false
     }     
+  },
+  textEncoding: {
+    _configInfo: {
+      description: "The content encoding for text resources.",
+      types: "string",
+      required: true
+    } 
   }
 };
 
@@ -247,33 +252,55 @@ p._startup = function (callback) {
   // array of bootstrap resources needed for the main Thywill page.
   var resources = [];
   var resourceManager = this.thywill.resourceManager;
-  // Helper function.
-  var readFromFile = function(relativePath) {
+  
+  /** 
+   * Helper function for loading a file to a Buffer.
+   * 
+   * @param {string} relativePath
+   *   A relative path from this file to the file to be loaded.
+   * @return {Buffer}
+   *   A Buffer instance.
+   */
+  var bufferFromFile = function(relativePath) {
     var filepath = pathHelpers.resolve(__dirname, relativePath);
-    return fs.readFileSync(filepath, self.config.encoding);
+    return fs.readFileSync(filepath);
   };
-  // Helper function.
-  var setResourceAndContinue = function(resource, asyncCallback) {
-    self.defineBootstrapResource(resource, function(error) {
-      asyncCallback.call(self, error);
-    });
+  
+  /** 
+   * Helper function for loading a file to a string with the
+   * default encoding.
+   * 
+   * @param {string} relativePath
+   *   A relative path from this file to the file to be loaded.
+   * @param {string} encoding
+   *   The file encoding.
+   * @return {Buffer}
+   *   A Buffer instance.
+   */
+  var stringFromFile = function(relativePath) {
+    var filepath = pathHelpers.resolve(__dirname, relativePath);
+    return fs.readFileSync(filepath, self.config.textEncoding);
   };
+  
   // Array of loader functions to be called in series.
   var fns = [
     // Main client-side Thywill Javascript.      
     function (asyncCallback) {
-      var js = readFromFile("../../../../client/thywill.js");
-      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 0, self.config.basePath + "/js/thywill.js", js);
-      setResourceAndContinue(resource, asyncCallback);
+      var resource = resourceManager.createResource(bufferFromFile("../../../../client/thywill.js"), {
+        encoding: self.config.textEncoding,
+        path: self.config.basePath + "/js/thywill.js",
+        type: resourceManager.types.JAVASCRIPT, 
+        weight: 0
+      });
+      self.storeBootstrapResource(resource, asyncCallback);
     },
     // Client-side Javascript for this clientInterface component. This one
     // needs minor templating to add in Socket.io client configuration values.
     // Use Handlebar.js rather than the configured template engine for core
     // files.
     function (asyncCallback) {
-      var serverInterfaceTemplate = readFromFile("../../../../client/component/clientInterface/socketIO/serverInterface.js");
-      var serverInterfaceTemplate = handlebars.compile(serverInterfaceTemplate);
-      
+      var serverInterfaceTemplate = handlebars.compile(stringFromFile("../../../../client/component/clientInterface/socketIO/serverInterface.js"));
+      // Template parameters.
       var params = {
         namespace: self.config.namespace,
         config: JSON.stringify({})
@@ -281,18 +308,28 @@ p._startup = function (callback) {
       if (socketClientConfig) {
         params.config = JSON.stringify(socketClientConfig);
       } 
-      var serverInterface = serverInterfaceTemplate(params); 
-      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 1, self.config.basePath + "/js/serverInterface.js", serverInterface);
-      setResourceAndContinue(resource, asyncCallback);
+      // Generate a buffer from the processed template and turn it into a resource.
+      var buffer = new Buffer(serverInterfaceTemplate(params), self.config.textEncoding); 
+      var resource = resourceManager.createResource(buffer, {
+        encoding: self.config.textEncoding,
+        path: self.config.basePath + "/js/serverInterface.js",
+        type: resourceManager.types.JAVASCRIPT, 
+        weight: 999999
+      });
+      self.storeBootstrapResource(resource, asyncCallback);
     },
     // Define a Javascript resource that needs to be loaded after all other
     // Javascript resources. We can't use things like jQuery(document).ready()
     // for this because core Thywill doesn't assume any such framework is 
     // present.
     function (asyncCallback) {
-      var js = readFromFile("../../../../client/thywillLoadLast.js");
-      var resource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, 999999, self.config.basePath + "/js/thywillLoadLast.js", js);
-      setResourceAndContinue(resource, asyncCallback); 
+      var resource = resourceManager.createResource(bufferFromFile("../../../../client/thywillLoadLast.js"), {
+        encoding: self.config.textEncoding,
+        path: self.config.basePath + "/js/thywillLoadLast.js",
+        type: resourceManager.types.JAVASCRIPT, 
+        weight: 999999
+      });
+      self.storeBootstrapResource(resource, asyncCallback);
     },
     // Load up bootstrap resources defined here and elsewhere (i.e. in 
     // applications) and stash them in an accessible array.
@@ -319,7 +356,7 @@ p._startup = function (callback) {
     },
     // If we are compressing and merging CSS/JS resources, then get to it.
     function (asyncCallback) {
-      self.thywill.minify.minifyResources(resources, self.config.minifyJavascript, self.config.minifyCss, function(error, minifiedResources, addedResources) {
+      self.thywill.minifier.minifyResources(resources, self.config.minifyJavascript, self.config.minifyCss, function(error, minifiedResources, addedResources) {
         // Replace the resource array with the new minified array.
         resources = minifiedResources;
         // Store any newly added resources, which should be the merged/minified
@@ -327,7 +364,7 @@ p._startup = function (callback) {
         async.forEach(
           addedResources,
           function (resource, innerAsyncCallback) {
-            self.defineResource(resource, innerAsyncCallback);          
+            self.storeResource(resource, innerAsyncCallback);          
           },
           function (error) {
             asyncCallback.call(self, error);
@@ -339,8 +376,7 @@ p._startup = function (callback) {
     // Javascript resources. Again using Handlebar.js rather than the
     // configured template engine.
     function (asyncCallback) {
-      var mainPageTemplate = readFromFile("../../../../client/thywill.html");
-      var mainPageTemplate = handlebars.compile(mainPageTemplate);
+      var mainPageTemplate = handlebars.compile(stringFromFile("../../../../client/thywill.html"));
       
       // Split out the assembled resources into arrays by type.
       var resourcesByType = {};
@@ -351,29 +387,39 @@ p._startup = function (callback) {
         resourcesByType[resources[i].type].push(resources[i]);
       }
 
-      // This Javascript resource is supplied by Socket.io, so we don't have the content. 
+      // This Javascript resource is supplied by Socket.io, so we don't have
+      // the content. 
       // 
-      // TODO: how best to get it running as a resource rather than this ad-hoc placement?
+      // TODO: how best to get it running as a resource rather than this 
+      // ad-hoc placement?
       //
       if (!resourcesByType[resourceManager.types.JAVASCRIPT]) {
         resourcesByType[resourceManager.types.JAVASCRIPT] = [];
       }
-      // This is a fake resource object with only the data needed here. Sketchy.
-      // It has to be first, or at least very near the top.
+      // This is a fake resource object with only the data needed for the
+      // templating. Sketchy. It has to be first, or at least very near the
+      // top.
       resourcesByType[resourceManager.types.JAVASCRIPT].unshift({
         path: self.socketFactory.get('resource') + '/socket.io.js',
-        type: resourceManager.types.JAVASCRIPT,
-        attributes: {}
+        type: resourceManager.types.JAVASCRIPT
       });
       
       // Render the template and stash it as a resource.
       var mainPage = mainPageTemplate({
         resources: resourcesByType,
-        encoding: self.config.encoding
+        encoding: self.config.pageEncoding
       });
-      self.defineResource(resourceManager.createResource(resourceManager.types.HTML, 0, self.config.basePath + "/", mainPage), asyncCallback);
+      var resource = resourceManager.createResource(new Buffer(mainPage, self.config.textEncoding), {
+        encoding: self.config.textEncoding,
+        path: self.config.basePath + "/",
+        type: resourceManager.types.HTML, 
+        weight: 0
+      });
+      self.storeResource(resource, asyncCallback);
     },
   ];
+  // Call the above functions in series. Any errors will abort part-way through
+  // and be passed back in the callback.
   async.series(fns, callback);  
 };
 
@@ -451,9 +497,11 @@ p._handleResourceRequest = function (req, res) {
   var sendResourceToClient = function(resource) {
     res.writeHead(200, {
       "Content-Type": resource.type,
-      "Content-Length": resource.data.length
+      // TODO: Using the buffer length is only going to be correct if people 
+      // always use right-sized buffers for the content they contain.
+      "Content-Length": resource.buffer.length
     });
-    res.end(resource.data);
+    res.end(resource.buffer);
   };
   
   // Is this cached?
@@ -462,6 +510,9 @@ p._handleResourceRequest = function (req, res) {
     sendResourceToClient(resource);
   } else {
     // Load the resource.
+    //
+    // TODO: better error responses, actual HTML would be nice.
+    //
     this.getResource(requestData.pathname, function (error, resource) {
       if (error) {
         self.thywill.log.error(error);
@@ -519,9 +570,9 @@ p.send = function (message) {
 /**
  * @see ClientInterface#defineBootstrapResource
  */
-p.defineBootstrapResource = function (resource, callback) {
+p.storeBootstrapResource = function (resource, callback) {
   var self = this;
-  this.defineResource(resource, function (error) {
+  this.storeResource(resource, function (error) {
    if (!error) {
      self.bootstrapResourcePaths.push(resource.path);
    } 
@@ -550,7 +601,7 @@ p.getBootstrapResources = function (callback) {
 /**
  * @see ClientInterface#defineResource
  */
-p.defineResource = function (resource, callback) {
+p.storeResource = function (resource, callback) {
   var self = this;
   this.thywill.resourceManager.store(resource.path, resource, function (error) {
     callback.call(this, error);
@@ -596,4 +647,4 @@ p.getSessionData = function (sessionId, key, callback) {
 // Exports - Class Constructor
 //-----------------------------------------------------------
 
-module.exports = SocketIO;
+module.exports = SocketIoClientInterface;

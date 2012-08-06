@@ -39,6 +39,15 @@ backend thywill_echo {
   .between_bytes_timeout = 15s;
   .max_connections = 400;
 }
+# Node.js: Thywill Shapes application.
+backend thywill_shapes {
+  .host = "127.0.0.1";
+  .port = "10081";
+  .connect_timeout = 1s;
+  .first_byte_timeout = 2s;
+  .between_bytes_timeout = 15s;
+  .max_connections = 400;
+}
 
 # -----------------------------------
 # Varnish Functions
@@ -103,6 +112,8 @@ sub vcl_recv {
   if (req.http.Upgrade ~ "(?i)websocket") {
     if (req.url ~ "^/echo/") {
       set req.backend = thywill_echo;
+    } elseif (req.url ~ "^/shapes/") {
+      set req.backend = thywill_shapes;
     }
     return (pipe);
   }
@@ -111,12 +122,17 @@ sub vcl_recv {
   if (req.url ~ "^/echo/socket.io/") {
     set req.backend = thywill_echo;
     return (pipe);
+  } elseif (req.url ~ "^/shapes/socket.io/") {
+    set req.backend = thywill_shapes;
+    return (pipe);
   }
   
   # Send everything else known to be served by Thywill to the relevant Node.js
   # backend.
   if (req.url ~ "^/echo/") {
     set req.backend = thywill_echo;
+  } elseif (req.url ~ "^/shapes/") {
+    set req.backend = thywill_shapes;
   }
 
   # Normalize Accept-Encoding header. This is straight from the manual: 

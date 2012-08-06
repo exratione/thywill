@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * LRU class definition.
+ * LRUCacheManager class definition.
  */
 
 var util = require("util");
@@ -15,18 +15,18 @@ var LRUCache = require("./lruCache");
  * @class
  * The superclass for cache managers, used to define caches.
  */
-function LRU() {
-  LRU.super_.call(this);
+function LRUCacheManager() {
+  LRUCacheManager.super_.call(this);
   this.caches = {};
 };
-util.inherits(LRU, Thywill.getBaseClass("CacheManager"));
-var p = LRU.prototype;
+util.inherits(LRUCacheManager, Thywill.getBaseClass("CacheManager"));
+var p = LRUCacheManager.prototype;
 
 //-----------------------------------------------------------
 // "Static" parameters
 //-----------------------------------------------------------
 
-LRU.CONFIG_TEMPLATE = null;
+LRUCacheManager.CONFIG_TEMPLATE = null;
 
 //-----------------------------------------------------------
 //Initialization
@@ -85,4 +85,4 @@ p.getCache = function(id) {
 // Exports - Class Constructor
 //-----------------------------------------------------------
 
-module.exports = LRU;
+module.exports = LRUCacheManager;

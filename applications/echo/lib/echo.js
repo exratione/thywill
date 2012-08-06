@@ -32,13 +32,9 @@ var p = Echo.prototype;
 //-----------------------------------------------------------
 
 /**
- * Define the resources used by the application: the application client code
- * and libraries.
- * 
- * @param {Function} callback
- *   Of the form function (error) {}, where error == null on success.
+ * @see Application#_defineBootstrapResources
  */
-p._defineClientResources = function (callback) {
+p._defineBootstrapResources = function (callback) {
   var self = this;
   var resourceManager = this.thywill.resourceManager;
   var clientInterface = this.thywill.clientInterface;
@@ -47,97 +43,186 @@ p._defineClientResources = function (callback) {
   var uiTemplateId = "echo-template-ui";
   var messageTemplateId = "echo-template-message";
   
-  // Helper function.
-  var loadFromFile = function(relativePath) {
+  // Text encoding throughout.
+  var encoding = "utf8";
+  
+  /** 
+   * Helper function for loading a file to a Buffer.
+   * 
+   * @param {string} relativePath
+   *   A relative path from this file to the file to be loaded.
+   * @return {Buffer}
+   *   A Buffer instance.
+   */
+  var bufferFromFile = function(relativePath) {
     var filepath = path.resolve(__dirname, relativePath);
-    return fs.readFileSync(filepath, "utf-8");  
+    return fs.readFileSync(filepath);
   };
-  // Helper function.
-  var createBootstrapResource = function(type, weight, path, data, attributes, callback) {
-    var resource = resourceManager.createResource(type, weight, path, data, attributes);
-    clientInterface.defineBootstrapResource(resource, callback);
+  
+  /** 
+   * Helper function for loading a file to a string with the
+   * default encoding.
+   * 
+   * @param {string} relativePath
+   *   A relative path from this file to the file to be loaded.
+   * @param {string} encoding
+   *   The file encoding.
+   * @return {Buffer}
+   *   A Buffer instance.
+   */
+  var stringFromFile = function(relativePath) {
+    var filepath = path.resolve(__dirname, relativePath);
+    return fs.readFileSync(filepath, encoding);
+  };
+  
+  /**
+   * Helper function for creating and storing a resource.
+   * 
+   * @param {Buffer} buffer
+   *   A buffer instance.
+   * @param {Object} attributes
+   *   A set of resource attributes.
+   * @param {Function} callback
+   *   Of the form function (error) where error = null on success.
+   */
+  var createBootstrapResource = function(buffer, attributes, callback) {
+    var resource = resourceManager.createResource(buffer, attributes);
+    clientInterface.storeBootstrapResource(resource, callback);
   };
   
   var fns = [
-    // Add Modernizr - comes first in the Javascript.
+    // Add Modernizr, which has to come first in the Javascript.
     function (asyncCallback) {
-      var data = loadFromFile("../../../thirdParty/modernizr/modernizr.2.6.1.min.js");
-      createBootstrapResource(resourceManager.types.JAVASCRIPT, -30, "/echo/js/modernizr.min.js", data, {minified: true}, asyncCallback);
+      createBootstrapResource(bufferFromFile("../../../thirdParty/modernizr/modernizr.2.6.1.min.js"), {
+        encoding: encoding,
+        minified: true,
+        path: "/echo/js/modernizr.min.js",
+        type: resourceManager.types.JAVASCRIPT, 
+        weight: -30
+      }, asyncCallback);
     },
     // Add jQuery as a resource, setting it a lower weight than the default
     // Thwyill code - having it come first is fairly necessary if you want
     // things to work rather than explode.
     function (asyncCallback) {
-      var data = loadFromFile("../../../thirdParty/jquery/jquery.1.7.2.min.js");
-      createBootstrapResource(resourceManager.types.JAVASCRIPT, -20, "/echo/js/jquery.min.js", data, {minified: true}, asyncCallback);
+      createBootstrapResource(bufferFromFile("../../../thirdParty/jquery/jquery.1.7.2.min.js"), {
+        encoding: encoding,
+        minified: true,
+        path: "/echo/js/jquery.min.js",
+        type: resourceManager.types.JAVASCRIPT, 
+        weight: -20
+      }, asyncCallback);
     },
     // Add the plugins.js code from HTML5 Boilerplate.
     function (asyncCallback) {
-      var data = loadFromFile("../../../thirdParty/html5boilerplate/plugins.js");
-      createBootstrapResource(resourceManager.types.JAVASCRIPT, -10, "/echo/js/plugins.js", data, {}, asyncCallback);
+      createBootstrapResource(bufferFromFile("../../../thirdParty/html5boilerplate/plugins.js"), {
+        encoding: encoding,
+        path: "/echo/js/plugins.js",
+        type: resourceManager.types.JAVASCRIPT, 
+        weight: -10
+      }, asyncCallback);
     },    
     // Add json2.js, required by Backbone.js.
     function (asyncCallback) {
-      var data = loadFromFile("../../../thirdParty/json/json2.js");
-      createBootstrapResource(resourceManager.types.JAVASCRIPT, 10, "/echo/js/json2.js", data, {}, asyncCallback);
+      createBootstrapResource(bufferFromFile("../../../thirdParty/json/json2.js"), {
+        encoding: encoding,
+        path: "/echo/js/json2.js",
+        type: resourceManager.types.JAVASCRIPT, 
+        weight: 10
+      }, asyncCallback);
     },
     // Add Underscore.js, required by Backbone.js.
     function (asyncCallback) {
-      var data = loadFromFile("../../../thirdParty/underscore.js/underscore.1.3.3.min.js");
-      createBootstrapResource(resourceManager.types.JAVASCRIPT, 20, "/echo/js/underscore.min.js", data, {minified: true}, asyncCallback);
+      createBootstrapResource(bufferFromFile("../../../thirdParty/underscore.js/underscore.1.3.3.min.js"), {
+        encoding: encoding,
+        minified: true,
+        path: "/echo/js/underscore.min.js",
+        type: resourceManager.types.JAVASCRIPT, 
+        weight: 20
+      }, asyncCallback);
     },
     // Add Backbone.js.
     function (asyncCallback) {
-      var data = loadFromFile("../../../thirdParty/backbone.js/backbone.0.9.2.min.js");
-      createBootstrapResource(resourceManager.types.JAVASCRIPT, 30, "/echo/js/backbone.min.js", data, {minified: true}, asyncCallback);
+      createBootstrapResource(bufferFromFile("../../../thirdParty/backbone.js/backbone.0.9.2.min.js"), {
+        encoding: encoding,
+        minified: true,
+        path: "/echo/js/backbone.min.js",
+        type: resourceManager.types.JAVASCRIPT, 
+        weight: 30
+      }, asyncCallback);
     },
     // Add Handlebars.js.
     function (asyncCallback) {
-      var data = loadFromFile("../../../thirdParty/handlebars.js/handlebars.1.0.0.beta.6.js");
-      createBootstrapResource(resourceManager.types.JAVASCRIPT, 40, "/echo/js/handlebars.js", data, {}, asyncCallback);
+      createBootstrapResource(bufferFromFile("../../../thirdParty/handlebars.js/handlebars.1.0.0.beta.6.js"), {
+        encoding: encoding,
+        path: "/echo/js/handlebars.js",
+        type: resourceManager.types.JAVASCRIPT, 
+        weight: 40
+      }, asyncCallback);
     },
     // Add the Echo client Javascript as a resource.
     function (asyncCallback) {
-      var data = loadFromFile("../client/js/echoClient.js");
       // A little templating to insert the application ID.
-      data = self.thywill.template.render(data, {
+      var data = self.thywill.templateEngine.render(stringFromFile("../client/js/echoClient.js"), {
         applicationId: self.id,
         uiTemplateId: uiTemplateId,
         messageTemplateId: messageTemplateId
       });
-      createBootstrapResource(resourceManager.types.JAVASCRIPT, 40, "/echo/js/client.js", data, {}, asyncCallback);
+      createBootstrapResource(new Buffer(data, encoding), {
+        encoding: encoding,
+        path: "/echo/js/echoClient.js",
+        type: resourceManager.types.JAVASCRIPT, 
+        weight: 50
+      }, asyncCallback);
     },
     // Add HTML5 Boilerplate CSS.
     function (asyncCallback) {
-      var data = loadFromFile("../../../thirdParty/html5boilerplate/html5boilerplate.css");
-      createBootstrapResource(resourceManager.types.CSS, 0, "/echo/css/html5boilerplate.css", data, {}, asyncCallback);
+      createBootstrapResource(bufferFromFile("../../../thirdParty/html5boilerplate/html5boilerplate.css"), {
+        encoding: encoding,
+        path: "/echo/css/html5boilerplate.css",
+        type: resourceManager.types.CSS, 
+        weight: 0
+      }, asyncCallback);
     },
     // Add the Echo client CSS.
     function (asyncCallback) {
-      var data = loadFromFile("../client/css/echoClient.css");
-      createBootstrapResource(resourceManager.types.CSS, 10, "/echo/css/client.css", data, {}, asyncCallback);
+      createBootstrapResource(bufferFromFile("../client/css/echoClient.css"), {
+        encoding: encoding,
+        path: "/echo/css/client.css",
+        type: resourceManager.types.CSS, 
+        weight: 10
+      }, asyncCallback);
     },
     // Add the Echo client UI template. Note that this won't be loaded over 
     // HTTP, but rather included into the application main page.
     function (asyncCallback) {
-      var data = loadFromFile("../client/template/ui.tpl");
-      createBootstrapResource(resourceManager.types.TEMPLATE, 0, "/echo/tpl/ui.tpl", data, {id: uiTemplateId}, asyncCallback);
+      createBootstrapResource(bufferFromFile("../client/template/ui.tpl"), {
+        encoding: encoding,
+        id: uiTemplateId,
+        minified: true,
+        path: "/echo/tpl/ui.tpl",
+        type: resourceManager.types.TEMPLATE, 
+        weight: 0
+      }, asyncCallback);
     },
     // Add the Echo client message display template. Note that this won't be
     // loaded over HTTP, but rather included into the application main page.
     function (asyncCallback) {
-      var data = loadFromFile("../client/template/message.tpl");
-      createBootstrapResource(resourceManager.types.TEMPLATE, 0, "/echo/tpl/message.tpl", data, {id: messageTemplateId}, asyncCallback);
+      createBootstrapResource(bufferFromFile("../client/template/message.tpl"), {
+        encoding: encoding,
+        id: messageTemplateId,
+        minified: true,
+        path: "/echo/tpl/message.tpl",
+        type: resourceManager.types.TEMPLATE, 
+        weight: 0
+      }, asyncCallback);
     },
   ];
   async.parallel(fns, callback);
 };
 
 /**
- * Perform any actions needed prior to Thywill shutdown.
- * 
- * @param {Function} callback
- *   Of the form function () {}.
+ * @see Application#_prepareForShutdown
  */
 p._prepareForShutdown = function (callback) {
   // Nothing needs doing here.
@@ -149,11 +234,7 @@ p._prepareForShutdown = function (callback) {
 //-----------------------------------------------------------
 
 /**
- * Called when a message is received. Echo back the content of received 
- * messages.
- * 
- * @param {Message} message
- *   Instance of the Message class.
+ * @see Application#receive
  */
 p.receive = function (message) {
   this.thywill.log.debug("Echo.receive(): Message for echoing: " + message.encode());
@@ -169,10 +250,7 @@ p.receive = function (message) {
 };
 
 /**
- * Called when a client connects or reconnects.
- * 
- * @param {string} sessionId
- *   Unique ID of the session.
+ * @see Application#connection
  */
 p.connection = function (sessionId) {
   // Do nothing except log it.
@@ -180,10 +258,7 @@ p.connection = function (sessionId) {
 };
 
 /**
- * Called when a client disconnects.
- * 
- * @param {string} sessionId
- *   Unique ID of the session.
+ * @see Application#disconnection
  */
 p.disconnection = function (sessionId) {
   // Do nothing except log it.

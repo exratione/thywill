@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * Console class definition. 
+ * ConsoleLog class definition. 
  */
 
 var util = require("util");
@@ -14,18 +14,18 @@ var Thywill = require("thywill");
  * @class
  * A trivial logger that sends everything to console.log().
  */
-function Console() {
-  Console.super_.call(this);
+function ConsoleLog() {
+  ConsoleLog.super_.call(this);
   this.level = this.levels.indexOf("debug");
 };
-util.inherits(Console, Thywill.getBaseClass("Log"));
-var p = Console.prototype;
+util.inherits(ConsoleLog, Thywill.getBaseClass("Log"));
+var p = ConsoleLog.prototype;
 
 //-----------------------------------------------------------
 // "Static" parameters
 //-----------------------------------------------------------
 
-Console.CONFIG_TEMPLATE = {
+ConsoleLog.CONFIG_TEMPLATE = {
   level: {
     _configInfo: {
       description: "The mimimum level of message that will be logged.",
@@ -125,4 +125,4 @@ p.log = function (level, message) {
 // Exports - Class Constructor
 //-----------------------------------------------------------
 
-module.exports = Console;
+module.exports = ConsoleLog;
