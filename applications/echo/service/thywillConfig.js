@@ -19,8 +19,8 @@ config.clientInterface.namespace = "/echo";
 config.clientInterface.socketClientConfig.resource = "echo/socket.io";
 config.clientInterface.socketConfig.global.resource = "/echo/socket.io";
 // Resource minification settings.
-config.clientInterface.minifyCss = false;
-config.clientInterface.minifyJavascript = false;
+config.clientInterface.minifyCss = true;
+config.clientInterface.minifyJavascript = true;
 
 // Set an appropriate log level for an example application.
 config.log.level = "debug";

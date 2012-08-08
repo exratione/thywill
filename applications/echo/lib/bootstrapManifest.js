@@ -49,12 +49,12 @@ var manifest = {
     weight: -10
   },    
   // Add Handlebars.js.
-  "../../../thirdParty/handlebars.js/handlebars.1.0.0.beta.6.js": {
-    clientPath: "/echo/js/handlebars.js",
+  "../../../thirdParty/handlebars.js/handlebars.1.0.0.beta.6.min.js": {
+    clientPath: "/echo/js/handlebars.min.js",
     encoding: encoding,
-    minified: false,
+    minified: true,
     type: Resource.TYPES.JAVASCRIPT, 
-    weight: 40
+    weight: 10
   },
   // Add HTML5 Boilerplate CSS.
   "../../../thirdParty/html5boilerplate/html5boilerplate.css": {

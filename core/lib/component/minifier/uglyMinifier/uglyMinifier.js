@@ -158,11 +158,11 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
         }
         
         if (resource.buffer && resource.minified) {
-          minifedJs += resource.buffer.toString(resource.encoding) + "\n\n";
+          minifiedJs += resource.buffer.toString(resource.encoding) + "\n\n";
         } else {
           try {
             // Javascript minification.
-            minifedJs += self._minifyJavascript(resource) + "\n\n";
+            minifiedJs += self._minifyJavascript(resource) + "\n\n";
           } catch (e) {
             error = "Ugly.minifyResources failed to minimize Javascript for path [" + resource.clientPath + "] with error: " + e.message;
             self.thywill.log.error(error);
@@ -187,7 +187,7 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
         }
         
         if (resource.minified) {
-          minifedCss += resource.buffer.toString(resource.encoding) + "\n\n";
+          minifiedCss += resource.buffer.toString(resource.encoding) + "\n\n";
         } else {
           try {
             // CSS minification.
