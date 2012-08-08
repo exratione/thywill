@@ -8,6 +8,7 @@
 var fs = require("node-fs");
 var pathUtils = require("path");
 var util = require("util");
+var async = require("async");
 var Thywill = require("thywill");
 var InMemoryResourceManager = require("../inMemoryResourceManager/inMemoryResourceManager");
 
@@ -59,6 +60,7 @@ LinkedFileResourceManager.CONFIG_TEMPLATE = {
  * @see Component#_configure
  */
 p._configure = function (thywill, config, callback) {
+  var self = this;
   // Minimal configuration setup.
   this.thywill = thywill;
   this.config = config; 
@@ -69,12 +71,12 @@ p._configure = function (thywill, config, callback) {
   // Check on the existence of the base directory and that its has suitable
   // permissions.
     function(asyncCallback) {
-      this.directoryExists(this.config.baseDirectory, asyncCallback);
+      self.directoryExists(self.config.baseDirectory, asyncCallback);
     }
   ];
   
   async.series(fns, function (error) {
-    this._announceReady(error);
+    self._announceReady(error);
   });
 };
 
@@ -127,7 +129,6 @@ p.createResource = function (data, attributes) {
  */
 p.store = function (key, resource, callback) {
   var self = this;
-  
   var innerCallback = function(error) {
     if (error) {
       callback.call(self, error);
@@ -138,11 +139,17 @@ p.store = function (key, resource, callback) {
   };
   
   // Either write the resource to a file or symlink it, depending on whether it
-  // has a defined origin file path.
-  if (!resource.originFile) {
+  // has a defined originFilePath and the value of isGenerated.
+  if (resource.originFilePath && !resource.isGenerated) {
+    this.createResourceSymlink(resource, innerCallback);
+  } else if (resource.buffer) {
     this.writeResourceToFile(resource, innerCallback);
   } else {
-    this.createResourceSymlink(resource, innerCallback);
+    // This resource is not in a state where it can be written out to file or
+    // symlinked.
+    var error = "LinkedFileResourceManager.store(): Resource is not correctly configured: " + resource.clientPath;
+    this.thywill.log.error(error);
+    callback.call(this, error);
   }
 };
 
@@ -176,15 +183,16 @@ p.remove = function (key, callback) {
  *   True if the present process can read the file or directory.
  */
 p.canRead = function (stats) {
-  var isOwner = stats.uid == process.getuid();
-  var inGroup = stats.gid == process.getgid();
-  return 
+  var isOwner = stats.uid == this.thywill.getFinalUid();
+  var inGroup = stats.gid == this.thywill.getFinalGid();
+  var readable;
     // User is owner and owner can read.
     isOwner && (stats.mode & 00400) ||
     // User is in group and group can read.
     inGroup && (stats.mode & 00040) || 
     // Anyone can read.
     (stats.mode & 00004); 
+  return readable;
 };
 
 /**
@@ -197,15 +205,16 @@ p.canRead = function (stats) {
  *   True if the present process can write to the file or directory.
  */
 p.canWrite = function (stats) {
-  var isOwner = stats.uid == process.getuid();
-  var inGroup = stats.gid == process.getgid();
-  return 
+  var isOwner = stats.uid == this.thywill.getFinalUid();
+  var inGroup = stats.gid == this.thywill.getFinalGid();
+  var writable = 
     // User is owner and owner can write.
     isOwner && (stats.mode & 00200) ||
     // User is in group and group can write.
     inGroup && (stats.mode & 00020) || 
     // Anyone can write.
     (stats.mode & 00002); 
+  return writable;
 };
 
 /**
@@ -217,16 +226,17 @@ p.canWrite = function (stats) {
  * @return {boolean}
  *   True if the present process has exec permissions on the file or directory.
  */
-p.canWrite = function (stats) {
-  var isOwner = stats.uid == process.getuid();
-  var inGroup = stats.gid == process.getgid();
-  return 
+p.canExec = function (stats) {
+  var isOwner = stats.uid == this.thywill.getFinalUid();
+  var inGroup = stats.gid == this.thywill.getFinalGid(); 
+  var exec =
     // User is owner and owner can exec.
     isOwner && (stats.mode & 00100) ||
     // User is in group and group can exec.
     inGroup && (stats.mode & 00010) || 
     // Anyone can exec.
     (stats.mode & 00001); 
+  return exec;
 };
 
 /**
@@ -240,12 +250,13 @@ p.canWrite = function (stats) {
  *   with suitable permissions.
  */
 p.directoryExists = function (path, callback) {
-  fs.stats(path, function(error, stats) {
+  var self = this;
+  fs.stat(path, function(error, stats) {
     if (!error) {
       if (stats.isDirectory()) {
-        if (!this.canWrite(stats)) {
+        if (!self.canWrite(stats)) {
           error = "Directory exists but is not writable: " + path;
-        } else if (!this.canExec(stats)) {
+        } else if (!self.canExec(stats)) {
           error = "Directory exists but without exec permission: " + path;
         }
       } else {

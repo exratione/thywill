@@ -3,6 +3,7 @@
  * Thywill class definition, the main controlling class for Thywill.
  */
 
+var exec = require('child_process').exec;
 var fs = require("fs");
 var path = require("path");
 var util = require("util");
@@ -276,6 +277,31 @@ Thywill.getBaseClass = (function () {
 } ());
 
 //-----------------------------------------------------------
+// Utility methods
+//-----------------------------------------------------------
+
+/**
+ * Obtain the process uid that will be used after Thywill setup is complete.
+ * For example, it might be the case that Thywill is launched as root to bind
+ * to privileged ports and then downgraded on completion of setup.
+ */
+p.getFinalUid = function() {
+  if (this.config.thywill.launch && this.config.thywill.launch.userId) {
+    return this.config.thywill.launch.userId;
+  } else {
+    return process.getuid();
+  }
+};
+
+p.getFinalGid = function() {
+  if (this.config.thywill.launch && this.config.thywill.launch.groupId) {
+    return this.config.thywill.launch.groupId;
+  } else {
+    return process.getgid();
+  } 
+};
+
+//-----------------------------------------------------------
 // Configuration - Synchronous Methods
 //-----------------------------------------------------------
 
@@ -345,9 +371,58 @@ p.startup = function (server, applications, callback) {
   this.readyCallback = callback;
   this.server = server;
   this._setupAdminInterfaceListener();
-  this._initializeComponents(applications, this.config, function (error) {
+  var fns = [
+    // Convert uid and gid names in configuration to numeric ids.
+    function (asyncCallback) {
+      self._convertUserIdAndGroupId(asyncCallback);
+    },
+    // Run through the component initialization.
+    function (asyncCallback) {
+      self._initializeComponents(applications, asyncCallback);
+    }
+  ];
+  async.series(fns, function (error) {
     self._announceReady(error);
   });
+};
+
+/**
+ * The process userId and groupId set in configuration can be string usernames
+ * or numeric user IDs, which can be inconvenient later on. So here we convert
+ * them to numeric user IDs.
+ */
+p._convertUserIdAndGroupId = function (callback) {
+  var self = this;
+  var fns = [];
+
+  if (this.config.thywill.launch && this.config.thywill.launch.userId) {
+    if (typeof this.config.thywill.launch.userId == "string") {
+      fns.push(function (asyncCallback) {
+        var childProcess = exec("id -u " + self.config.thywill.launch.userId, function (error, stdoutBuffer, stderrBuffer) {
+          var response = stdoutBuffer.toString().trim();
+          if (/^\d+$/.test(response)) {
+            self.config.thywill.launch.userId = parseInt(response);
+          }
+          asyncCallback.call(self, error);
+        });
+      });
+    }
+  }
+  if (this.config.thywill.launch && this.config.thywill.launch.groupId) {
+    if (typeof this.config.thywill.launch.groupId == "string") {
+      fns.push(function (asyncCallback) {
+        var childProcess = exec("id -u " + self.config.thywill.launch.groupId, function (error, stdoutBuffer, stderrBuffer) {
+          var response = stdoutBuffer.toString().trim();
+          if (/^\d+$/.test(response)) {
+            self.config.thywill.launch.groupId = parseInt(response);
+          }
+          asyncCallback.call(self, error);
+        });
+      });
+    } 
+  }
+  
+  async.series(fns, callback);
 };
 
 /**
@@ -449,34 +524,32 @@ p._managePreparationForShutdown = function (callback) {
  * 
  * @param {Application[]} passedApplications 
  *   Array of object instances of classes derived from Application.
- * @param {Object} config 
- *   An object representation of configuration data.
  * @param {Function} callback 
  *   Of the form function (error), where error == null on success.
  */
-p._initializeComponents = function (passedApplications, config, callback) {
+p._initializeComponents = function (passedApplications, callback) {
   var self = this;
   var fns = [
     function (asyncCallback) {
-      self._initializeComponent("log", config, asyncCallback);      
+      self._initializeComponent("log", asyncCallback);      
     },
     function (asyncCallback) {
-      self._initializeComponent("cacheManager", config, asyncCallback);      
+      self._initializeComponent("cacheManager", asyncCallback);      
     },
     function (asyncCallback) {
-      self._initializeComponent("resourceManager", config, asyncCallback);      
+      self._initializeComponent("resourceManager", asyncCallback);      
     },
     function (asyncCallback) {
-      self._initializeComponent("messageManager", config, asyncCallback);      
+      self._initializeComponent("messageManager", asyncCallback);      
     },
     function (asyncCallback) {
-      self._initializeComponent("templateEngine", config, asyncCallback);      
+      self._initializeComponent("templateEngine", asyncCallback);      
     },
     function (asyncCallback) {
-      self._initializeComponent("minifier", config, asyncCallback);      
+      self._initializeComponent("minifier", asyncCallback);      
     },
     function (asyncCallback) {
-      self._initializeComponent("clientInterface", config, asyncCallback);      
+      self._initializeComponent("clientInterface", asyncCallback);      
     },
   ];
   
@@ -541,12 +614,10 @@ p._registerApplication = function (application, callback) {
  * 
  * @param {string} componentType 
  *   The type of the component.
- * @param {Object} config 
- *   An object representation of configuration.
  * @param {Function} callback 
  *   Of the form function (error), where error == null on success.
  */
-p._initializeComponent = function (componentType, config, callback) {
+p._initializeComponent = function (componentType, callback) {
   // Maintain only a single instance of each component.
   if (this[componentType]) {
     return this[componentType];
@@ -554,7 +625,7 @@ p._initializeComponent = function (componentType, config, callback) {
   
   // If there is no instance configured, then set it up. But do we have the
   // necessary configuration?
-  if (!config[componentType] || typeof config[componentType].implementation != "object") {
+  if (!this.config[componentType] || typeof this.config[componentType].implementation != "object") {
     callback.call(this, "Thywill._initializeComponent: missing " + componentType + " component definition in configuration."); 
     return;
   }
@@ -574,7 +645,7 @@ p._initializeComponent = function (componentType, config, callback) {
   //   property: "optionalProperty"
   // }
   //
-  var implementation = config[componentType].implementation;
+  var implementation = this.config[componentType].implementation;
   var ComponentConstructor = null;
   if (implementation.type == "core") {
     // Loading a constructor for a core component implementation.
@@ -617,12 +688,12 @@ p._initializeComponent = function (componentType, config, callback) {
   
   // Check the configuration: this will throw errors, unlike most of 
   // thywill's setup.
-  this[componentType]._checkConfiguration(config[componentType]);
+  this[componentType]._checkConfiguration(this.config[componentType]);
   
   // Note that the returned instance may not yet be finished with its 
   // configuration. When the component is done and ready for use, it will emit
   // an event and the callback function will be invoked.
-  this[componentType]._configure(this, config[componentType], callback);
+  this[componentType]._configure(this, this.config[componentType], callback);
 };
 
 //-----------------------------------------------------------

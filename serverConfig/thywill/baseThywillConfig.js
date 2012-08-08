@@ -31,7 +31,10 @@ module.exports = {
       // Group ID and User ID for the Thywill process to downgrade to
       // once launched - this allows for such things as launching as
       // root to bind to privileged ports, then running later as a lesser
-      // user.
+      // user. 
+      //
+      // Note that if you set either of these to a numeric uid, it must be a
+      // number not a numeric string - 312, not "312".
       groupId: "node",
       userId: "node"
     },
