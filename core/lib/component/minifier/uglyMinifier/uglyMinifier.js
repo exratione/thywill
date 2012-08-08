@@ -30,16 +30,16 @@ var p = UglyMinifier.prototype;
 //-----------------------------------------------------------
 
 UglyMinifier.CONFIG_TEMPLATE = {
-  jsBasePath: {
+  jsBaseClientPath: {
     _configInfo: {
-      description: "The base path for merged Javascript resources.",
+      description: "The base path for client access to merged Javascript resources.",
       types: "string",
       required: true
     } 
   },
-  cssBasePath: {
+  cssBaseClientPath: {
     _configInfo: {
-      description: "The base path for merged CSS resources.",
+      description: "The base path for client access to merged CSS resources.",
       types: "string",
       required: true
     } 
@@ -94,17 +94,22 @@ p.minifyResource = function (resource, callback) {
   try {
     if (resource.type == resourceManager.types.JAVASCRIPT) {
       // Javascript minification.
-      var minifiedJs = this._minifyJavascript(resource.data);
-      newResource = resourceManager.createResource(resource.type, resource.weight, resource.path, minifiedJs, {minified: true});
-      newResource.path = this._generateMinifiedPath(newResource.path);
+      var minifiedData = this._minifyJavascript(resource);
     } else if (resource.type == resourceManager.types.CSS) {
       // CSS minification.
-      var minifiedCss = this._minifyCss(resource.data);
-      newResource = resourceManager.createResource(resource.type, resource.weight, resource.path, minifiedCss, {minified: true});
-      newResource.path = this._generateMinifiedPath(newResource.path);
+      var minifiedData = this._minifyCss(resource);
     }
+    newResource = resourceManager.createResource(minifiedData, {
+      clientPath: this._generateMinifiedClientPath(resource.clientPath),
+      encoding: resource.encoding,
+      isGenerated: true,
+      minified: true,
+      originFilePath: resource.originFilePath,
+      type: resource.type,
+      weight: resource.weight
+    });
   } catch (e) {
-    error = "Ugly.minifyResource failed for resource of type [" + resource.type + "] and path [" + resource.path + "] with error: " + e.message;
+    error = "Ugly.minifyResource failed for resource of type [" + resource.type + "] and path [" + resource.clientPath + "] with error: " + e.message;
     self.thywill.log.error(error);
   }
 
@@ -120,7 +125,10 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
   // Build a new array of resources in which all of the CSS and JS is
   // merged down into one resource.
   var cssResource = null;
+  var minifiedCss = "";
   var jsResource = null;
+  var minifiedJs = "";
+  
   // The mapSeries function operates in series on each element in the passed
   // resources array, and builds a new array with the transformed resources.
   async.mapSeries(
@@ -132,23 +140,31 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
       var returnResource = null;
       if (resource.type == resourceManager.types.JAVASCRIPT && minifyJavascript) {
         // Create the single Javascript-holding resource if not yet done. Give
-        // it the same weight as this first Javascript resource in the array.
+        // it the same weight and encoding as this first Javascript resource in
+        // the array.
         if (!jsResource) {
           // Path is empty - set it at the end of this process so we can get
           // an MD5 of the contents.
-          jsResource = resourceManager.createResource(resourceManager.types.JAVASCRIPT, resource.weight, "", "", {minified: true});
+          jsResource = resourceManager.createResource(null, {
+            clientPath: null,
+            encoding: resource.encoding,
+            isGenerated: true,
+            minified: true,
+            originFilePath: null,
+            type: resourceManager.types.JAVASCRIPT,
+            weight: resource.weight
+          });
           returnResource = jsResource;
         }
         
-        jsResource.data += "\n\n";
-        if (resource.minified) {
-          jsResource.data += resource.data;
+        if (resource.buffer && resource.minified) {
+          minifedJs += resource.buffer.toString(resource.encoding) + "\n\n";
         } else {
           try {
             // Javascript minification.
-            jsResource.data += self._minifyJavascript(resource.data);
+            minifedJs += self._minifyJavascript(resource) + "\n\n";
           } catch (e) {
-            error = "Ugly.minifyResources failed to minimize Javascript for path [" + resource.path + "] with error: " + e.message;
+            error = "Ugly.minifyResources failed to minimize Javascript for path [" + resource.clientPath + "] with error: " + e.message;
             self.thywill.log.error(error);
           }
         }
@@ -158,19 +174,26 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
         if (!cssResource) {
           // Path is empty - set it at the end of this process so we can get
           // an MD5 of the contents.
-          cssResource = resourceManager.createResource(resourceManager.types.CSS, resource.weight, "", "", {minified: true});
+          cssResource = resourceManager.createResource(null, {
+            clientPath: null,
+            encoding: resource.encoding,
+            isGenerated: true,
+            minified: true,
+            originFilePath: null,
+            type: resourceManager.types.CSS,
+            weight: resource.weight
+          });
           returnResource = cssResource;
         }
         
-        cssResource.data += "\n\n";
         if (resource.minified) {
-          cssResource.data += resource.data;
+          minifedCss += resource.buffer.toString(resource.encoding) + "\n\n";
         } else {
           try {
             // CSS minification.
-            cssResource.data += self._minifyCss(resource.data);
+            minifiedCss += self._minifyCss(resource) + "\n\n";
           } catch (e) {
-            error = "Ugly.minifyResources failed to minimize CSS for path [" + resource.path + "] with error: " + e.message;
+            error = "Ugly.minifyResources failed to minimize CSS for path [" + resource.clientPath + "] with error: " + e.message;
             self.thywill.log.error(error);
           }
         }
@@ -190,15 +213,18 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
     // the list, assemble for the final function callback, and we're done.
     function (error, minifiedResources) { 
       var addedResources = [];
-      // Sort out paths, which should be based on MD5 hashes of the data.
+      // Sort out content and paths, which should be based on MD5 hashes of
+      // the data.
       if (jsResource) {
-        var md5 = crypto.createHash('md5').update(jsResource.data).digest("hex");
-        jsResource.path = self.config.jsBasePath + "/" + md5 + ".min.js";
+        jsResource.buffer = new Buffer(minifiedJs, jsResource.encoding);
+        var md5 = crypto.createHash('md5').update(minifiedJs).digest("hex");
+        jsResource.clientPath = self.config.jsBaseClientPath + "/" + md5 + ".min.js";
         addedResources.push(jsResource);
       }
       if (cssResource) {
-        var md5 = crypto.createHash('md5').update(cssResource.data).digest("hex");
-        cssResource.path = self.config.cssBasePath + "/" + md5 + ".min.css";
+        cssResource.buffer = new Buffer(minifiedCss, cssResource.encoding);
+        var md5 = crypto.createHash('md5').update(minifiedCss).digest("hex");
+        cssResource.clientPath = self.config.cssBaseClientPath + "/" + md5 + ".min.css";
         addedResources.push(cssResource);
       }
       
@@ -221,7 +247,14 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
  * @return {string}
  *   Return minimized Javascript code.
  */
-p._minifyJavascript = function (code) {
+p._minifyJavascript = function (resource) {
+  var code = "";
+  if (resource.buffer && resource.encoding) {
+    code = resource.buffer.toString(resource.encoding);
+  } else {
+    this.thywill.log.error("Trying to minify Javascript resource that is missing either its buffer or encoding: " + resource.clientPath);
+  }
+  
   // Parse code and get the initial AST.
   var ast = uglify.parser.parse(code); 
   // Get a new AST with mangled names.
@@ -229,8 +262,7 @@ p._minifyJavascript = function (code) {
   // Get an AST with compression optimizations.
   ast = uglify.uglify.ast_squeeze(ast); 
   // Compressed code here
-  var final_code = uglify.uglify.gen_code(ast); 
-  return final_code;
+  return uglify.uglify.gen_code(ast); 
 };
 
 /**
@@ -241,7 +273,13 @@ p._minifyJavascript = function (code) {
  * @return {string}
  *   Return minimized CSS.
  */
-p._minifyCss = function(css) {
+p._minifyCss = function(resource) {
+  var css = "";
+  if (resource.buffer && resource.encoding) {
+    css = resource.buffer.toString(resource.encoding);
+  } else {
+    this.thywill.log.error("Trying to minify Javascript resource that is missing either its buffer or encoding: " + resource.clientPath);
+  }
   return cleanCss.process(css);
 };
 
@@ -254,7 +292,7 @@ p._minifyCss = function(css) {
  * @return {string}
  *   The path with minified name.
  */
-p._generateMinifiedPath = function (path) {
+p._generateMinifiedClientPath = function (path) {
   return path.replace(/\.(\w+)$/, ".min.$1", "i");
 };
 

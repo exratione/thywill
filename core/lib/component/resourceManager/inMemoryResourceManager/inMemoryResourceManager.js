@@ -62,8 +62,13 @@ p._prepareForShutdown = function (callback) {
 /**
  * @see ResourceManager#createResource
  */
-p.createResource = function(buffer, attributes) {
-  return new Resource(buffer, attributes);
+p.createResource = function(data, attributes) {
+  // If we have a string rather than null or a Buffer, then convert it into a
+  // Buffer.
+  if (typeof data == "string") {
+    data = new Buffer(data, attributes.encoding);
+  };
+  return new Resource(data, attributes);
 };
 
 /**

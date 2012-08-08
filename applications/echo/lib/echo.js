@@ -9,6 +9,7 @@ var fs = require("fs");
 
 var async = require("async");
 var Thywill = require("thywill");
+var bootstrapManifest = require("./bootstrapManifest");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -36,189 +37,42 @@ var p = Echo.prototype;
  */
 p._defineBootstrapResources = function (callback) {
   var self = this;
-  var resourceManager = this.thywill.resourceManager;
-  var clientInterface = this.thywill.clientInterface;
-  
-  // IDs for UI templates.
-  var uiTemplateId = "echo-template-ui";
-  var messageTemplateId = "echo-template-message";
   
   // Text encoding throughout.
   var encoding = "utf8";
   
-  /** 
-   * Helper function for loading a file to a Buffer.
-   * 
-   * @param {string} relativePath
-   *   A relative path from this file to the file to be loaded.
-   * @return {Buffer}
-   *   A Buffer instance.
-   */
-  var bufferFromFile = function(relativePath) {
-    var filepath = path.resolve(__dirname, relativePath);
-    return fs.readFileSync(filepath);
-  };
-  
-  /** 
-   * Helper function for loading a file to a string with the
-   * default encoding.
-   * 
-   * @param {string} relativePath
-   *   A relative path from this file to the file to be loaded.
-   * @param {string} encoding
-   *   The file encoding.
-   * @return {Buffer}
-   *   A Buffer instance.
-   */
-  var stringFromFile = function(relativePath) {
-    var filepath = path.resolve(__dirname, relativePath);
-    return fs.readFileSync(filepath, encoding);
-  };
-  
-  /**
-   * Helper function for creating and storing a resource.
-   * 
-   * @param {Buffer} buffer
-   *   A buffer instance.
-   * @param {Object} attributes
-   *   A set of resource attributes.
-   * @param {Function} callback
-   *   Of the form function (error) where error = null on success.
-   */
-  var createBootstrapResource = function(buffer, attributes, callback) {
-    var resource = resourceManager.createResource(buffer, attributes);
-    clientInterface.storeBootstrapResource(resource, callback);
-  };
-  
+  // An array of functions to execute to load up bootstrap resources.
   var fns = [
-    // Add Modernizr, which has to come first in the Javascript.
+    // Add resources from files listed in the bootstrap manifest.
     function (asyncCallback) {
-      createBootstrapResource(bufferFromFile("../../../thirdParty/modernizr/modernizr.2.6.1.min.js"), {
-        encoding: encoding,
-        minified: true,
-        path: "/echo/js/modernizr.min.js",
-        type: resourceManager.types.JAVASCRIPT, 
-        weight: -30
-      }, asyncCallback);
+      self.storeBootstrapResourcesFromManifest(bootstrapManifest, asyncCallback);
     },
-    // Add jQuery as a resource, setting it a lower weight than the default
-    // Thwyill code - having it come first is fairly necessary if you want
-    // things to work rather than explode.
+    // Add the Echo client Javascript separately, as it needs to be rendered
+    // as a template.
     function (asyncCallback) {
-      createBootstrapResource(bufferFromFile("../../../thirdParty/jquery/jquery.1.7.2.min.js"), {
-        encoding: encoding,
-        minified: true,
-        path: "/echo/js/jquery.min.js",
-        type: resourceManager.types.JAVASCRIPT, 
-        weight: -20
-      }, asyncCallback);
-    },
-    // Add the plugins.js code from HTML5 Boilerplate.
-    function (asyncCallback) {
-      createBootstrapResource(bufferFromFile("../../../thirdParty/html5boilerplate/plugins.js"), {
-        encoding: encoding,
-        path: "/echo/js/plugins.js",
-        type: resourceManager.types.JAVASCRIPT, 
-        weight: -10
-      }, asyncCallback);
-    },    
-    // Add json2.js, required by Backbone.js.
-    function (asyncCallback) {
-      createBootstrapResource(bufferFromFile("../../../thirdParty/json/json2.js"), {
-        encoding: encoding,
-        path: "/echo/js/json2.js",
-        type: resourceManager.types.JAVASCRIPT, 
-        weight: 10
-      }, asyncCallback);
-    },
-    // Add Underscore.js, required by Backbone.js.
-    function (asyncCallback) {
-      createBootstrapResource(bufferFromFile("../../../thirdParty/underscore.js/underscore.1.3.3.min.js"), {
-        encoding: encoding,
-        minified: true,
-        path: "/echo/js/underscore.min.js",
-        type: resourceManager.types.JAVASCRIPT, 
-        weight: 20
-      }, asyncCallback);
-    },
-    // Add Backbone.js.
-    function (asyncCallback) {
-      createBootstrapResource(bufferFromFile("../../../thirdParty/backbone.js/backbone.0.9.2.min.js"), {
-        encoding: encoding,
-        minified: true,
-        path: "/echo/js/backbone.min.js",
-        type: resourceManager.types.JAVASCRIPT, 
-        weight: 30
-      }, asyncCallback);
-    },
-    // Add Handlebars.js.
-    function (asyncCallback) {
-      createBootstrapResource(bufferFromFile("../../../thirdParty/handlebars.js/handlebars.1.0.0.beta.6.js"), {
-        encoding: encoding,
-        path: "/echo/js/handlebars.js",
-        type: resourceManager.types.JAVASCRIPT, 
-        weight: 40
-      }, asyncCallback);
-    },
-    // Add the Echo client Javascript as a resource.
-    function (asyncCallback) {
+      // Load the file.
+      var originFilePath = path.resolve(__dirname, "../client/js/echoClient.js");
+      var data = fs.readFileSync(originFilePath, encoding);
       // A little templating to insert the application ID.
-      var data = self.thywill.templateEngine.render(stringFromFile("../client/js/echoClient.js"), {
+      data = self.thywill.templateEngine.render(data, {
         applicationId: self.id,
-        uiTemplateId: uiTemplateId,
-        messageTemplateId: messageTemplateId
+        uiTemplateId: "echo-template-ui",
+        messageTemplateId: "echo-template-message"
       });
-      createBootstrapResource(new Buffer(data, encoding), {
+      // Create and store the resource.
+      var resource = self.thywill.resourceManager.createResource(data, {
+        clientPath: "/echo/js/echoClient.js",
         encoding: encoding,
-        path: "/echo/js/echoClient.js",
-        type: resourceManager.types.JAVASCRIPT, 
+        isGenerated: true,
+        minified: false,
+        originFilePath: originFilePath,
+        type: self.thywill.resourceManager.types.JAVASCRIPT, 
         weight: 50
-      }, asyncCallback);
-    },
-    // Add HTML5 Boilerplate CSS.
-    function (asyncCallback) {
-      createBootstrapResource(bufferFromFile("../../../thirdParty/html5boilerplate/html5boilerplate.css"), {
-        encoding: encoding,
-        path: "/echo/css/html5boilerplate.css",
-        type: resourceManager.types.CSS, 
-        weight: 0
-      }, asyncCallback);
-    },
-    // Add the Echo client CSS.
-    function (asyncCallback) {
-      createBootstrapResource(bufferFromFile("../client/css/echoClient.css"), {
-        encoding: encoding,
-        path: "/echo/css/client.css",
-        type: resourceManager.types.CSS, 
-        weight: 10
-      }, asyncCallback);
-    },
-    // Add the Echo client UI template. Note that this won't be loaded over 
-    // HTTP, but rather included into the application main page.
-    function (asyncCallback) {
-      createBootstrapResource(bufferFromFile("../client/template/ui.tpl"), {
-        encoding: encoding,
-        id: uiTemplateId,
-        minified: true,
-        path: "/echo/tpl/ui.tpl",
-        type: resourceManager.types.TEMPLATE, 
-        weight: 0
-      }, asyncCallback);
-    },
-    // Add the Echo client message display template. Note that this won't be
-    // loaded over HTTP, but rather included into the application main page.
-    function (asyncCallback) {
-      createBootstrapResource(bufferFromFile("../client/template/message.tpl"), {
-        encoding: encoding,
-        id: messageTemplateId,
-        minified: true,
-        path: "/echo/tpl/message.tpl",
-        type: resourceManager.types.TEMPLATE, 
-        weight: 0
-      }, asyncCallback);
-    },
+      });
+      self.thywill.clientInterface.storeBootstrapResource(resource, asyncCallback);
+    }
   ];
-  async.parallel(fns, callback);
+  async.series(fns, callback);
 };
 
 /**

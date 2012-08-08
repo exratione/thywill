@@ -42,7 +42,7 @@ LinkedFileResourceManager.CONFIG_TEMPLATE = {
       required: true
     } 
   },
-  basePath: {
+  baseClientPath: {
     _configInfo: {
       description: "A base path prepended to provided resource paths. e.g. /thywill-static",
       types: "string",
@@ -66,7 +66,8 @@ p._configure = function (thywill, config, callback) {
   
   // List of functions to call via async.
   fns = [
-  // Check on the existence of the base directory and its permissions.
+  // Check on the existence of the base directory and that its has suitable
+  // permissions.
     function(asyncCallback) {
       this.directoryExists(this.config.baseDirectory, asyncCallback);
     }
@@ -98,22 +99,26 @@ p._prepareForShutdown = function (callback) {
 /**
  * @see ResourceManager#createResource
  */
-p.createResource = function(buffer, attributes) {
- 
+p.createResource = function (data, attributes) {
+  // If we have a string rather than null or a Buffer, then convert it into a
+  // Buffer.
+  if (typeof data == "string") {
+    data = new Buffer(data, attributes.encoding);
+  };
+  
   // TODO: Tighten this up to accommodate issues with delimiters, etc.
   
-  // Parent class creates the base resource.
-  var resource = LinkedFileResourceManager.super_.prototype.createResource.call(this, buffer, attributes);  
-  resource.originalPath = resource.path;
+  // First the parent class creates the resource.
+  var resource = LinkedFileResourceManager.super_.prototype.createResource.call(this, data, attributes);  
   // Take the provided path as the basis for where this file will be stored.
-  resource.fileSystemPath = this.config.baseDirectory + resource.path;
+  resource.filePath = this.config.baseDirectory + resource.path;
   // If path is not suitable for a file, add some file to the end of it, e.g. /dir/ -> /dir/default
-  if (resource.fileSystemPath[resource.fileSystemPath - 1] == "/") {
-    resource.fileSystemPath += "default";
+  if (resource.filePath[resource.filePath.length - 1] == "/") {
+    resource.filePath += "default";
     // TODO: add file type ending?
   }
   // Change the provided path to point to the file resource directory.
-  resource.path = basePath + resource.path;
+  resource.clientPath = this.config.baseClientPath + resource.clientPath;
   return resource;
 };
 
@@ -122,15 +127,23 @@ p.createResource = function(buffer, attributes) {
  */
 p.store = function (key, resource, callback) {
   var self = this;
-  // Write out the resource as a file.
-  this.writeResourceToFile(resource, function(error) {
+  
+  var innerCallback = function(error) {
     if (error) {
       callback.call(self, error);
     } else {
       // Store an in-memory reference as the parent class does.
       LinkedFileResourceManager.super_.prototype.store.call(self, key, resource, callback);
     }
-  });
+  };
+  
+  // Either write the resource to a file or symlink it, depending on whether it
+  // has a defined origin file path.
+  if (!resource.originFile) {
+    this.writeResourceToFile(resource, innerCallback);
+  } else {
+    this.createResourceSymlink(resource, innerCallback);
+  }
 };
 
 /**
@@ -226,7 +239,7 @@ p.canWrite = function (stats) {
  *   Of the form function(error) where error = null if the directory exists
  *   with suitable permissions.
  */
-p.directoryExists = function(path, callback) {
+p.directoryExists = function (path, callback) {
   fs.stats(path, function(error, stats) {
     if (!error) {
       if (stats.isDirectory()) {
@@ -244,14 +257,15 @@ p.directoryExists = function(path, callback) {
 };
 
 /**
- * Write a resource to the file system.
+ * Write a resource to the file system as a file. Expects the property
+ * resource.filePath to exist.
  * 
  * @param {Resource} resource
  *   A Resource instance.
  * @param {Function} callback
  *   Of the form function(error) where error = null on success.
  */
-p.writeResourceToFile = function(resource, callback) {
+p.writeResourceToFile = function (resource, callback) {
   var self = this;
   // Array of asynchronous functions to call in series.
   var fns = [
@@ -278,7 +292,33 @@ p.writeResourceToFile = function(resource, callback) {
       stream.end(resource.buffer);
     }
   ];
-  
+  // Run the functions to get the file written.
+  async.series(fns, callback);
+};
+
+/**
+ * Create a symlink to the original resource file. Expects the properties
+ * resource.originFilePath and resource.filePath to exist.
+ * 
+ * @param {Resource} resource
+ *   A Resource instance.
+ * @param {Function} callback
+ *   Of the form function(error) where error = null on success.
+ */
+p.createResourceSymlink = function (resource, callback) {
+  var self = this;
+  // Array of asynchronous functions to call in series.
+  var fns = [
+    // Make sure the directory exists.           
+    function (asyncCallback) {
+      fs.mkdir(pathUtils.dirname(resource.fileSystemPath), 0755, true, asyncCallback);
+    },
+    // Create the symlink.
+    function (asyncCallback) {
+      fs.symlink(resource.originFilePath, resource.filePath, 'file', asyncCallback);
+    }
+  ];
+  // Run the functions to get the file written.
   async.series(fns, callback);
 };
 

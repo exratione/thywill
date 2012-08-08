@@ -13,7 +13,7 @@ config.thywill.adminInterface.port = 20081;
 
 // An example application should have its own base path and Socket.IO
 // namespace.
-config.clientInterface.basePath = "/shapes";
+config.clientInterface.baseClientPath = "/shapes";
 config.clientInterface.namespace = "/shapes";
 // Note that the client resource has no leading /. These must otherwise match.
 config.clientInterface.socketClientConfig.resource = "shapes/socket.io";
@@ -26,8 +26,8 @@ config.clientInterface.minifyJavascript = false;
 config.log.level = "debug";
 
 // Base paths to use when defining new resources for merged CSS and Javascript.
-config.minifier.cssBasePath = "/shapes/css";
-config.minifier.jsBasePath = "/shapes/js";
+config.minifier.cssBaseClientPath = "/shapes/css";
+config.minifier.jsBaseClientPath = "/shapes/js";
 
 // Use the linkedFileResourceManager in place of the default in-memory
 // implementation, allowing Nginx to serve resources as static files.
@@ -39,7 +39,7 @@ config.resourceManager = {
   // The filesystem directory to which resources are written.
   baseDirectory: "/home/node/thywill-static",
   // A base path prepended to provided resource paths.
-  basePath: "/thywill-static"
+  baseClientPath: "/thywill-static"
 };
 
 //-----------------------------------------------------------

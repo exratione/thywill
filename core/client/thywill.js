@@ -186,7 +186,7 @@ var Thywill = (function() {
   	      applications[message.toApplicationId].received(message);
   	    }
   	  } else {
-  	    for (applicationId in applications) {
+  	    for (var applicationId in applications) {
   	      applications[applicationId].received(message);
   	    }
   	  }
@@ -196,7 +196,7 @@ var Thywill = (function() {
   	 * Called when the initial connection or a reconnection attempt times out.
   	 */
   	connectionFailure: function() {
-  	  for (applicationId in applications) {
+  	  for (var applicationId in applications) {
         applications[applicationId].connectionFailure();
       }
   	},
@@ -207,7 +207,7 @@ var Thywill = (function() {
   	 */
   	disconnected: function () {
   	  this.connected = false;
-  	  for (applicationId in applications) {
+  	  for (var applicationId in applications) {
         applications[applicationId].disconnected();
   	  }
   	},
@@ -217,7 +217,7 @@ var Thywill = (function() {
   	 */
     reconnected: function () {
       this.connected = true;
-      for (applicationId in applications) {
+      for (var applicationId in applications) {
         applications[applicationId].reconnected();
       }
     }

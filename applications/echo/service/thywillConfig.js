@@ -13,7 +13,7 @@ config.thywill.adminInterface.port = 20080;
 
 // An example application should have its own base path and Socket.IO
 // namespace.
-config.clientInterface.basePath = "/echo";
+config.clientInterface.baseClientPath = "/echo";
 config.clientInterface.namespace = "/echo";
 // Note that the client resource has no leading /. These must otherwise match.
 config.clientInterface.socketClientConfig.resource = "echo/socket.io";
@@ -26,8 +26,8 @@ config.clientInterface.minifyJavascript = false;
 config.log.level = "debug";
 
 // Base paths to use when defining new resources for merged CSS and Javascript.
-config.minifier.cssBasePath = "/echo/css";
-config.minifier.jsBasePath = "/echo/js";
+config.minifier.cssBaseClientPath = "/echo/css";
+config.minifier.jsBaseClientPath = "/echo/js";
 
 //-----------------------------------------------------------
 //Exports - Configuration

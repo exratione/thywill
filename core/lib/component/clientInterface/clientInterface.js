@@ -36,7 +36,7 @@ p.receive = function (message) {
   var self = this;
   // Send to all applications if no toApplicationId specified.
   if (!message.toApplicationId) {
-    for (id in this.thywill.applications) {
+    for (var id in this.thywill.applications) {
       process.nextTick(function () {
         self.thywill.applications[id].receive(message);
       });
@@ -54,7 +54,7 @@ p.receive = function (message) {
  */
 p.connection = function (sessionId) {
   var self = this;
-  for (id in this.thywill.applications) {
+  for (var id in this.thywill.applications) {
     process.nextTick(function () {
       self.thywill.applications[id].connection(sessionId);
     });
@@ -69,7 +69,7 @@ p.connection = function (sessionId) {
  */
 p.disconnection = function (sessionId) {
   var self = this;
-  for (id in this.thywill.applications) {
+  for (var id in this.thywill.applications) {
     process.nextTick(function () {
       self.thywill.applications[id].disconnection(sessionId);
     });
@@ -127,13 +127,13 @@ p.storeResource = function (resource, callback) {
  * Return a resource to the callback, or null if no resource is mapped to 
  * this path.
  * 
- * @param {string} path
+ * @param {string} clientPath
  *   A request path.
  * @param {Function} [callback] 
  *   Of the form function (error, resource) {}, where error == null on success
  *   and resource is the resource to be returned.
  */
-p.getResource = function (path, callback) {
+p.getResource = function (clientPath, callback) {
   throw new Error("Not implemented.");
 };
 

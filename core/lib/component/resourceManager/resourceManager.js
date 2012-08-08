@@ -3,6 +3,7 @@
  * ResourceManager class definition.
  */
 
+var fs = require("fs");
 var util = require("util");
 var Thywill = require("thywill");
 var Resource = Thywill.getBaseClass("Resource");
@@ -28,22 +29,54 @@ util.inherits(ResourceManager, Thywill.getBaseClass("Component"));
 var p = ResourceManager.prototype;
 
 //-----------------------------------------------------------
+// Methods.
+//-----------------------------------------------------------
+
+/**
+ * Obtain a new Resource object. The object returned in the callback function
+ * is not stored.
+ * 
+ * @param {string} path
+ *   An absolute path to a file.
+ * @param {Object} attributes
+ *   Other attributes of this resource - see the Resource class
+ *   for more information.
+ * @param {Function} callback
+ *   Of the form function (error, resource), where error == null on success
+ *   and resource is the new Resource instance.
+ * 
+ * @see Resource
+ */
+p.createResourceFromFile = function(path, attributes, callback) {
+  var self = this;
+  fs.readFile(path, null, function(error, buffer) {
+    var resource = null;
+    if (!error) {
+      resource = self.createResource(buffer, attributes);
+    }
+    callback.call(self, error, resource);
+  });
+};
+
+//-----------------------------------------------------------
 // Methods to be implemented by subclasses.
 //-----------------------------------------------------------
 
 /**
  * Obtain a new Resource object. The object returned is not stored.
  * 
- * @param {Buffer} buffer
- *   A Buffer instance containing the resource data.
+ * @param {Buffer|string|null} data
+ *   A Buffer instance containing the resource data, or a string. A string will
+ *   be used to create a Buffer with the encoding provided in the attributes
+ *   object. This can be null for resources that don't need to have data in 
+ *   memory.
  * @param {Object} attributes
- *   Other attributes of this resource. It is expected to set the following:
- *   encoding: e.g. "utf8" or "binary".
- *   path: the path of the resource when accessed via the client.
- *   type: the defined type or other MIME type.
- *   weight: a numeric value for sorting resources.
+ *   Other attributes of this resource - see the Resource class
+ *   for more information.
+ * 
+ * @see Resource
  */
-p.createResource = function(buffer, attributes) {
+p.createResource = function(data, attributes) {
   throw new Error("Not implemented.");
 };
 

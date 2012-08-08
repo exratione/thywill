@@ -10,6 +10,7 @@ var fs = require("fs");
 
 var async = require("async");
 var Thywill = require("thywill");
+var bootstrapManifest = require("./bootstrapManifest");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -39,6 +40,8 @@ p._defineBootstrapResources = function (callback) {
   var self = this;
   var resourceManager = this.thywill.resourceManager;
   var clientInterface = this.thywill.clientInterface;
+  
+  
   
   
   

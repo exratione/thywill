@@ -113,7 +113,7 @@ p._checkConfiguration = function (config) {
  *   A string to keep track of which configuration property is being inspected. 
  */
 p._checkConfigurationRecursively = function (configObj, templateObj, propertyChain) {
-  for (property in templateObj) {
+  for (var property in templateObj) {
     
     if (propertyChain) { 
       var thisPropertyChain = propertyChain + "." + property;
