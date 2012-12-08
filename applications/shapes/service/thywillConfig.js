@@ -29,6 +29,7 @@ config.log.level = "debug";
 config.minifier.cssBaseClientPath = "/shapes/css";
 config.minifier.jsBaseClientPath = "/shapes/js";
 
+/*
 // Use the linkedFileResourceManager in place of the default in-memory
 // implementation, allowing Nginx to serve resources as static files.
 config.resourceManager = {
@@ -41,6 +42,7 @@ config.resourceManager = {
   // A base path prepended to provided resource paths.
   baseClientPath: "/thywill-static"
 };
+*/
 
 //-----------------------------------------------------------
 //Exports - Configuration

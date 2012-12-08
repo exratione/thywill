@@ -418,15 +418,6 @@ p._startup = function (callback) {
         type: resourceManager.types.JAVASCRIPT
       });
       
-      // Register a Handlebars helper.
-      /*
-      Handlebars.registerHelper('call', function(context, options) {
-        
-        console.log(context);
-        
-      });
-      */
-      
       // Render the template and stash it as a resource.
       var mainPage = mainPageTemplate({
         resources: resourcesByType,
