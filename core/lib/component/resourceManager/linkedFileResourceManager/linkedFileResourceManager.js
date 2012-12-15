@@ -134,7 +134,7 @@ p.store = function (key, resource, callback) {
       callback.call(self, error);
     } else {
       // Store an in-memory reference as the parent class does.
-      LinkedFileResourceManager.super_.prototype.store.call(self, key, resource, callback);
+      this.invokeSuperclassMethod("store", key, resource, callback);
     }
   };
   
@@ -147,8 +147,7 @@ p.store = function (key, resource, callback) {
   } else {
     // This resource is not in a state where it can be written out to file or
     // symlinked.
-    var error = "LinkedFileResourceManager.store(): Resource is not correctly configured: " + resource.clientPath;
-    this.thywill.log.error(error);
+    var error = new Error("LinkedFileResourceManager.store(): Resource is not correctly configured: " + resource.clientPath);
     callback.call(this, error);
   }
 };
@@ -164,7 +163,7 @@ p.remove = function (key, callback) {
       callback.call(self, error);
     } else {
       // Remove the in-memory reference as the parent class does.
-      LinkedFileResourceManager.super_.prototype.remove.call(self, key, callback);
+      this.invokeSuperclassMethod("remove", key, callback);
     }
   });
 };

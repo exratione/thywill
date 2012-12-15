@@ -29,8 +29,10 @@
  *   // be a template file, null for a generated resource, or an exact copy of
  *   // the resource data.
  *   originFilePath: null,
+ *   // Which process serves this Resource.
+ *   servedBy: Resource.SERVED_BY.THYWILL,
  *   // A MIME type or other defined type.
- *   type: "text/plain",
+ *   type: Resource.TYPES.TEXT,
  *   // Used to order bootstrap resources served to a client immediately on
  *   // connection. e.g. to order Javascript files in a web page.
  *   weight: 0,
@@ -52,7 +54,8 @@ function Resource(buffer, attributes) {
   this.isGenerated = false;
   this.minified = false;
   this.originFilePath = null;
-  this.type = "text/plain";
+  this.servedBy = Resource.SERVED_BY.THYWILL;
+  this.type = Resource.TYPES.TEXT;
   this.weight = 0;
   
   // Set the attributes.
@@ -73,12 +76,26 @@ var p = Resource.prototype;
 //-----------------------------------------------------------
 
 /**
+ * Defining which process serves this resource.
+ */
+Resource.SERVED_BY = {
+  // Served through Thywill's HTTPServer listener.
+  THYWILL: "thywill",
+  // Served by some other local process. E.g. Express running on the same 
+  // HTTPServer object, paths directed by the proxy to Nginx or Apache on the
+  // same server, etc.
+  OTHER_LOCAL: "otherLocal"
+};
+
+/**
  * MIME types are generally used to define different resource types.
  */ 
 Resource.TYPES = {
+  // Standard MIME types.
   CSS: "text/css",
   HTML: "text/html",
   JAVASCRIPT: "application/javascript",
+  TEXT: "text/plain",
   // For templates used by Underscore.js, Handlebars.js, etc.
   TEMPLATE: "text/template"
 };

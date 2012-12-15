@@ -20,10 +20,13 @@ var Resource = Thywill.getBaseClass("Resource");
 function ResourceManager() {
   ResourceManager.super_.call(this);
   this.componentType = "resourceManager";
+  this.clientPathsServedByThywill = {};
   // Convenience copy of the Resource types; resourceManager.createResource()
   // needs the type, and it's easier if you don't have to go load the Resource
   // class to get the type definitions.
   this.types = Resource.TYPES;
+  // Another convenience copy.
+  this.servedBy = Resource.SERVED_BY;
 };
 util.inherits(ResourceManager, Thywill.getBaseClass("Component"));
 var p = ResourceManager.prototype;
@@ -57,6 +60,23 @@ p.createResourceFromFile = function(path, attributes, callback) {
     callback.call(self, error, resource);
   });
 };
+
+
+/**
+ * Obtain a list of all clientPaths for resources served by Thywill.
+ */
+p.getClientPathsServedByThywill = function() {
+  return this.clientPathsServedByThywill;
+};
+
+p.addClientPathServedByThywill = function(path) {
+  this.clientPathsServedByThywill[path] = true;
+};
+
+p.removeClientPathServedByThywill = function(path) {
+  delete clientPathsServedByThywill[path];
+};
+
 
 //-----------------------------------------------------------
 // Methods to be implemented by subclasses.

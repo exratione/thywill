@@ -65,7 +65,7 @@ p._prepareForShutdown = function (callback) {
 p.createResource = function(data, attributes) {
   // If we have a string rather than null or a Buffer, then convert it into a
   // Buffer.
-  if (typeof data == "string") {
+  if (typeof data === "string") {
     data = new Buffer(data, attributes.encoding);
   };
   return new Resource(data, attributes);
@@ -77,6 +77,9 @@ p.createResource = function(data, attributes) {
 p.store = function (key, resource, callback) {
   this.data[key] = resource;
   resource.stored = true;
+  if (resource.clientPath && resource.servedBy === this.servedBy.THYWILL) {
+    this.addClientPathServedByThywill(resource.clientPath);
+  }
   callback(this.NO_ERRORS);
 };
 
@@ -88,6 +91,9 @@ p.remove = function (key, callback) {
   var error = this.NO_ERRORS;
   if (this.data[key]) {
     resource = this.data[key];
+    if (resource.clientPath && resource.servedBy === this.servedBy.THYWILL) {
+      this.removeClientPathServedByThywill(resource.clientPath);
+    }
     delete this.data[key];
   } 
   callback(error, resource);

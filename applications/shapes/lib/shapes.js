@@ -20,7 +20,7 @@ var bootstrapManifest = require("./bootstrapManifest");
  * @class
  * An example application.
  * 
- * This provies a UI where a user can request new shapes to be made available
+ * This provides a UI where a user can request new shapes to be made available
  * and then place the shapes on a canvas.
  */
 function Shapes(id) {
@@ -32,6 +32,19 @@ var p = Shapes.prototype;
 //-----------------------------------------------------------
 // Initialization and Shutdown
 //-----------------------------------------------------------
+
+
+/**
+ * @see Application#storeBootstrapResourcesFromManifest
+ */
+p.storeBootstrapResourcesFromManifest = function (bootstrapManifest, callback) {
+  // Run through the manifest and add all the external items as Express routes.
+  
+  
+  
+
+  this.invokeSuperclassMethod(bootstrapManifest, callback);
+};
 
 /**
  * @see Application#_defineBootstrapResources

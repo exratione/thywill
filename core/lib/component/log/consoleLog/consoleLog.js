@@ -88,7 +88,7 @@ p._prepareForShutdown = function (callback) {
  */
 p.debug = function (message) {
   if (this.levels.indexOf("debug") >= this.level) {
-    this.log("debug", message);
+    this.log("DEBUG", message);
   }
 };
 
@@ -97,7 +97,7 @@ p.debug = function (message) {
  */
 p.warn = function (message) {
   if (this.levels.indexOf("warn") >= this.level) {
-    this.log("warn", message);
+    this.log("WARN", message);
   }
 };
 
@@ -106,7 +106,7 @@ p.warn = function (message) {
  */
 p.error = function (message) {
   if (this.levels.indexOf("error") >= this.level) {
-    this.log("error", message);
+    this.log("ERROR", message);
   }
 };
 
@@ -114,10 +114,10 @@ p.error = function (message) {
  * @see Log#log
  */
 p.log = function (level, message) {
-  if (message && message.toString) {
-    console.log("[" + level + "] " + message.toString());
+  if (message instanceof Error) {
+    console.log("[" + new Date() + "] " + level + " " + message.stack);
   } else {
-    console.log("[" + level + "] " + message);
+    console.log("[" + new Date() + "] " + level + " " + message);
   }
 };
 

@@ -109,8 +109,7 @@ p.minifyResource = function (resource, callback) {
       weight: resource.weight
     });
   } catch (e) {
-    error = "Ugly.minifyResource failed for resource of type [" + resource.type + "] and path [" + resource.clientPath + "] with error: " + e.message;
-    self.thywill.log.error(error);
+    self.thywill.log.error(e);
   }
 
   callback.call(this, error, newResource);
@@ -164,8 +163,7 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
             // Javascript minification.
             minifiedJs += self._minifyJavascript(resource) + "\n\n";
           } catch (e) {
-            error = "Ugly.minifyResources failed to minimize Javascript for path [" + resource.clientPath + "] with error: " + e.message;
-            self.thywill.log.error(error);
+            self.thywill.log.error(e);
           }
         }
       } else if (resource.type == resourceManager.types.CSS && minifyCss) {
@@ -193,8 +191,7 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
             // CSS minification.
             minifiedCss += self._minifyCss(resource) + "\n\n";
           } catch (e) {
-            error = "Ugly.minifyResources failed to minimize CSS for path [" + resource.clientPath + "] with error: " + e.message;
-            self.thywill.log.error(error);
+            self.thywill.log.error(e);
           }
         }
         
@@ -252,7 +249,7 @@ p._minifyJavascript = function (resource) {
   if (resource.buffer && resource.encoding) {
     code = resource.buffer.toString(resource.encoding);
   } else {
-    this.thywill.log.error("Trying to minify Javascript resource that is missing either its buffer or encoding: " + resource.clientPath);
+    this.thywill.log.error(new Error("Trying to minify Javascript resource that is missing either its buffer or encoding: " + resource.clientPath));
   }
   
   // Parse code and get the initial AST.
@@ -278,7 +275,7 @@ p._minifyCss = function(resource) {
   if (resource.buffer && resource.encoding) {
     css = resource.buffer.toString(resource.encoding);
   } else {
-    this.thywill.log.error("Trying to minify Javascript resource that is missing either its buffer or encoding: " + resource.clientPath);
+    this.thywill.log.error(new Error("Trying to minify Javascript resource that is missing either its buffer or encoding: " + resource.clientPath));
   }
   return cleanCss.process(css);
 };

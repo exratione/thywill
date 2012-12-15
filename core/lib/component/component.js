@@ -229,6 +229,20 @@ p._throwConfigurationError = function (propertyChain, error) {
   );
 };
 
+/**
+ * Shortcut for calling a superclass function. All parameters after the method
+ * name are passed through.
+ * 
+ * @param {string} methodName
+ *   Name of the method to call.
+ * @return {mixed}
+ *   Whatever the method returns.
+ */
+p.invokeSuperclassMethod = function(methodName) {
+  var args = arguments.slice(1);
+  return this.constructor.super_.prototype[methodName].apply(this, args);
+};
+
 //-----------------------------------------------------------
 // Methods to be implemented by subclasses.
 //-----------------------------------------------------------

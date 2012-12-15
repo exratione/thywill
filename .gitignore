@@ -1,4 +1,5 @@
 .settings
 .project
+*sublime-*
 node_modules
 tools/deploy/environment

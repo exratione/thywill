@@ -23,7 +23,7 @@ var encoding = "utf8";
 var manifest = {
   // Add Modernizr, which has to come first in the Javascript.
   "../../../thirdParty/modernizr/modernizr.2.6.1.min.js": {
-    clientPath: "/echo/js/modernizr.min.js",
+    clientPath: "/shapes/js/modernizr.min.js",
     encoding: encoding,
     minified: true,
     type: Resource.TYPES.JAVASCRIPT, 
@@ -33,7 +33,7 @@ var manifest = {
   // Thwyill code - having it come first is fairly necessary if you want
   // things to work rather than explode.
   "../../../thirdParty/jquery/jquery.1.7.2.min.js": {
-    clientPath: "/echo/js/jquery.min.js",
+    clientPath: "/shapes/js/jquery.min.js",
     encoding: encoding,
     minified: true,
     type: Resource.TYPES.JAVASCRIPT, 
@@ -42,7 +42,7 @@ var manifest = {
   },
   // Add the plugins.js code from HTML5 Boilerplate.
   "../../../thirdParty/html5boilerplate/plugins.js": {
-    clientPath: "/echo/js/plugins.js",
+    clientPath: "/shapes/js/plugins.js",
     encoding: encoding,
     minified: false,
     type: Resource.TYPES.JAVASCRIPT, 
@@ -50,7 +50,7 @@ var manifest = {
   },    
   // Add json2.js, required by Backbone.js.
   "../../../thirdParty/json/json2.js": {
-    clientPath: "/echo/js/json2.js",
+    clientPath: "/shapes/js/json2.js",
     encoding: encoding,
     minified: false,
     type: Resource.TYPES.JAVASCRIPT, 
@@ -58,7 +58,7 @@ var manifest = {
   },
   // Add Underscore.js, required by Backbone.js.
   "../../../thirdParty/underscore.js/underscore.1.3.3.min.js": {
-    clientPath: "/echo/js/underscore.min.js",
+    clientPath: "/shapes/js/underscore.min.js",
     encoding: encoding,
     minified: true,
     type: Resource.TYPES.JAVASCRIPT, 
@@ -66,7 +66,7 @@ var manifest = {
   },
   // Add Backbone.js.
   "../../../thirdParty/backbone.js/backbone.0.9.2.min.js": {
-    clientPath: "/echo/js/backbone.min.js",
+    clientPath: "/shapes/js/backbone.min.js",
     encoding: encoding,
     minified: true,
     type: Resource.TYPES.JAVASCRIPT, 
@@ -74,7 +74,7 @@ var manifest = {
   },
   // Add Handlebars.js.
   "../../../thirdParty/handlebars.js/handlebars.1.0.0.beta.6.min.js": {
-    clientPath: "/echo/js/handlebars.min.js",
+    clientPath: "/shapes/js/handlebars.min.js",
     encoding: encoding,
     minified: true,
     type: Resource.TYPES.JAVASCRIPT, 
@@ -82,7 +82,7 @@ var manifest = {
   },
   // Add HTML5 Boilerplate CSS.
   "../../../thirdParty/html5boilerplate/html5boilerplate.css": {
-    clientPath: "/echo/css/html5boilerplate.css",
+    clientPath: "/shapes/css/html5boilerplate.css",
     encoding: encoding,
     minified: false,
     type: Resource.TYPES.CSS, 
@@ -90,7 +90,7 @@ var manifest = {
   },
   // Add the Shapes client CSS.
   "../client/css/shapesClient.css": {
-    clientPath: "/echo/css/client.css",
+    clientPath: "/shapes/css/client.css",
     encoding: encoding,
     minified: false,
     type: Resource.TYPES.CSS, 
