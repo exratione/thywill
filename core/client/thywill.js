@@ -59,11 +59,26 @@ var Thywill = (function() {
    *   A Thywill.Message instance.
    */
   p.received = function (message) {
-    console.log("ApplicationInterface.receive() not implemented in child class.");
+    console.log("ApplicationInterface.received() not implemented in child class.");
   };
   
   /**
-   * Invoked when the client fails to initially connect or reconnect after 
+   * Invoked when the client is trying to connect or reconnect.
+   */
+  p.connecting = function () {
+    console.log("ApplicationInterface.connecting() not implemented in child class.");
+  };
+  
+  /**
+   * Invoked when the client successfully connects or reconnects after
+   * disconnection.
+   */
+  p.connected = function () {
+    console.log("ApplicationInterface.connected() not implemented in child class.");
+  };
+  
+  /**
+   * Invoked when the client fails to initially connect or reconnect after
    * disconnection.
    */
   p.connectionFailure = function () {
@@ -76,13 +91,6 @@ var Thywill = (function() {
    */
   p.disconnected = function () {
     console.log("ApplicationInterface.disconnected() not implemented in child class.");
-  };
-  
-  /**
-   * Invoked when a disconnected client is reconnected.
-   */
-  p.reconnected = function () {
-    console.log("ApplicationInterface.reconnected() not implemented in child class.");
   };
   
   // -----------------------------------------------------
@@ -123,7 +131,7 @@ var Thywill = (function() {
    */
   thywillObj.ServerInterface = {
     // Set to true by the clientInterface component when connected.
-    connected: false,     
+    isConnected: false,     
 
     /**
      * Register an application so that Thywill can pass it messages.
@@ -133,24 +141,6 @@ var Thywill = (function() {
      */
     registerApplication: function (applicationInterface) {
       applications[applicationInterface.applicationId] = applicationInterface;
-    },
-    
-    /**
-     * A function to check whether we are done yet - i.e. are we connected
-     * to the server and set up? If so, call the ready callback functions
-     * defined to date. If not, keep checking.
-     */
-    checkCompletion: function () {
-      var self = this;
-      if (this.connected) {
-        for (var i = 0, l = readyCallbacks.length; i < l; i++) {
-          readyCallbacks[i].call(this);
-        }
-      } else {
-        setTimeout(function() {
-          self.checkCompletion();
-        }, 100);
-      }
     },
     
     // ---------------------------------------------------------
@@ -166,6 +156,13 @@ var Thywill = (function() {
     send: function (message) {
       console.log("Thywill.ServerInterface.send() not implemented.");
     },      
+    
+    /**
+     * Set up the connection to the server.
+     */
+    setupConnection: function () {
+      console.log("Thywill.ServerInterface.setupConnection() not implemented.");
+    },  
     
     // ------------------------------------------------
     // Functions called by the clientInterface.
@@ -191,6 +188,25 @@ var Thywill = (function() {
   	    }
   	  }
   	},	
+
+    /**
+     * A connection is established or reestablished. All applications are notified.
+     */
+    connected: function () {
+      this.isConnected = true;
+      for (var applicationId in applications) {
+        applications[applicationId].connected();
+      }
+    },
+    
+    /**
+     * A connection is established or reestablished. All applications are notified.
+     */
+    connecting: function () {
+      for (var applicationId in applications) {
+        applications[applicationId].connecting();
+      }
+    },
   	
   	/**
   	 * Called when the initial connection or a reconnection attempt times out.
@@ -206,29 +222,11 @@ var Thywill = (function() {
   	 * All applications are notified.
   	 */
   	disconnected: function () {
-  	  this.connected = false;
+  	  this.isConnected = false;
   	  for (var applicationId in applications) {
         applications[applicationId].disconnected();
   	  }
-  	},
-  	
-  	/**
-  	 * A lost connection is reestablished. All applications are notified.
-  	 */
-    reconnected: function () {
-      this.connected = true;
-      for (var applicationId in applications) {
-        applications[applicationId].reconnected();
-      }
-    }
-  };
-  
-  /**
-   * Provide a callback function that will be invoked when Thywill is
-   * connected to the server and ready to run.
-   */
-  thywillObj.addReadyCallback = function (callback) {
-    readyCallbacks.push(callback);
+  	}
   };
   
   return thywillObj;

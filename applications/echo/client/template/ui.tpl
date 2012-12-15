@@ -9,4 +9,5 @@
     Enter text into the upper box and hit send. It will be passed to the Thywill server and
     then echoed back to appear in the lower box.
   </div>
+  <div id="status"></div>
 </div>

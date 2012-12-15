@@ -1,6 +1,5 @@
 /*
   Minimal CSS for the Echo client.
-  If this were a real application, HTML5 Bootstrap would be starting this off.
 */
 body {
   color: #666666;
@@ -9,6 +8,7 @@ body {
 }
 #echo-wrapper {
   margin: 40px auto;
+  position: relative;
   width: 500px;
 }
 #title {
@@ -28,10 +28,10 @@ textarea {
   width: 300px;
 }
 button {
-  background-color: #e5efe5;
-  box-shadow: 5px 5px 10px 0 #cccccc;
+  background-color: #e5e5e5;
   border: 1px solid #999999;
   color: #666666;
+  cursor: default;
   font-size: 20px;
   height: 40px;
   letter-spacing: 1px;
@@ -42,7 +42,12 @@ button {
   transition: all 0.2s ease-in-out;
   width: 100px;
 }
-button:hover {
+button.enabled {
+  background-color: #e5efe5;
+  box-shadow: 5px 5px 10px 0 #cccccc;
+  cursor: pointer;
+}
+button.enabled:hover {
 	 background-color: #e9f3e9;
 	 box-shadow: 2px 2px 10px 0 #cccccc;
 }
@@ -60,4 +65,23 @@ button:hover {
 }
 #instructions {
 	text-align: justify;
+}
+#status {
+  font-size: 12px;
+  position: absolute;
+  right: 10px;
+  top: 14px;
+  -webkit-transition: all 0.2s ease-in-out;
+  -moz-transition: all 0.2s ease-in-out;
+  -o-transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
+}
+#status.connected {
+	color: #559955;
+}
+#status.connecting {
+  color: #999999;
+}
+#status.disconnected {
+  color: #995555;
 }

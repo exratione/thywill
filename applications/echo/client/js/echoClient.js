@@ -23,11 +23,15 @@
   };
   jQuery.extend(EchoApplication.prototype, Thywill.ApplicationInterface.prototype);
   var p = EchoApplication.prototype;
+ 
+  // ------------------------------------------
+  // User Interface Methods
+  // ------------------------------------------  
   
   /**
    * Create the application user interface and its event listeners.
    */
-  p.setupUI = function () { 
+  p.uiSetup = function () { 
     var self = this;
     this.templates.uiTemplate = Handlebars.compile(jQuery("#{{{uiTemplateId}}}").html());
     this.templates.messageTemplate = Handlebars.compile(jQuery("#{{{messageTemplateId}}}").html());
@@ -38,19 +42,51 @@
     }));
     
     jQuery("#sender textarea").focus();
-    
-    jQuery("#sender button").click(function () {
-     var inputData = $("#sender textarea").val();  
-     if (inputData) {
-       // Thywill.Message(data, fromApplicationId, toApplicationId). Sending
-       // this message to the server side of the same application.
-       var message = new Thywill.Message(inputData, self.applicationId, self.applicationId);
-       self.send(message);
-       $("#sender textarea").val("");
-     }
-    });
     jQuery("#echo-wrapper").append('');
   };
+  
+  /**
+   * Make the UI disabled - no sending.
+   */
+  p.uiDisable = function () {
+    jQuery("#sender button").removeClass("enabled").off("click");
+  };
+  
+  /**
+   * Make the UI enabled and allow sending.
+   */
+  p.uiEnable = function () {
+    var self = this;
+    // Enable the button.
+    jQuery("#sender button").addClass("enabled").on("click", function () {
+      var inputData = $("#sender textarea").val();  
+      if (inputData) {
+        // Thywill.Message(data, fromApplicationId, toApplicationId). Sending
+        // this message to the server side of the same application.
+        var message = new Thywill.Message(inputData, self.applicationId, self.applicationId);
+        self.send(message);
+        $("#sender textarea").val("");
+      }
+     });
+  };
+  
+  /**
+   * Change the status message.
+   */
+  p.uiStatus = function (text, className) {
+    var status = jQuery("#status");
+    var speed = 100;
+    status.fadeOut(speed, function () {
+      status.html(text)
+        .removeClass("connecting connected disconnected")
+        .addClass(className)
+        .fadeIn(speed);
+    });
+  };
+  
+  // ------------------------------------------
+  // Other Methods
+  // ------------------------------------------  
   
   /**
    * Rudimentary logging.
@@ -73,44 +109,41 @@
     var rendered = this.templates.messageTemplate(message);
     // Add the message content to the output div, and slide it in.
     jQuery(rendered).hide().prependTo("#echo-output").slideDown();
-  },
+  };
+  
+  /**
+   * @see Thywill.ApplicationInterface#connecting
+   */   
+  p.connecting = function () {
+    this.uiStatus("Connecting...", "connecting");
+    this.log("Client attempting to connect.");
+  };
+  
+  /**
+   * @see Thywill.ApplicationInterface#connected
+   */   
+  p.connected = function () {
+    this.uiStatus("Connected", "connected");
+    this.uiEnable();
+    this.log("Client connected.");
+  };
   
   /**
    * @see Thywill.ApplicationInterface#connectionFailure
    */
   p.connectionFailure = function () {
-    
-    
-    // TODO: something UI.
-
-    this.log("Client failed to connect to the server.");
+    this.uiStatus("Disconnected", "disconnected");
+    this.uiDisable();
+    this.log("Client failed to connect.");
   };
   
   /**
    * @see Thywill.ApplicationInterface#disconnected
    */  
   p.disconnected = function () {
-    
-    
-    
-    // TODO: something UI.
-    
-    
+    this.uiStatus("Disconnected", "disconnected");
+    this.uiDisable();
     this.log("Client disconnected.");
-  };
-  
-  /**
-   * @see Thywill.ApplicationInterface#reconnected
-   */   
-  p.reconnected = function () {
-    
-    
-    
-    
-    // TODO: something UI.
-    
-    
-    this.log("Client reconnected.");
   };
   
   // ----------------------------------------------------------
@@ -122,14 +155,10 @@
   // file is prepared as a resource.
   var app = new EchoApplication("{{{applicationId}}}");
   
-  // Set a callback to be invoked when the Thywill bootstrap process is 
-  // complete and applications can start to do their thing. That might complete
-  // before the DOM is ready, so use jQuery.ready() to make sure we wait for
-  // that.
-  Thywill.addReadyCallback(function () {
+  // Initial UI setup.
+  jQuery(document).ready(function () {
+    app.uiSetup();
     Thywill.ServerInterface.registerApplication(app);
-    jQuery(document).ready(function () {
-      app.setupUI();
-    });
   });
+  
 })();
