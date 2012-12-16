@@ -17,7 +17,7 @@ var Thywill = require("thywill");
 function CacheManager() {
   CacheManager.super_.call(this);
   this.componentType = "cacheManager";
-};
+}
 util.inherits(CacheManager, Thywill.getBaseClass("Component"));
 var p = CacheManager.prototype;
 
@@ -27,7 +27,7 @@ var p = CacheManager.prototype;
 
 /**
  * Create a new Cache instance.
- * 
+ *
  * @param {string} id
  *   An identifier for this cache.
  * @param {Object} size
@@ -44,7 +44,7 @@ p.createCache = function(id, size, timeout) {
 
 /**
  * Destroy a previously created cache.
- * 
+ *
  * @param {string} id
  *   An identifier for this cache.
  */
@@ -54,7 +54,7 @@ p.destroyCache = function(id) {
 
 /**
  * Obtain a previously created Cache instance.
- * 
+ *
  * @param {string} id
  *   An identifier for this cache.
  * @return {Cache}

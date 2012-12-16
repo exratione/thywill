@@ -17,23 +17,23 @@ var Component = require("./component/component");
 //-----------------------------------------------------------
 
 /**
- * @class 
- * The main controlling class for thywill. 
- * 
- * See the service scripts in /applications/[appName]/service/start.js for 
+ * @class
+ * The main controlling class for thywill.
+ *
+ * See the service scripts in /applications/[appName]/service/start.js for
  * examples of use.
  */
 function Thywill() {
-  Thywill.super_.call(this);  
+  Thywill.super_.call(this);
   this.componentType = "thywill";
   this.server = null;
   this.adminInterfaceServer = null;
-  
+
   // Was this Thywill instance provided with an http.Server (true) or did it
   // create a default http.Server as a part of launch and configuration
   // (false)?
   this.providedServer = true;
-  
+
   // Components.
   this.applications = {};
   this.cacheManager = null;
@@ -43,7 +43,7 @@ function Thywill() {
   this.minifier = null;
   this.resourceManager = null;
   this.templateEngine = null;
-};
+}
 util.inherits(Thywill, Component);
 var p = Thywill.prototype;
 
@@ -61,21 +61,21 @@ Thywill.CONFIG_TEMPLATE = {
         description: "Listen port if starting an Express server rather than using a provided server.",
         types: "integer",
         required: false
-      }  
+      }
     },
     groupId: {
       _configInfo: {
         description: "The group name or ID to own the Node process after startup.",
         types: "string",
         required: false
-      } 
+      }
     },
     userId: {
       _configInfo: {
         description: "The user name or ID to own the Node process after startup.",
         types: "string",
         required: false
-      } 
+      }
     }
   },
   adminInterface: {
@@ -84,7 +84,7 @@ Thywill.CONFIG_TEMPLATE = {
         description: "IP addresses permitted to connect to the administrative interface.",
         types: "array",
         required: true
-      } 
+      }
     },
     paths: {
       prepareForShutdown: {
@@ -92,7 +92,7 @@ Thywill.CONFIG_TEMPLATE = {
           description: "The full path that an HTTP shutdown request must hit. e.g. '/thywill/prepareForShutdown'",
           types: "string",
           required: true
-        } 
+        }
       }
     },
     port: {
@@ -100,7 +100,7 @@ Thywill.CONFIG_TEMPLATE = {
         description: "The port to listen on.",
         types: "integer",
         required: true
-      } 
+      }
     }
   }
 };
@@ -111,18 +111,18 @@ Thywill.CONFIG_TEMPLATE = {
 
 /**
  * Launch a Thywill server.
- * 
+ *
  * This is intended to be called from a startup script. See the Thywill
  * documentation for more information on how to set up Thywill as a service.
- * 
+ *
  * @param {Object} config
  *   An object representation of configuration.
- * @param {Application|Application[]} applications 
+ * @param {Application|Application[]} applications
  *   A single Application or array of Application instances to be registered.
  * @param {Object} [server]
  *   An http.Server or https.Server instance. If not provided, an HTTPServer will
  *   be created.
- * @param {Function} [callback] 
+ * @param {Function} [callback]
  *   Of the form function (error, thywill, server) {}, called on completion of
  *   setup, where thywill is the Thywill instance, server is a the Express
  *   server used, and error == null on success.
@@ -133,20 +133,20 @@ Thywill.launch = function (config, applications, server, callback) {
   // Create and configure the Thywill instance.
   var thywill = new Thywill();
   thywill.configureFromObject(config);
-  
-  // Check to see that there is a port defined if no server is provided, so 
+
+  // Check to see that there is a port defined if no server is provided, so
   // that a default server can be created.
   if (!server && (!config.thywill.launch || !config.thywill.launch.port)) {
     throw new Error("Configuration passed to Thywill.launch() must include thywill.launch.port if no Express server is provided.");
   }
-  
+
   if (!server) {
     thywill.providedServer = false;
-    
+
     // Start up an HTTP server. Note that this will need sufficient privileges
     // to bind to a privileged port of < 1024. E.g. you are running the script
     // while logged in as root or through sudo via something like:
-    // 
+    //
     // sudo /full/path/to/node /full/path/to/simpleExample.js
     //
     // Or more sensibly, you are using an init.d script.
@@ -154,15 +154,15 @@ Thywill.launch = function (config, applications, server, callback) {
     console.log("No server provided: starting http.Server on port " + config.thywill.launch.port);
     server = http.createServer(function (req, res) {
       res.statusCode = 404;
-      res.end("No such resource."); 
+      res.end("No such resource.");
     });
     server.listen(config.thywill.launch.port);
     console.log("http.Server started.");
   }
 
-  // Start thywill running. 
+  // Start thywill running.
   //
-  // We can either pass thywill.startup() a callback function that will be 
+  // We can either pass thywill.startup() a callback function that will be
   // invoked when startup is complete, or we can listen for the "thywill.ready"
   // event elsewhere in our code. Here we are passing a callback.
   thywill.startup(server, applications, function (error) {
@@ -175,7 +175,7 @@ Thywill.launch = function (config, applications, server, callback) {
     if (config.thywill.launch && config.thywill.launch.userId) {
       process.setuid(config.thywill.launch.userId);
     }
-    
+
     // Pass out the Thywill instance, the server, and any error message in the
     // callback.
     if (callback) {
@@ -185,12 +185,12 @@ Thywill.launch = function (config, applications, server, callback) {
 };
 
 /**
- * Tell a Thywill server to gracefully prepare for shutdown, but do not end 
- * the process. 
- * 
+ * Tell a Thywill server to gracefully prepare for shutdown, but do not end
+ * the process.
+ *
  * This is intended to be called from a shutdown script. See the Thywill
  * documentation for more information on how to set up Thywill as a service.
- * 
+ *
  * @param {Object} config
  *   An object representation of configuration.
  * @param {Function) callback
@@ -201,11 +201,11 @@ Thywill.prepareForShutdown = function (config, callback) {
   // Check the configuration with a dummy Thywill instance.
   var thywill = new Thywill();
   thywill.configureFromObject(config);
-  
+
   // Now go on to send a request to what is hopefully a running Thywill
   // instance and tell it to prepare for impending shutdown.
   console.log("Instructing Thywill to prepare for shutdown.");
-  
+
   var options = {
     host: "localhost",
     port: config.thywill.adminInterface.port,
@@ -225,15 +225,15 @@ Thywill.prepareForShutdown = function (config, callback) {
 
 /**
  * Obtain one of the Thywill base class constructors.
- * 
+ *
  * Various base classes must be easily available as a result of using
  * require("thywill"), so that other packages can build on them. We can't
  * just attach them to the Thywill constructor because the base class
  * definitions also have require("thywill") in them - that would create
  * circular references.
- * 
+ *
  * So instead, allow loading through this function.
- * 
+ *
  * @param {string} className
  *   The name of a Thywill base class.
  */
@@ -298,17 +298,17 @@ p.getFinalGid = function() {
     return this.config.thywill.launch.groupId;
   } else {
     return process.getgid();
-  } 
+  }
 };
 
 //-----------------------------------------------------------
 // Configuration - Synchronous Methods
 //-----------------------------------------------------------
 
-/** 
+/**
  * Configure this Thywill instance.
  *
- * @param {Object} obj 
+ * @param {Object} obj
  *   An object representation of configuration parameters.
  * @return {Object}
  *   The Thywill instance this function is called on.
@@ -324,7 +324,7 @@ p.configureFromObject = function (obj) {
 
 /**
  * Configure this Thywill instance.
- * 
+ *
  * @param {string} json
  *   A JSON representation of configuration parameters.
  * @return {Object}
@@ -336,7 +336,7 @@ p.configureFromJSON = function (json) {
 
 /**
  * Configure this Thywill instance.
- * 
+ *
  * @param {string} [filepath]
  *   Path to a JSON configuration file.
  * @return {Object}
@@ -351,23 +351,23 @@ p.configureFromFile = function (filepath) {
 //-----------------------------------------------------------
 
 /**
- * Start this thywill instance running: set up the configured components and 
+ * Start this thywill instance running: set up the configured components and
  * then register applications.
- * 
- * @param {Object} server 
+ *
+ * @param {Object} server
  *   An Express server object.
- * @param {Application|Application[]} applications 
+ * @param {Application|Application[]} applications
  *   A single application or array of application objects to be registered.
- * @param {Function} [callback] 
+ * @param {Function} [callback]
  *   Of the form function (error) {}, where error == null on success.
  */
 p.startup = function (server, applications, callback) {
   if (!this.config) {
-    this.announceReady("Thywill.startup(): not configured. Use one of the configuration functions before calling startup()."); 
+    this.announceReady("Thywill.startup(): not configured. Use one of the configuration functions before calling startup().");
     return;
   }
-  
-  var self = this; 
+
+  var self = this;
   this.readyCallback = callback;
   this.server = server;
   this._setupAdminInterfaceListener();
@@ -401,7 +401,7 @@ p._convertUserIdAndGroupId = function (callback) {
         var childProcess = exec("id -u " + self.config.thywill.launch.userId, function (error, stdoutBuffer, stderrBuffer) {
           var response = stdoutBuffer.toString().trim();
           if (/^\d+$/.test(response)) {
-            self.config.thywill.launch.userId = parseInt(response);
+            self.config.thywill.launch.userId = parseInt(response, 10);
           }
           asyncCallback.call(self, error);
         });
@@ -414,14 +414,14 @@ p._convertUserIdAndGroupId = function (callback) {
         var childProcess = exec("id -u " + self.config.thywill.launch.groupId, function (error, stdoutBuffer, stderrBuffer) {
           var response = stdoutBuffer.toString().trim();
           if (/^\d+$/.test(response)) {
-            self.config.thywill.launch.groupId = parseInt(response);
+            self.config.thywill.launch.groupId = parseInt(response, 10);
           }
           asyncCallback.call(self, error);
         });
       });
-    } 
+    }
   }
-  
+
   async.series(fns, callback);
 };
 
@@ -434,9 +434,9 @@ p._setupAdminInterfaceListener = function () {
   var config = this.config.thywill.adminInterface;
   this.adminInterfaceServer = http.createServer();
   this.adminInterfaceServer.listen(config.port);
-  
+
   // TODO: better admin responses, actual HTML.
-  
+
   this.adminInterfaceServer.on("request", function (req, res) {
     if (config.ipAddresses.indexOf(req.connection.remoteAddress) == -1) {
       res.statusCode = 500;
@@ -460,8 +460,8 @@ p._setupAdminInterfaceListener = function () {
  * Perform all the cleanup and other operations needed prior to shutdown,
  * but do not actually shutdown. Call the callback function only when
  * these operations are actually complete.
- * 
- * @param {Function} callback 
+ *
+ * @param {Function} callback
  *   Called when preparations are complete.
  */
 p._managePreparationForShutdown = function (callback) {
@@ -476,7 +476,7 @@ p._managePreparationForShutdown = function (callback) {
         self.server.on("close", asyncCallback);
         self.server.close();
       }
-    },        
+    },
     function (asyncCallback) {
       self.log.debug("Preparing clientInterface for shutdown.");
       self.clientInterface._prepareForShutdown(asyncCallback);
@@ -504,56 +504,56 @@ p._managePreparationForShutdown = function (callback) {
     function (asyncCallback) {
       self.log.debug("Preparing log for shutdown.");
       self.log._prepareForShutdown(asyncCallback);
-    },
+    }
   ];
   async.series(fns, callback);
 };
 
 /**
  * Initialize the components and register applications in the necessary order.
- * Later components may thereby make use of earlier ones in their 
+ * Later components may thereby make use of earlier ones in their
  * initialization. The order is:
- * 
+ *
  * log
  * resourceManager
  * messageManager
- * template 
+ * template
  * minify
  * applications     - which set various resources
  * clientInterface  - which needs to know about all the resources
- * 
- * @param {Application[]} passedApplications 
+ *
+ * @param {Application[]} passedApplications
  *   Array of object instances of classes derived from Application.
- * @param {Function} callback 
+ * @param {Function} callback
  *   Of the form function (error), where error == null on success.
  */
 p._initializeComponents = function (passedApplications, callback) {
   var self = this;
   var fns = [
     function (asyncCallback) {
-      self._initializeComponent("log", asyncCallback);      
+      self._initializeComponent("log", asyncCallback);
     },
     function (asyncCallback) {
-      self._initializeComponent("cacheManager", asyncCallback);      
+      self._initializeComponent("cacheManager", asyncCallback);
     },
     function (asyncCallback) {
-      self._initializeComponent("resourceManager", asyncCallback);      
+      self._initializeComponent("resourceManager", asyncCallback);
     },
     function (asyncCallback) {
-      self._initializeComponent("messageManager", asyncCallback);      
+      self._initializeComponent("messageManager", asyncCallback);
     },
     function (asyncCallback) {
-      self._initializeComponent("templateEngine", asyncCallback);      
+      self._initializeComponent("templateEngine", asyncCallback);
     },
     function (asyncCallback) {
-      self._initializeComponent("minifier", asyncCallback);      
+      self._initializeComponent("minifier", asyncCallback);
     },
     function (asyncCallback) {
-      self._initializeComponent("clientInterface", asyncCallback);      
-    },
+      self._initializeComponent("clientInterface", asyncCallback);
+    }
   ];
-  
-  // Add two loops through the applications array, if we have one, to 
+
+  // Add two loops through the applications array, if we have one, to
   // the list of functions to call.
   if (passedApplications) {
     if (!(passedApplications instanceof Array)) {
@@ -583,12 +583,12 @@ p._initializeComponents = function (passedApplications, callback) {
     );
   }
 
-  // Finish by starting up the clientInterface, which will process all the 
+  // Finish by starting up the clientInterface, which will process all the
   // resources defined so far.
   fns.push(function (asyncCallback) {
-    self.clientInterface._startup(asyncCallback);      
+    self.clientInterface._startup(asyncCallback);
   });
-  
+
   // Call the array of functions in order, each starting after the prior has
   // finished, and invoke the original callback function at the end.
   async.series(fns, callback);
@@ -596,10 +596,10 @@ p._initializeComponents = function (passedApplications, callback) {
 
 /**
  * Sort out the various details for an application; called during setup.
- * 
- * @param {Application} application 
+ *
+ * @param {Application} application
  *   An application instance.
- * @param {Function} callback 
+ * @param {Function} callback
  *   Of the form function (error), where error == null on success.
  */
 p._registerApplication = function (application, callback) {
@@ -611,10 +611,10 @@ p._registerApplication = function (application, callback) {
 
 /**
  * Create and initialize a component, and return the singleton instance of that component.
- * 
- * @param {string} componentType 
+ *
+ * @param {string} componentType
  *   The type of the component.
- * @param {Function} callback 
+ * @param {Function} callback
  *   Of the form function (error), where error == null on success.
  */
 p._initializeComponent = function (componentType, callback) {
@@ -622,11 +622,11 @@ p._initializeComponent = function (componentType, callback) {
   if (this[componentType]) {
     return this[componentType];
   }
-  
+
   // If there is no instance configured, then set it up. But do we have the
   // necessary configuration?
   if (!this.config[componentType] || typeof this.config[componentType].implementation != "object") {
-    callback.call(this, "Thywill._initializeComponent: missing " + componentType + " component definition in configuration."); 
+    callback.call(this, "Thywill._initializeComponent: missing " + componentType + " component definition in configuration.");
     return;
   }
 
@@ -668,29 +668,29 @@ p._initializeComponent = function (componentType, callback) {
     // Optionally, the constructor is in a property of this package export.
     var exported = require(implementation.name);
     if (implementation.property) {
-      ComponentConstructor = exported[property];  
+      ComponentConstructor = exported[property];
     } else {
       ComponentConstructor = exported;
     }
   } else {
-    callback.call(this, "Thywill._initializeComponent: invalid implementation type '" + implementation.type + "' for " + componentType + " component definition."); 
+    callback.call(this, "Thywill._initializeComponent: invalid implementation type '" + implementation.type + "' for " + componentType + " component definition.");
     return;
   }
-  
+
   // Did we get a function? I hope so.
   if (typeof ComponentConstructor != "function") {
     callback.call(this, "Thywill._initializeComponent: component implementation definition for " + componentType + " did not yield a constructor function");
-    return; 
+    return;
   }
-  
+
   // Now create the component, finally.
   this[componentType] = new ComponentConstructor();
-  
-  // Check the configuration: this will throw errors, unlike most of 
+
+  // Check the configuration: this will throw errors, unlike most of
   // thywill's setup.
   this[componentType]._checkConfiguration(this.config[componentType]);
-  
-  // Note that the returned instance may not yet be finished with its 
+
+  // Note that the returned instance may not yet be finished with its
   // configuration. When the component is done and ready for use, it will emit
   // an event and the callback function will be invoked.
   this[componentType]._configure(this, this.config[componentType], callback);

@@ -17,7 +17,7 @@ var Thywill = require("thywill");
 function TemplateEngine() {
   TemplateEngine.super_.call(this);
   this.componentType = "template";
-};
+}
 util.inherits(TemplateEngine, Thywill.getBaseClass("Component"));
 var p = TemplateEngine.prototype;
 
@@ -27,7 +27,7 @@ var p = TemplateEngine.prototype;
 
 /**
  * Render a template based on a string and replacement tokens.
- * 
+ *
  * @param {string} template
  *   The template string, e.g. something along the lines of
  *   "Insert this value: <%= value %>" - but dependent on the implementation
@@ -38,7 +38,7 @@ var p = TemplateEngine.prototype;
  *   The rendered template.
  */
 p.render = function (template, values) {
-  throw new Error("Not implemented.");  
+  throw new Error("Not implemented.");
 };
 
 //-----------------------------------------------------------

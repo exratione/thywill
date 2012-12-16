@@ -13,7 +13,7 @@ var Thywill = require("thywill");
  * @class
  * A Cache implementation manages caching of data.
  */
-function Cache() {};
+function Cache() {}
 var p = Cache.prototype;
 
 //-----------------------------------------------------------
@@ -22,7 +22,7 @@ var p = Cache.prototype;
 
 /**
  * Return a JSON string representing this object.
- * 
+ *
  * @param {string} key
  *   The key by which the cached item can be retrieved.
  * @return {mixed}
@@ -34,7 +34,7 @@ p.get = function (key) {
 
 /**
  * Return a JSON string representing this object.
- * 
+ *
  * @param {string} key
  *   The key by which the cached item can be retrieved.
  * @param {mixed} value
@@ -47,7 +47,7 @@ p.set = function (key, value) {
 /**
  * Remove a key from the cache, or clear the entire cache if no key is
  * provided.
- * 
+ *
  * @param {string} [key]
  *   The key by which the cached item can be retrieved.
  */

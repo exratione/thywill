@@ -14,7 +14,7 @@ function Log() {
     "warn",
     "error"
   ];
-};
+}
 util.inherits(Log, Thywill.getBaseClass("Component"));
 var p = Log.prototype;
 
@@ -23,13 +23,13 @@ var p = Log.prototype;
 //-----------------------------------------------------------
 
 p.debug = function (message) {
-  throw new Error("Not implemented."); 
+  throw new Error("Not implemented.");
 };
 p.warn = function (message) {
-  throw new Error("Not implemented."); 
+  throw new Error("Not implemented.");
 };
 p.error = function (message) {
-  throw new Error("Not implemented."); 
+  throw new Error("Not implemented.");
 };
 
 //-----------------------------------------------------------

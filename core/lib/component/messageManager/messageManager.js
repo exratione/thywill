@@ -19,12 +19,12 @@ var Message = require("./message");
 function MessageManager() {
   MessageManager.super_.call(this);
   this.componentType = "messageManager";
-  
-  // Convenience copy of the Message origins and destinations types; it's 
+
+  // Convenience copy of the Message origins and destinations types; it's
   // usually easier if you don't have to load the Message class.
   this.origins = Message.ORIGINS;
   this.destinations = Message.DESTINATIONS;
-};
+}
 util.inherits(MessageManager, Thywill.getBaseClass("Component"));
 var p = MessageManager.prototype;
 
@@ -34,7 +34,7 @@ var p = MessageManager.prototype;
 
 /**
  * Obtain a new Message object.
- * 
+ *
  * @param {string} data
  *   The body of the message.
  * @param {string} sessionId

@@ -1,5 +1,5 @@
 /**
- * @fileOverview 
+ * @fileOverview
  * Component class definition.
  */
 
@@ -11,7 +11,7 @@ var util = require("util");
 //-----------------------------------------------------------
 
 /**
- * @class 
+ * @class
  * The superclass for most core Thywill classes.
  */
 function Component() {
@@ -19,14 +19,14 @@ function Component() {
   this.componentType = "component";
   this.config = null;
   this.ready = false;
-  this.readyCallback = null;  
+  this.readyCallback = null;
   this.thywill = null;
-  
+
   // Used to make callback code a little more comprehensible, since most
-  // callbacks are of the form function (error, results...) where 
+  // callbacks are of the form function (error, results...) where
   // error == null on success.
   this.NO_ERRORS = null;
-};
+}
 util.inherits(Component, EventEmitter);
 var p = Component.prototype;
 
@@ -36,7 +36,7 @@ var p = Component.prototype;
 
 /**
  * The configuration template. Not used in this class, as it isn't intended
- * to be instantiated, but subclasses should have a template by which 
+ * to be instantiated, but subclasses should have a template by which
  * configuration can be validated.
  */
 Component.CONFIG_TEMPLATE = null;
@@ -49,21 +49,22 @@ Component.CONFIG_TEMPLATE = null;
  * Announce that the component object is ready for use. This implies that
  * all asynchronous configuration and initialization tasks required for this
  * object to be used are now complete.
- * 
- * @param {string} error 
+ *
+ * @param {string} error
  *   Any errors generated during setup, or null on success.
  */
 p._announceReady = function (error) {
   if (!error) {
     this.ready = true;
   }
-  if (this.componentType == "thywill") {
+  var eventName, log;
+  if (this.componentType === "thywill") {
     // Set a suitable event name.
-    var eventName = "thywill.ready";
-    var log = this.log;
+    eventName = "thywill.ready";
+    log = this.log;
   } else {
-    var eventName = "thywill." + this.componentType + ".ready";
-    var log = this.thywill.log;
+    eventName = "thywill." + this.componentType + ".ready";
+    log = this.thywill.log;
   }
   // Log if there is a log to log to.
   if (log && !error) {
@@ -79,8 +80,8 @@ p._announceReady = function (error) {
 /**
  * If this class has a configuration template associated with its constructor,
  * then check it against the provided configuration.
- * 
- * @param {Object} config 
+ *
+ * @param {Object} config
  *   The configuration object for this instance.
  */
 p._checkConfiguration = function (config) {
@@ -90,10 +91,10 @@ p._checkConfiguration = function (config) {
 };
 
 /**
- * Recursively step through the configuration and the matching template. The 
+ * Recursively step through the configuration and the matching template. The
  * template looks like this - but may have multiple levels of objects, just
  * like the configuration.
- * 
+ *
  * {
  *  value1: {
  *    _configInfo: {
@@ -104,40 +105,41 @@ p._checkConfiguration = function (config) {
  *  },
  *  value2: ...
  * }
- * 
+ *
  * @param {Object} configObj
  *   A portion of the configuration object.
  * @param {Object} templateObj
  *   An object describing the desired configuration.
  * @param {string} propertyChain
- *   A string to keep track of which configuration property is being inspected. 
+ *   A string to keep track of which configuration property is being inspected.
  */
 p._checkConfigurationRecursively = function (configObj, templateObj, propertyChain) {
   for (var property in templateObj) {
-    
-    if (propertyChain) { 
-      var thisPropertyChain = propertyChain + "." + property;
+
+    var thisPropertyChain;
+    if (propertyChain) {
+      thisPropertyChain = propertyChain + "." + property;
     } else {
-      var thisPropertyChain = property;
+      thisPropertyChain = property;
     }
 
     var configInfo = templateObj[property]._configInfo;
     var configValue = configObj[property];
-    
+
     // If this is a nested set of further properties then recurse.
     if (configValue instanceof Object) {
       this._checkConfigurationRecursively(configValue, templateObj[property], thisPropertyChain);
     }
-    
-    // It's possible that there is no configInfo for this level of 
+
+    // It's possible that there is no configInfo for this level of
     // configuration; e.g. it's just a holder for sub-values. If this is the
     // case, then skip to the next property.
     if (!configInfo) {
       continue;
     }
-    
+
     // Is this property required and/or missing?
-    if (configValue == undefined) {
+    if (configValue === undefined) {
       if (configInfo.required) {
         this._throwConfigurationError(thisPropertyChain, "required, but missing");
       } else {
@@ -145,7 +147,7 @@ p._checkConfigurationRecursively = function (configObj, templateObj, propertyCha
         continue;
       }
     }
-    
+
     // Check type.
     if (configInfo.types) {
       if (!(configInfo.types instanceof Array)) {
@@ -163,30 +165,26 @@ p._checkConfigurationRecursively = function (configObj, templateObj, propertyCha
         this._throwConfigurationError(thisPropertyChain, "invalid type, found " + configValueType + " expecting one of [" + configInfo.types.toString() + "]");
       }
     }
-    
+
     // Check allowed values.
     if (configInfo.allowedValues instanceof Array) {
-      var found = false;
-      for (var i = 0, l = configInfo.allowedValues.length; i < l; i++) {
-        if (configInfo.allowedValues[i] == configValue) {
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
+      var isAllowed = configInfo.allowedValues.some(function (element, index, array) {
+        return (element === configValue);
+      });
+      if (!isAllowed) {
         this._throwConfigurationError(thisPropertyChain, "invalid value, found " + configValue + " expecting one of [" + configInfo.allowedValues.toString() + "]");
       }
     }
-    
+
   }
 };
 
 /**
  * An augmented type detection function.
- * 
- * @param value 
+ *
+ * @param value
  *   Any value.
- * @return {string} 
+ * @return {string}
  *   One of: "object", "array", "boolean", "string", "number", "integer",
  *   "undefined", "null", "function".
  */
@@ -195,17 +193,17 @@ p._getType = function (value) {
   if (type == "object") {
     if (value instanceof Array) {
       type = "array";
-    } else if(value == null) {
+    } else if (value === null) {
       type = "null";
     }
-  } else if(type == "number") {
-    if (value % 1 == 0) {
+  } else if (type === "number") {
+    if (value % 1 === 0) {
       type = "integer";
     }
-  } else if(type == "string") {
+  } else if (type === "string") {
     if (value.match(/^\d+$/)) {
       type = "integer";
-    } else if(value.match(/^\d*\.?\d*$/)) {
+    } else if (value.match(/^\d*\.?\d*$/)) {
       type = "number";
     }
   }
@@ -214,7 +212,7 @@ p._getType = function (value) {
 
 /**
  * Throw an error based on a configuration issue.
- * 
+ *
  * @param {string} propertyChain
  *   A name of the property where the error was found.
  * @param {string} error
@@ -222,17 +220,14 @@ p._getType = function (value) {
  */
 p._throwConfigurationError = function (propertyChain, error) {
   throw new Error(
-    "Configuration error for constructor " 
-    + this.constructor.name
-    + " and configuration property " 
-    + propertyChain + ": " + error
+    "Configuration error for constructor " + this.constructor.name + " and configuration property " + propertyChain + ": " + error
   );
 };
 
 /**
  * Shortcut for calling a superclass function. All parameters after the method
  * name are passed through.
- * 
+ *
  * @param {string} methodName
  *   Name of the method to call.
  * @return {mixed}
@@ -249,12 +244,12 @@ p.invokeSuperclassMethod = function(methodName) {
 
 /**
  * Configure and initialize the component instance.
- * 
- * @param {Thywill} thywill 
+ *
+ * @param {Thywill} thywill
  *   The thywill instance, used to obtain component references.
- * @param {Object} config 
+ * @param {Object} config
  *   An object representation ofconfiguration data.
- * @param {Function} callback 
+ * @param {Function} callback
  *   Of the form function (error) where error == null on success.
  */
 p._configure = function (thywill, config, callback) {
@@ -263,13 +258,13 @@ p._configure = function (thywill, config, callback) {
 
 /**
  * Called when the application will be shutdown: do everything that needs to be
- * done, and call the callback function ONLY WHEN EVERYTHING YOU NEED TO DO 
+ * done, and call the callback function ONLY WHEN EVERYTHING YOU NEED TO DO
  * IS COMPLETE.
- * 
+ *
  * @param {Function} callback
  */
 p._prepareForShutdown = function (callback) {
-  throw new Error("Not implemented."); 
+  throw new Error("Not implemented.");
 };
 
 

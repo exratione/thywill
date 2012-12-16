@@ -12,7 +12,7 @@ var Thywill = require("thywill");
 /**
  * @class
  * A Message instance wraps data for delivery between client and server.
- * 
+ *
  * @param {string} data
  *   The body of the message.
  * @param {string} sessionId
@@ -33,7 +33,7 @@ function Message(data, sessionId, origin, destination, fromApplicationId, toAppl
   this.destination = destination;
   this.fromApplicationId = fromApplicationId;
   this.toApplicationId = toApplicationId;
-};
+}
 var p = Message.prototype;
 
 //-----------------------------------------------------------
@@ -53,7 +53,7 @@ Message.DESTINATIONS = Message.ORIGINS;
 
 /**
  * Return a JSON string representing this object.
- * 
+ *
  * @return {string}
  *   A JSON string representing this instance.
  */
@@ -63,23 +63,19 @@ p.encode = function () {
   } catch (e) {
     // TODO log it.
     return null;
-  }  
+  }
 };
 
 /**
- * A valid message has at least values for data and sessionId. A null 
+ * A valid message has at least values for data and sessionId. A null
  * toApplicationId implies delivery to all applications, but is still valid.
- * 
+ *
  * @return {boolean}
  *   True if this instance is a valid message.
  */
 p.isValid = function () {
   // TODO more rigorous check.
-  return (
-   this.data 
-   && this.sessionId 
-   && this.fromApplicationId
-  );
+  return (this.data && this.sessionId && this.fromApplicationId);
 };
 
 //-----------------------------------------------------------

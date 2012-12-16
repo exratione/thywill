@@ -11,11 +11,11 @@
  * @class
  * Instances represent resources such as CSS and Javascript files. The provided
  * attributes object is important and has the following form and defaults:
- * 
+ *
  * {
  *   // Used for accessing the resource through the client, e.g. a URI like
  *   // /my/resource.html
- *   clientPath: null, 
+ *   clientPath: null,
  *   // The encoding for the resource data, either in the provided buffer, or
  *   // in the originFilePath.
  *   encoding: "utf8",
@@ -37,16 +37,16 @@
  *   // connection. e.g. to order Javascript files in a web page.
  *   weight: 0,
  * }
- * 
+ *
  * Other arbitrary attribute names can be used, but the following names are
  * reserved: buffer, stored.
- * 
+ *
  * @param {Buffer} buffer
  *   A Buffer instance containing resource data, or null for resources that
  *   are not loaded into memory.
  * @param {Object} attributes
  *   Attributes for this resource.
- *   
+ *
  */
 function Resource(buffer, attributes) {
   this.clientPath = null;
@@ -57,18 +57,20 @@ function Resource(buffer, attributes) {
   this.servedBy = Resource.SERVED_BY.THYWILL;
   this.type = Resource.TYPES.TEXT;
   this.weight = 0;
-  
+
   // Set the attributes.
   attributes = attributes || {};
   for (var property in attributes) {
     this[property] = attributes[property];
   }
-  
+
+  // TODO: some validation. e.g. clientPath can't be null
+
   // The data buffer.
   this.buffer = buffer;
   // Is this stored by a resource manager or not?
   this.stored = false;
-};
+}
 var p = Resource.prototype;
 
 //-----------------------------------------------------------
@@ -81,7 +83,7 @@ var p = Resource.prototype;
 Resource.SERVED_BY = {
   // Served through Thywill's HTTPServer listener.
   THYWILL: "thywill",
-  // Served by some other local process. E.g. Express running on the same 
+  // Served by some other local process. E.g. Express running on the same
   // HTTPServer object, paths directed by the proxy to Nginx or Apache on the
   // same server, etc.
   OTHER_LOCAL: "otherLocal"
@@ -89,7 +91,7 @@ Resource.SERVED_BY = {
 
 /**
  * MIME types are generally used to define different resource types.
- */ 
+ */
 Resource.TYPES = {
   // Standard MIME types.
   CSS: "text/css",
@@ -107,7 +109,7 @@ Resource.TYPES = {
 /**
  * Is this a Resource intended to be piped from a file rather than held in
  * memory?
- * 
+ *
  * @return {boolean}
  *   Return true is this resource is to be piped from file contents.
  */
@@ -120,7 +122,7 @@ p.isPipedResource = function () {
 /**
  * Return the resource contents as a string, provided that the contents are
  * held in memory.
- * 
+ *
  * @return {string}
  *   The resource data.
  */

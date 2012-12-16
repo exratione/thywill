@@ -26,7 +26,8 @@ var manifest = {
     clientPath: "/shapes/js/modernizr.min.js",
     encoding: encoding,
     minified: true,
-    type: Resource.TYPES.JAVASCRIPT, 
+    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
+    type: Resource.TYPES.JAVASCRIPT,
     weight: -30
   },
   // Add jQuery as a resource, setting it a lower weight than the default
@@ -36,16 +37,17 @@ var manifest = {
     clientPath: "/shapes/js/jquery.min.js",
     encoding: encoding,
     minified: true,
-    type: Resource.TYPES.JAVASCRIPT, 
+    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
+    type: Resource.TYPES.JAVASCRIPT,
     weight: -20
-
   },
   // Add the plugins.js code from HTML5 Boilerplate.
   "../../../thirdParty/html5boilerplate/plugins.js": {
     clientPath: "/shapes/js/plugins.js",
     encoding: encoding,
     minified: false,
-    type: Resource.TYPES.JAVASCRIPT, 
+    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
+    type: Resource.TYPES.JAVASCRIPT,
     weight: -10
   },    
   // Add json2.js, required by Backbone.js.
@@ -53,7 +55,8 @@ var manifest = {
     clientPath: "/shapes/js/json2.js",
     encoding: encoding,
     minified: false,
-    type: Resource.TYPES.JAVASCRIPT, 
+    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
+    type: Resource.TYPES.JAVASCRIPT,
     weight: 10
   },
   // Add Underscore.js, required by Backbone.js.
@@ -61,22 +64,16 @@ var manifest = {
     clientPath: "/shapes/js/underscore.min.js",
     encoding: encoding,
     minified: true,
+    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
     type: Resource.TYPES.JAVASCRIPT, 
     weight: 20
-  },
-  // Add Backbone.js.
-  "../../../thirdParty/backbone.js/backbone.0.9.2.min.js": {
-    clientPath: "/shapes/js/backbone.min.js",
-    encoding: encoding,
-    minified: true,
-    type: Resource.TYPES.JAVASCRIPT, 
-    weight: 30
   },
   // Add Handlebars.js.
   "../../../thirdParty/handlebars.js/handlebars.1.0.0.beta.6.min.js": {
     clientPath: "/shapes/js/handlebars.min.js",
     encoding: encoding,
     minified: true,
+    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
     type: Resource.TYPES.JAVASCRIPT, 
     weight: 40
   },
@@ -85,6 +82,7 @@ var manifest = {
     clientPath: "/shapes/css/html5boilerplate.css",
     encoding: encoding,
     minified: false,
+    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
     type: Resource.TYPES.CSS, 
     weight: 0
   },
@@ -93,6 +91,7 @@ var manifest = {
     clientPath: "/shapes/css/client.css",
     encoding: encoding,
     minified: false,
+    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
     type: Resource.TYPES.CSS, 
     weight: 10
   }

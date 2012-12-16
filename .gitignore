@@ -2,4 +2,5 @@
 .project
 *sublime-*
 node_modules
+npm-debug.log
 tools/deploy/environment

@@ -55,9 +55,9 @@ button.enabled:hover {
   background-color: #ebebf5;
 	border: 1px solid #cccccc;
 	height: 200px;
-	margin: 20px 0 15px; 
+	margin: 20px 0 15px;
 	overflow-y: auto;
-	width: 500px;  
+	width: 500px;
 }
 .echoed-message {
 	padding: 10px;

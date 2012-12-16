@@ -22,7 +22,7 @@ function Application(id) {
   }
   this.componentType = "application";
   this.id = id;
-};
+}
 util.inherits(Application, Thywill.getBaseClass("Component"));
 var p = Application.prototype;
 
@@ -32,7 +32,7 @@ var p = Application.prototype;
 
 /**
  * Send a message, usually to one specific client.
- * 
+ *
  * @param {Message} message
  *   Instance of the Message class.
  */
@@ -40,10 +40,10 @@ p.send = function (message) {
   this.thywill.clientInterface.send(message);
 };
 
-/** 
+/**
  * A utility function for creating and storing a bootstrap resource directly
  * from a file, loading its contents into memory.
- * 
+ *
  * @param {string} filePath
  *   An absolute path to the file to be loaded.
  * @param {Object} attributes
@@ -61,12 +61,12 @@ p.storeBootstrapResourceFromFile = function (filePath, attributes, callback) {
   attributes.isGenerated = false;
   // Create the resource and pass it back out in the callback.
   this.thywill.resourceManager.createResourceFromFile(
-    attributes.originFilePath, 
+    attributes.originFilePath,
     attributes,
     function (error, resource) {
       if (error) {
         callback.call(self, error);
-      } else { 
+      } else {
         self.thywill.clientInterface.storeBootstrapResource(resource, callback);
       }
     }
@@ -75,21 +75,21 @@ p.storeBootstrapResourceFromFile = function (filePath, attributes, callback) {
 
 /**
  * Create bootstrap resources from a manifest object. The manifest object
- * should be of the following form, listing off files and resource 
+ * should be of the following form, listing off files and resource
  * attributes. The contents of each file will be loaded into memory:
- * 
+ *
  * {
  *   "/file/system/path/to/file.css": {
  *     clientPath: "/path/to/file.css",
  *     encoding: encoding,
  *     minified: false,
- *     type: resourceManager.types.CSS, 
+ *     type: resourceManager.types.CSS,
  *     weight: 0,
  *     ... other attributes
  *   },
  *   ...
  * }
- * 
+ *
  * @param {Object} manifest
  * @param {Function} callback
  *   Of the form function (error) where error = null on success.
@@ -123,13 +123,13 @@ p.storeBootstrapResourcesFromManifest = function (manifest, callback) {
  * loaded by a client immediately on connection. These will typically include
  * third party libraries and the core Javascript client code that starts an
  * application running, renders a user interface, and so on.
- * 
+ *
  * These bootstrap resources are defined via the resourceManager and
  * clientInterface components:
- * 
+ *
  * var resource = this.thywill.resourceManager.createResource(type, ...);
  * this.thywill.clientInterface.storeBootstrapResource(resource, callback);
- * 
+ *
  * @param {Function} callback
  *   Of the form function (error) {}, where error == null on success.
  */
@@ -139,32 +139,32 @@ p._defineBootstrapResources = function (callback) {
 
 /**
  * Called when a message is received from a client.
- * 
+ *
  * @param {Message} message
  *   Instance of the Message class.
  */
 p.receive = function (message) {
-  throw new Error("Not implemented.");  
+  throw new Error("Not implemented.");
 };
 
 /**
  * Called when a client connects or reconnects.
- * 
+ *
  * @param {string} sessionId
  *   Unique ID of the session.
  */
 p.connection = function (sessionId) {
-  throw new Error("Not implemented.");  
+  throw new Error("Not implemented.");
 };
 
 /**
  * Called when a client disconnects.
- * 
+ *
  * @param {string} sessionId
  *   Unique ID of the session.
  */
 p.disconnection = function (sessionId) {
-  throw new Error("Not implemented.");  
+  throw new Error("Not implemented.");
 };
 
 //-----------------------------------------------------------

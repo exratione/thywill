@@ -18,7 +18,7 @@ var Thywill = require("thywill");
 function ClientInterface() {
   ClientInterface.super_.call(this);
   this.componentType = "clientInterface";
-};
+}
 util.inherits(ClientInterface, Thywill.getBaseClass("Component"));
 var p = ClientInterface.prototype;
 
@@ -28,7 +28,7 @@ var p = ClientInterface.prototype;
 
 /**
  * Called when a message is received from a client.
- * 
+ *
  * @param {Message} message
  *   A Message instance.
  */
@@ -40,15 +40,15 @@ p.receive = function (message) {
       process.nextTick(function () {
         self.thywill.applications[id].receive(message);
       });
-    }    
+    }
   } else if (this.thywill.applications[message.toApplicationId]) {
-    this.thywill.applications[message.toApplicationId].receive(message); 
+    this.thywill.applications[message.toApplicationId].receive(message);
   }
 };
 
 /**
  * Called when a client connects or reconnects.
- * 
+ *
  * @param {string} sessionId
  *   Unique ID of the session.
  */
@@ -63,7 +63,7 @@ p.connection = function (sessionId) {
 
 /**
  * Called when a client disconnects.
- * 
+ *
  * @param {string} sessionId
  *   Unique ID of the session.
  */
@@ -83,20 +83,20 @@ p.disconnection = function (sessionId) {
 /**
  * Start the client interface running - should be the very last initialization
  * call, after all resources are set by all applications and components.
- * 
- * @param {Function} [callback] 
- *   Of the form function (error) {}, where error == null on success. 
+ *
+ * @param {Function} [callback]
+ *   Of the form function (error) {}, where error == null on success.
  */
 p._startup = function (callback) {
-  throw new Error("Not implemented.");  
+  throw new Error("Not implemented.");
 };
 
 /**
  * Define a resource to be loaded immediately on client connection.
- * 
+ *
  * @param {Resource} resource
  *   A Resource instance.
- * @param {Function} [callback] 
+ * @param {Function} [callback]
  *   Of the form function (error) {}, where error == null on success.
  */
 p.storeBootstrapResource = function (resource, callback) {
@@ -105,18 +105,18 @@ p.storeBootstrapResource = function (resource, callback) {
 
 /**
  * Return all bootstrap resource objects defined to date.
- * 
- * @param {Function} [callback] 
+ *
+ * @param {Function} [callback]
  *   Of the form function (error) {}, where error == null on success.
  */
 p.getBootstrapResources = function (callback) {
-  throw new Error("Not implemented."); 
+  throw new Error("Not implemented.");
 };
 
 /**
  * Define a resource to be loaded at some point after client connection.
- * 
- * @param {Function} [callback] 
+ *
+ * @param {Function} [callback]
  *   Of the form function (error) {}, where error == null on success.
  */
 p.storeResource = function (resource, callback) {
@@ -124,12 +124,12 @@ p.storeResource = function (resource, callback) {
 };
 
 /**
- * Return a resource to the callback, or null if no resource is mapped to 
+ * Return a resource to the callback, or null if no resource is mapped to
  * this path.
- * 
+ *
  * @param {string} clientPath
  *   A request path.
- * @param {Function} [callback] 
+ * @param {Function} [callback]
  *   Of the form function (error, resource) {}, where error == null on success
  *   and resource is the resource to be returned.
  */
@@ -139,43 +139,43 @@ p.getResource = function (clientPath, callback) {
 
 /**
  * Send a message out to a particular client.
- * 
+ *
  * @param {Message} message
  *   A Message instance.
  */
 p.send = function (message) {
-  throw new Error("Not implemented.");  
+  throw new Error("Not implemented.");
 };
 
 /**
  * Store key-value data for a specific session.
- * 
+ *
  * @param {string} sessionId
  *   A unique session ID.
  * @param {string} key
  *   Key for the data.
  * @param {Object} value
  *   Any object.
- * @param {Function} [callback] 
+ * @param {Function} [callback]
  *   Of the form function (error) {}, where error == null on success.
  */
 p.setSessionData = function (sessionId, key, value, callback) {
-  throw new Error("Not implemented."); 
+  throw new Error("Not implemented.");
 };
 
 /**
  * Retrieve the value data for a specific session and key.
- * 
+ *
  * @param {string} sessionId
  *   A unique session ID.
  * @param {string} key
  *   Key for the data.
- * @param {Function} [callback] 
+ * @param {Function} [callback]
  *   Of the form function (error, value) {}, where error == null on success
  *   and value is the value to be returned.
  */
 p.getSessionData = function (sessionId, key, callback) {
-  throw new Error("Not implemented."); 
+  throw new Error("Not implemented.");
 };
 
 //-----------------------------------------------------------

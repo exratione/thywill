@@ -2,4 +2,6 @@ exclude .git
 exclude .gitignore
 exclude .project
 exclude .settings
-protect node_modules
+exclude node_modules
+exclude npm-debug.log
+exclude *sublime-*

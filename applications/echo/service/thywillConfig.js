@@ -33,4 +33,4 @@ config.minifier.jsBaseClientPath = "/echo/js";
 //Exports - Configuration
 //-----------------------------------------------------------
 
-module.exports = config; 
+module.exports = config;

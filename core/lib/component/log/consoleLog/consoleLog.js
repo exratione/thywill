@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * ConsoleLog class definition. 
+ * ConsoleLog class definition.
  */
 
 var util = require("util");
@@ -17,7 +17,7 @@ var Thywill = require("thywill");
 function ConsoleLog() {
   ConsoleLog.super_.call(this);
   this.level = this.levels.indexOf("debug");
-};
+}
 util.inherits(ConsoleLog, Thywill.getBaseClass("Log"));
 var p = ConsoleLog.prototype;
 
@@ -32,7 +32,7 @@ ConsoleLog.CONFIG_TEMPLATE = {
       types: "string",
       required: true,
       allowedValues: ['debug', 'warn', 'error']
-    } 
+    }
   }
 };
 
@@ -42,20 +42,20 @@ ConsoleLog.CONFIG_TEMPLATE = {
 
 /**
  * The config object is expected to have the following form:
- * 
+ *
  * {
  *   "component": "console",
  *   "level": "debug"
  * }
- * 
+ *
  * @see Component#_configure
  */
 p._configure = function (thywill, config, callback) {
   // Minimal configuration - all we're doing here is storing it for posterity.
   this.thywill = thywill;
-  this.config = config; 
+  this.config = config;
   this.readyCallback = callback;
-  
+
   if (this.config.level) {
     if (this.levels.indexOf(this.config.level) != -1) {
       this.level = this.levels.indexOf(this.config.level);
@@ -64,7 +64,7 @@ p._configure = function (thywill, config, callback) {
       return;
     }
   }
-  
+
   // There are no asynchronous initialization functions here or in the superclasses.
   // So we can just call them and forge ahead without having to wait around or check
   // for completion.

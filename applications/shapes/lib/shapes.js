@@ -22,8 +22,13 @@ var bootstrapManifest = require("./bootstrapManifest");
  * 
  * This provides a UI where a user can request new shapes to be made available
  * and then place the shapes on a canvas.
+ * 
+ * @param {string} id
+ *   The application ID.
+ * @param {object} app
+ *   An Express application instance.
  */
-function Shapes(id) {
+function Shapes(id, app) {
   Shapes.super_.call(this, id);
 };
 util.inherits(Shapes, Thywill.getBaseClass("Application"));

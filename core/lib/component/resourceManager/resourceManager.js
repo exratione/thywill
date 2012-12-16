@@ -27,7 +27,7 @@ function ResourceManager() {
   this.types = Resource.TYPES;
   // Another convenience copy.
   this.servedBy = Resource.SERVED_BY;
-};
+}
 util.inherits(ResourceManager, Thywill.getBaseClass("Component"));
 var p = ResourceManager.prototype;
 
@@ -38,7 +38,7 @@ var p = ResourceManager.prototype;
 /**
  * Obtain a new Resource object. The object returned in the callback function
  * is not stored.
- * 
+ *
  * @param {string} path
  *   An absolute path to a file.
  * @param {Object} attributes
@@ -47,7 +47,7 @@ var p = ResourceManager.prototype;
  * @param {Function} callback
  *   Of the form function (error, resource), where error == null on success
  *   and resource is the new Resource instance.
- * 
+ *
  * @see Resource
  */
 p.createResourceFromFile = function(path, attributes, callback) {
@@ -64,6 +64,9 @@ p.createResourceFromFile = function(path, attributes, callback) {
 
 /**
  * Obtain a list of all clientPaths for resources served by Thywill.
+ *
+ * TODO: these should have callbacks, be implemented by descendant classes.
+ *
  */
 p.getClientPathsServedByThywill = function() {
   return this.clientPathsServedByThywill;
@@ -84,16 +87,16 @@ p.removeClientPathServedByThywill = function(path) {
 
 /**
  * Obtain a new Resource object. The object returned is not stored.
- * 
+ *
  * @param {Buffer|string|null} data
  *   A Buffer instance containing the resource data, or a string. A string will
  *   be used to create a Buffer with the encoding provided in the attributes
- *   object. This can be null for resources that don't need to have data in 
+ *   object. This can be null for resources that don't need to have data in
  *   memory.
- * @param {Object} attributes
+ * @param {object} attributes
  *   Other attributes of this resource - see the Resource class
  *   for more information.
- * 
+ *
  * @see Resource
  */
 p.createResource = function(data, attributes) {
@@ -102,12 +105,12 @@ p.createResource = function(data, attributes) {
 
 /**
  * Store a Resource object.
- * 
+ *
  * @param {string} key
  *   The key by which the stored resource can be retrieved.
  * @param {Resource} resource
  *   A Resource instance.
- * @param {Function} callback
+ * @param {function} callback
  *   Of the form function (error), where error == null on success.
  */
 p.store = function (key, resource, callback) {
@@ -117,7 +120,7 @@ p.store = function (key, resource, callback) {
 /**
  * Pass the object associated with the key, or null if no such object, to the
  * callback. Remove the object from the resourceManager.
- * 
+ *
  * @param {string} key
  *   The key under which a resource was earlier stored.
  * @param {Function} callback
@@ -130,7 +133,7 @@ p.remove = function (key, callback) {
 
 /**
  * Load a stored resource.
- * 
+ *
  * @param {string} key
  *   The key under which a resource was earlier stored.
  * @param {Function} callback

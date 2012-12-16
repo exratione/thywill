@@ -10,14 +10,14 @@ and dynamic content respectively. There are two options for frontend servers:
   * All content is served over SSL
   * Stunnel decrypts HTTPS traffic and passes HTTP traffic to Varnish
   * Varnish manages distribution of traffic between Node.js and Nginx backends
-  
+
 2) HAProxy
 
   * All content is served over SSL
   * HAProxy decrypts HTTPS traffic and passes HTTP traffic to Node.js and Nginx
-  
+
 In either case the backend setup is the same:
-  
+
   * Nginx serves static files for Thywill
   * Nginx can also be used to serve an unrelated website
   * Each Thywill application runs as a separate Node.js backend process
@@ -35,7 +35,7 @@ Install Node.js
 
 First install the packages required by Node.js:
 
-    apt-get install python openssl openssl-devel gcc-c++ make
+    apt-get install python openssl openssl-devel build-essential
 
 Next create a user to run Node.js and switch to that user:
 
@@ -53,10 +53,10 @@ Then:
     ./configure --prefix=$HOME/local/node
     make
     make install
-    
+
 Lastly, you will need to add the node executables to the PATH environment
 variable and set the NODE_PATH such that Node.js can see modules in the main
-node_modules library folder. You should probably set this up for all users, 
+node_modules library folder. You should probably set this up for all users,
 which can be done as follows.
 
 Create the file /etc/profile.d/node.sh containing the following lines:
@@ -64,7 +64,7 @@ Create the file /etc/profile.d/node.sh containing the following lines:
     export PATH=/home/node/local/node/bin:$PATH
     export NODE_PATH=/home/node/local/node/lib/node_modules
 
-Depending on your setup, you may instead need to create the file 
+Depending on your setup, you may instead need to create the file
 /etc/profile.d/node.csh containing the following lines:
 
     setenv PATH /home/node/local/node/bin:$PATH
@@ -89,7 +89,7 @@ Install Thywill
 Installing through NPM will automatically install the necessary dependencies.
 
     npm install thywill
-    
+
 If setting up for development on Thywill, then you instead might clone the
 repository and then use NPM to link it locally, allowing you to update the
 code but still otherwise treat it as an installed package.
@@ -98,7 +98,7 @@ code but still otherwise treat it as an installed package.
     git clone git://github.com/exratione/thywill.git
     cd thywill
     npm link
-    
+
 Set Up a Thywill Application to Run as a Service
 ------------------------------------------------
 
@@ -110,7 +110,7 @@ typically contain the following items:
   * Shutdown preparation Node.js script
   * Service scripts that will have to be copied /etc/init.d or /etc/init
   * Default configuration Javascript file
-  
+
 The service script files contain paths to various files in the Thywill
 directories. These will only be correct if Node.js is installed as described in
 this document - otherwise they must be edited in order for the scripts to work.
@@ -148,7 +148,7 @@ There is a very simplistic default site configuration for Nginx on port 8080
 in the following location:
 
     /serverConfig/nginx/thywill-default.conf
-    
+
 Make a backup of /etc/nginx/sites-available/default and the copy the above
 configuration file over the original /etc/nginx/sites-available/default. This
 should already be symlinked in /etc/nginx/sites-enabled and thus active.
@@ -166,7 +166,7 @@ certificate is sufficient. That can be accomplished as follows:
     apt-get install ssl-cert
     make-ssl-cert generate-default-snakeoil --force-overwrite
     cat /etc/ssl/private/ssl-cert-snakeoil.key /etc/ssl/certs/ssl-cert-snakeoil.pem > /etc/ssl/snakeoil.pem
-    
+
 This will create these files:
 
     /etc/ssl/certs/ssl-cert-snakeoil.pem
@@ -184,7 +184,7 @@ The following arrangement of server processes is used:
   * Varnish on port 80
   * Nginx on port 8080
   * Thywill Node.js applications on ports 10080+
-  
+
 Prior to version 1.3, Nginx cannot pass websocket traffic as a proxy, so
 Varnish is the frontend proxy. It passes websocket traffic and other relevant
 URLs directly to the appropriate Node.js backends, and remaining traffic to
@@ -203,22 +203,22 @@ Varnish cannot manage SSL traffic, so Stunnel is used to field HTTPS traffic.
 Install Stunnel as a package:
 
     apt-get install stunnel
-    
+
 Next set up the Stunnel configuration file as required. An example configuration
 is provided in:
 
     /serverConfig/stunnel/thywill-stunnel4.conf
-    
+
 Copy this into the /etc/stunnel/ directory (each separate *.conf file there
 will be used to launch a separate Stunnel process when the Stunnel service
 starts). Note that this is probably not going to be suitable for production
 use, or for anything other than running the Thywill example applications.
 
 Make sure that the certificate path in the configuration file is correct. If
-using your own certificate rather than the snakeoil certificate, it will no 
+using your own certificate rather than the snakeoil certificate, it will no
 doubt have to be changed.
 
-Lastly you will have to edit /etc/default/stunnel4 to set the following line, 
+Lastly you will have to edit /etc/default/stunnel4 to set the following line,
 otherwise the process will not start.
 
     # Change to one to enable stunnel automatic startup
@@ -230,12 +230,12 @@ Set Up Varnish
 Install Varnish as a package:
 
     apt-get install varnish
-   
+
 Next, set up the configuration as required for your server scenario. A default
 configuration suitable for any of the example applications is provided in:
 
     /serverConfig/varnish/thywill-default.vcl
-    
+
 Copy the contents into your Varnish configuration file /etc/varnish/default.vcl.
 Note that this configuration is far from suitable for production use - it is an
 example only, and omits most of the useful things that Varnish can do.
@@ -257,9 +257,9 @@ The following arrangement of server processes is used:
   * HAProxy on port 80 and 443, redirecting HTTP to HTTPS
   * Nginx on port 8080
   * Thywill Node.js applications on ports 10080+
-  
+
 HAProxy must be of version 1.5-dev13 or later in order to support both SSL traffic
-and websockets. At the time of writing, this means that there is no package install, 
+and websockets. At the time of writing, this means that there is no package install,
 and HAProxy must be built from source as follows:
 
     apt-get install libpcre3 libpcre3-dev libssl-dev
@@ -273,22 +273,22 @@ and HAProxy must be built from source as follows:
 Now copy the provided init.d script to /etc/init.d/haproxy. It is found at:
 
     /serverConfig/haproxy/haproxy-initd
-    
+
 Copy the configuration file provided to /etc/haproxy/haproxy.cfg. It is found at:
 
     /serverConfig/haproxy/thywill-haproxy.cfg
-    
+
 Make sure that the certificate path in the configuration file is correct. If
-using your own certificate rather than the snakeoil certificate, it will no 
+using your own certificate rather than the snakeoil certificate, it will no
 doubt have to be changed.
-    
+
 Create a file /etc/default/haproxy with the following contents:
 
     # Set ENABLED to 1 if you want the init script to start haproxy.
     ENABLED=1
     # Add extra flags here
     # EXTRAOPTS="-de -m 16"
-    
+
 You must update the service definitions:
 
     cd /etc/init.d

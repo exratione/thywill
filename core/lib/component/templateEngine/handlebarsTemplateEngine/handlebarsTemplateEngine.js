@@ -21,7 +21,7 @@ function HandlebarsTemplateEngine() {
   HandlebarsTemplateEngine.super_.call(this);
   // A cache to hold compiled templates.
   this.cache = null;
-};
+}
 util.inherits(HandlebarsTemplateEngine, Thywill.getBaseClass("TemplateEngine"));
 var p = HandlebarsTemplateEngine.prototype;
 
@@ -35,8 +35,8 @@ HandlebarsTemplateEngine.CONFIG_TEMPLATE = {
       description: "The maximum number of compiled templates retained in an LRU cache.",
       types: "integer",
       required: true
-    } 
-  }  
+    }
+  }
 };
 
 //-----------------------------------------------------------
@@ -49,13 +49,13 @@ HandlebarsTemplateEngine.CONFIG_TEMPLATE = {
 p._configure = function (thywill, config, callback) {
   // Minimal configuration - all we're doing here is storing it for posterity.
   this.thywill = thywill;
-  this.config = config; 
+  this.config = config;
   this.readyCallback = callback;
-  
+
   // Create a cache with no timeout for compiled templates.
   this.cache = this.thywill.cacheManager.createCache("handlebars", config.templateCacheLength);
-  
-  // There are no asynchronous initialization functions here or in the 
+
+  // There are no asynchronous initialization functions here or in the
   // superclasses. So we can just call them and forge ahead without having
   // to wait around or check for completion.
   this._announceReady(this.NO_ERRORS);

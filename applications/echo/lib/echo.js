@@ -18,13 +18,13 @@ var bootstrapManifest = require("./bootstrapManifest");
 /**
  * @class
  * A trivial example application.
- * 
+ *
  * This application provides a UI for the client to enter messages, and echoes
  * back all entered messages with the same content.
  */
 function Echo(id) {
   Echo.super_.call(this, id);
-};
+}
 util.inherits(Echo, Thywill.getBaseClass("Application"));
 var p = Echo.prototype;
 
@@ -37,10 +37,10 @@ var p = Echo.prototype;
  */
 p._defineBootstrapResources = function (callback) {
   var self = this;
-  
+
   // Text encoding throughout.
   var encoding = "utf8";
-  
+
   // An array of functions to execute to load up bootstrap resources.
   var fns = [
     // Add resources from files listed in the bootstrap manifest.
@@ -66,7 +66,7 @@ p._defineBootstrapResources = function (callback) {
         isGenerated: true,
         minified: false,
         originFilePath: originFilePath,
-        type: self.thywill.resourceManager.types.JAVASCRIPT, 
+        type: self.thywill.resourceManager.types.JAVASCRIPT,
         weight: 50
       });
       self.thywill.clientInterface.storeBootstrapResource(resource, asyncCallback);
@@ -84,7 +84,7 @@ p._prepareForShutdown = function (callback) {
 };
 
 //-----------------------------------------------------------
-// Methods 
+// Methods
 //-----------------------------------------------------------
 
 /**
@@ -94,7 +94,7 @@ p.receive = function (message) {
   this.thywill.log.debug("Echo.receive(): Message for echoing: " + message.encode());
   var messageManager = this.thywill.messageManager;
   var echoMessage = messageManager.createMessage(
-    message.data, 
+    message.data,
     message.sessionId,
     messageManager.origins.SERVER,
     messageManager.destinations.CLIENT,

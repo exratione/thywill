@@ -20,14 +20,14 @@ var InMemoryResourceManager = require("../inMemoryResourceManager/inMemoryResour
  * @class
  * A resource manage that writes or symlinks resources in the filesystem,
  * and stores references to that data in memory.
- * 
+ *
  * This is useful as a way to offload the serving of resources to another
  * process: write or symlink resources to a webroot served by Nginx, for
  * example.
  */
 function LinkedFileResourceManager() {
   LinkedFileResourceManager.super_.call(this);
-};
+}
 util.inherits(LinkedFileResourceManager, InMemoryResourceManager);
 var p = LinkedFileResourceManager.prototype;
 
@@ -41,15 +41,15 @@ LinkedFileResourceManager.CONFIG_TEMPLATE = {
       description: "The directory to which resources will be written as files. e.g. /var/www or /home/node/thywill-static",
       types: "string",
       required: true
-    } 
+    }
   },
   baseClientPath: {
     _configInfo: {
       description: "A base path prepended to provided resource paths. e.g. /thywill-static",
       types: "string",
       required: true
-    } 
-  }  
+    }
+  }
 };
 
 //-----------------------------------------------------------
@@ -63,9 +63,9 @@ p._configure = function (thywill, config, callback) {
   var self = this;
   // Minimal configuration setup.
   this.thywill = thywill;
-  this.config = config; 
+  this.config = config;
   this.readyCallback = callback;
-  
+
   // List of functions to call via async.
   fns = [
   // Check on the existence of the base directory and that its has suitable
@@ -74,7 +74,7 @@ p._configure = function (thywill, config, callback) {
       self.directoryExists(self.config.baseDirectory, asyncCallback);
     }
   ];
-  
+
   async.series(fns, function (error) {
     self._announceReady(error);
   });
@@ -85,15 +85,15 @@ p._configure = function (thywill, config, callback) {
  */
 p._prepareForShutdown = function (callback) {
 
-  
-  
+
+
   // TODO: clean up resources? What about controlled restarts?
-  
-  
-  
+
+
+
   callback.call(this);
 };
-  
+
 //-----------------------------------------------------------
 // Other Overridden Methods
 //-----------------------------------------------------------
@@ -106,12 +106,12 @@ p.createResource = function (data, attributes) {
   // Buffer.
   if (typeof data == "string") {
     data = new Buffer(data, attributes.encoding);
-  };
-  
+  }
+
   // TODO: Tighten this up to accommodate issues with delimiters, etc.
-  
+
   // First the parent class creates the resource.
-  var resource = LinkedFileResourceManager.super_.prototype.createResource.call(this, data, attributes);  
+  var resource = LinkedFileResourceManager.super_.prototype.createResource.call(this, data, attributes);
   // Take the provided path as the basis for where this file will be stored.
   resource.filePath = this.config.baseDirectory + resource.path;
   // If path is not suitable for a file, add some file to the end of it, e.g. /dir/ -> /dir/default
@@ -137,7 +137,7 @@ p.store = function (key, resource, callback) {
       this.invokeSuperclassMethod("store", key, resource, callback);
     }
   };
-  
+
   // Either write the resource to a file or symlink it, depending on whether it
   // has a defined originFilePath and the value of isGenerated.
   if (resource.originFilePath && !resource.isGenerated) {
@@ -175,7 +175,7 @@ p.remove = function (key, callback) {
 /**
  * Given a file or directory stats object, determine whether the present
  * process has write permissions.
- * 
+ *
  * @params {Object} stats
  *   A Stats instance, e.g. obtained from fs.stat().
  * @return {boolean}
@@ -184,20 +184,20 @@ p.remove = function (key, callback) {
 p.canRead = function (stats) {
   var isOwner = stats.uid == this.thywill.getFinalUid();
   var inGroup = stats.gid == this.thywill.getFinalGid();
-  var readable;
+  var readable =
     // User is owner and owner can read.
     isOwner && (stats.mode & 00400) ||
     // User is in group and group can read.
-    inGroup && (stats.mode & 00040) || 
+    inGroup && (stats.mode & 00040) ||
     // Anyone can read.
-    (stats.mode & 00004); 
+    (stats.mode & 00004);
   return readable;
 };
 
 /**
  * Given a file or directory stats object, determine whether the present
  * process has write permissions.
- * 
+ *
  * @params {Object} stats
  *   A Stats instance, e.g. obtained from fs.stat().
  * @return {boolean}
@@ -206,20 +206,20 @@ p.canRead = function (stats) {
 p.canWrite = function (stats) {
   var isOwner = stats.uid == this.thywill.getFinalUid();
   var inGroup = stats.gid == this.thywill.getFinalGid();
-  var writable = 
+  var writable =
     // User is owner and owner can write.
     isOwner && (stats.mode & 00200) ||
     // User is in group and group can write.
-    inGroup && (stats.mode & 00020) || 
+    inGroup && (stats.mode & 00020) ||
     // Anyone can write.
-    (stats.mode & 00002); 
+    (stats.mode & 00002);
   return writable;
 };
 
 /**
  * Given a file or directory stats object, determine whether the present
  * process has exec permissions.
- * 
+ *
  * @params {Object} stats
  *   A Stats instance, e.g. obtained from fs.stat().
  * @return {boolean}
@@ -227,21 +227,21 @@ p.canWrite = function (stats) {
  */
 p.canExec = function (stats) {
   var isOwner = stats.uid == this.thywill.getFinalUid();
-  var inGroup = stats.gid == this.thywill.getFinalGid(); 
+  var inGroup = stats.gid == this.thywill.getFinalGid();
   var exec =
     // User is owner and owner can exec.
     isOwner && (stats.mode & 00100) ||
     // User is in group and group can exec.
-    inGroup && (stats.mode & 00010) || 
+    inGroup && (stats.mode & 00010) ||
     // Anyone can exec.
-    (stats.mode & 00001); 
+    (stats.mode & 00001);
   return exec;
 };
 
 /**
  * Check the existence of a directory with suitable permissions - both write
  * and exec for this process.
- * 
+ *
  * @param {string} path
  *   A filesystem path.
  * @param {Function} callback
@@ -269,7 +269,7 @@ p.directoryExists = function (path, callback) {
 /**
  * Write a resource to the file system as a file. Expects the property
  * resource.filePath to exist.
- * 
+ *
  * @param {Resource} resource
  *   A Resource instance.
  * @param {Function} callback
@@ -279,7 +279,7 @@ p.writeResourceToFile = function (resource, callback) {
   var self = this;
   // Array of asynchronous functions to call in series.
   var fns = [
-    // Make sure the directory exists.           
+    // Make sure the directory exists.
     function (asyncCallback) {
       fs.mkdir(pathUtils.dirname(resource.fileSystemPath), 0755, true, asyncCallback);
     },
@@ -309,7 +309,7 @@ p.writeResourceToFile = function (resource, callback) {
 /**
  * Create a symlink to the original resource file. Expects the properties
  * resource.originFilePath and resource.filePath to exist.
- * 
+ *
  * @param {Resource} resource
  *   A Resource instance.
  * @param {Function} callback
@@ -319,7 +319,7 @@ p.createResourceSymlink = function (resource, callback) {
   var self = this;
   // Array of asynchronous functions to call in series.
   var fns = [
-    // Make sure the directory exists.           
+    // Make sure the directory exists.
     function (asyncCallback) {
       fs.mkdir(pathUtils.dirname(resource.fileSystemPath), 0755, true, asyncCallback);
     },

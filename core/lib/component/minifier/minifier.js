@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * Minifier class definition. 
+ * Minifier class definition.
  */
 
 var util = require("util");
@@ -17,7 +17,7 @@ var Thywill = require("thywill");
 function Minifier() {
   Minifier.super_.call(this);
   this.componentType = "minify";
-};
+}
 util.inherits(Minifier, Thywill.getBaseClass("Component"));
 var p = Minifier.prototype;
 
@@ -28,7 +28,7 @@ var p = Minifier.prototype;
 /**
  * Minify the contents of a resource object. The new resources is not yet
  * stored by the resourceManager.
- * 
+ *
  * @param {Resource} resource
  *   A Resource instance.
  * @param {Function} callback
@@ -43,22 +43,22 @@ p.minifyResource = function (resource, callback) {
 /**
  * Minify and merge an array of resources. Newly created resources are not yet
  * stored by the resourceManager.
- * 
+ *
  * @param {Resource[]} resource
  *   A resource instance.
  * @param {boolean} minifyJavascript
  *   If true, minify and merge Javascript resources.
  * @param {boolean} minifyCss
- *   If true, minify and merge CSS resources. 
+ *   If true, minify and merge CSS resources.
  * @param {Function} callback
- *   Of the form function (error, minifiedResources, addedResources), where 
+ *   Of the form function (error, minifiedResources, addedResources), where
  *   error == null on success.
- *   
- *   minifiedResources: is a new Resource object array, with the unminified 
+ *
+ *   minifiedResources: is a new Resource object array, with the unminified
  *   resources removed and new minified and merged resources added. Resources
  *   that cannot be minified will remain as they are in the array. The ordering
- *   of resources is otherwise preserved. 
- *   
+ *   of resources is otherwise preserved.
+ *
  *   addedResources: is an array of minified and merged resources created in
  *   this function call, but not stored anywhere yet.
  */
