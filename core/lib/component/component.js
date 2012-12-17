@@ -24,7 +24,7 @@ function Component() {
 
   // Used to make callback code a little more comprehensible, since most
   // callbacks are of the form function (error, results...) where
-  // error == null on success.
+  // error === null on success.
   this.NO_ERRORS = null;
 }
 util.inherits(Component, EventEmitter);
@@ -72,8 +72,8 @@ p._announceReady = function (error) {
   }
   // Emit and invoke the callback.
   this.emit(eventName, error);
-  if (this.readyCallback) {
-    this.readyCallback.call(this, error);
+  if (typeof this.readyCallback === "function") {
+    this.readyCallback(error);
   }
 };
 
@@ -156,7 +156,7 @@ p._checkConfigurationRecursively = function (configObj, templateObj, propertyCha
       var found = false;
       var configValueType = this._getType(configValue);
       for (var i = 0, l = configInfo.types.length; i < l; i++) {
-        if (configValueType == configInfo.types[i]) {
+        if (configValueType === configInfo.types[i]) {
           found = true;
           break;
         }
@@ -190,7 +190,7 @@ p._checkConfigurationRecursively = function (configObj, templateObj, propertyCha
  */
 p._getType = function (value) {
   var type = typeof value;
-  if (type == "object") {
+  if (type === "object") {
     if (value instanceof Array) {
       type = "array";
     } else if (value === null) {
@@ -224,20 +224,6 @@ p._throwConfigurationError = function (propertyChain, error) {
   );
 };
 
-/**
- * Shortcut for calling a superclass function. All parameters after the method
- * name are passed through.
- *
- * @param {string} methodName
- *   Name of the method to call.
- * @return {mixed}
- *   Whatever the method returns.
- */
-p.invokeSuperclassMethod = function(methodName) {
-  var args = arguments.slice(1);
-  return this.constructor.super_.prototype[methodName].apply(this, args);
-};
-
 //-----------------------------------------------------------
 // Methods to be implemented by subclasses.
 //-----------------------------------------------------------
@@ -250,7 +236,7 @@ p.invokeSuperclassMethod = function(methodName) {
  * @param {Object} config
  *   An object representation ofconfiguration data.
  * @param {Function} callback
- *   Of the form function (error) where error == null on success.
+ *   Of the form function (error) where error === null on success.
  */
 p._configure = function (thywill, config, callback) {
   throw new Error("Not implemented.");

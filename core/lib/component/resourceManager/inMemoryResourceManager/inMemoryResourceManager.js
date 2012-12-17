@@ -15,9 +15,12 @@ var Resource = require("../resource");
  * @class
  * A trivial synchronous in-memory resource manager.
  */
-function InMemoryResourceManager() {
+function InMemoryResourceManager () {
   InMemoryResourceManager.super_.call(this);
+  // Resources are stashed away as properties of this object.
   this.data = {};
+  // For resources with resource.servedBy = Resource.SERVED_BY.THYWILL
+  this.keysServedByThywill = {};
 }
 util.inherits(InMemoryResourceManager, Thywill.getBaseClass("ResourceManager"));
 var p = InMemoryResourceManager.prototype;
@@ -52,7 +55,7 @@ p._configure = function (thywill, config, callback) {
  */
 p._prepareForShutdown = function (callback) {
   // Nothing needed here.
-  callback.call(this);
+  callback();
 };
 
 //-----------------------------------------------------------
@@ -62,12 +65,12 @@ p._prepareForShutdown = function (callback) {
 /**
  * @see ResourceManager#createResource
  */
-p.createResource = function(data, attributes) {
+p.createResource = function (data, attributes) {
   // If we have a string rather than null or a Buffer, then convert it into a
   // Buffer.
   if (typeof data === "string") {
     data = new Buffer(data, attributes.encoding);
-  };
+  }
   return new Resource(data, attributes);
 };
 
@@ -78,9 +81,9 @@ p.store = function (key, resource, callback) {
   this.data[key] = resource;
   resource.stored = true;
   if (resource.servedBy === this.servedBy.THYWILL) {
-    this.addClientPathServedByThywill(resource.clientPath);
+    this.keysServedByThywill[key] = true;
   }
-  callback(this.NO_ERRORS);
+  callback(this.NO_ERRORS, resource);
 };
 
 /**
@@ -92,7 +95,7 @@ p.remove = function (key, callback) {
   if (this.data[key]) {
     resource = this.data[key];
     if (resource.servedBy === this.servedBy.THYWILL) {
-      this.removeClientPathServedByThywill(resource.clientPath);
+      delete this.keysServedByThywill[key];
     }
     delete this.data[key];
   }
@@ -108,6 +111,13 @@ p.load = function (key, callback) {
   } else {
     callback(this.NO_ERRORS, null);
   }
+};
+
+/**
+ * @see ResourceManager#getKeysServedByThywill
+ */
+p.getKeysServedByThywill = function (callback) {
+  callback(this.NO_ERRORS, this.keysServedByThywill);
 };
 
 //-----------------------------------------------------------

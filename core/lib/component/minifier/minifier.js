@@ -32,7 +32,7 @@ var p = Minifier.prototype;
  * @param {Resource} resource
  *   A Resource instance.
  * @param {Function} callback
- *   Of the form function (error, resource), where error == null on success and
+ *   Of the form function (error, resource), where error === null on success and
  *   resource is a new Resource object the existing Resource object if it could
  *   not be minified.
  */
@@ -52,7 +52,7 @@ p.minifyResource = function (resource, callback) {
  *   If true, minify and merge CSS resources.
  * @param {Function} callback
  *   Of the form function (error, minifiedResources, addedResources), where
- *   error == null on success.
+ *   error === null on success.
  *
  *   minifiedResources: is a new Resource object array, with the unminified
  *   resources removed and new minified and merged resources added. Resources

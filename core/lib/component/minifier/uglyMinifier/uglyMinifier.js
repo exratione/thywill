@@ -70,7 +70,7 @@ p._configure = function (thywill, config, callback) {
  */
 p._prepareForShutdown = function (callback) {
   // Nothing needed here.
-  callback.call(this);
+  callback();
 };
 
 //-----------------------------------------------------------
@@ -87,16 +87,16 @@ p.minifyResource = function (resource, callback) {
 
   // Only minify if not already minified.
   if (resource.minified) {
-    callback.call(this, error, resource);
+    callback(error, resource);
     return;
   }
 
   try {
     var minifiedData;
-    if (resource.type == resourceManager.types.JAVASCRIPT) {
+    if (resource.type === resourceManager.types.JAVASCRIPT) {
       // Javascript minification.
       minifiedData = this._minifyJavascript(resource);
-    } else if (resource.type == resourceManager.types.CSS) {
+    } else if (resource.type === resourceManager.types.CSS) {
       // CSS minification.
       minifiedData = this._minifyCss(resource);
     }
@@ -138,7 +138,7 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
     function (resource, asyncCallback) {
       var error = self.NO_ERRORS;
       var returnResource = null;
-      if (resource.type == resourceManager.types.JAVASCRIPT && minifyJavascript) {
+      if (resource.type === resourceManager.types.JAVASCRIPT && minifyJavascript) {
         // Create the single Javascript-holding resource if not yet done. Give
         // it the same weight and encoding as this first Javascript resource in
         // the array.
@@ -167,7 +167,7 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
             self.thywill.log.error(e);
           }
         }
-      } else if (resource.type == resourceManager.types.CSS && minifyCss) {
+      } else if (resource.type === resourceManager.types.CSS && minifyCss) {
         // Create the single CSS-holding resource if not yet done. Give
         // it the same weight as this first Javascript resource in the array.
         if (!cssResource) {
@@ -205,7 +205,7 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
       // which will be the single compressed resource. The nulls will be
       // stripped out later. All unminified and unmerged resources are just
       // returned as-is.
-      asyncCallback.call(self, error, returnResource);
+      asyncCallback(error, returnResource);
     },
     // Final callback at the end of the async.mapSeries() operation. Tidy up
     // the list, assemble for the final function callback, and we're done.
@@ -233,7 +233,7 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
           return true;
         }
       });
-      callback.call(self, error, minifiedResources, addedResources);
+      callback(error, minifiedResources, addedResources);
     }
   );
 };

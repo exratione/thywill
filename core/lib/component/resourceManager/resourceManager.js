@@ -20,7 +20,6 @@ var Resource = Thywill.getBaseClass("Resource");
 function ResourceManager() {
   ResourceManager.super_.call(this);
   this.componentType = "resourceManager";
-  this.clientPathsServedByThywill = {};
   // Convenience copy of the Resource types; resourceManager.createResource()
   // needs the type, and it's easier if you don't have to go load the Resource
   // class to get the type definitions.
@@ -45,41 +44,21 @@ var p = ResourceManager.prototype;
  *   Other attributes of this resource - see the Resource class
  *   for more information.
  * @param {Function} callback
- *   Of the form function (error, resource), where error == null on success
+ *   Of the form function (error, resource), where error === null on success
  *   and resource is the new Resource instance.
  *
  * @see Resource
  */
-p.createResourceFromFile = function(path, attributes, callback) {
+p.createResourceFromFile = function (path, attributes, callback) {
   var self = this;
-  fs.readFile(path, null, function(error, buffer) {
+  fs.readFile(path, null, function (error, buffer) {
     var resource = null;
     if (!error) {
       resource = self.createResource(buffer, attributes);
     }
-    callback.call(self, error, resource);
+    callback(error, resource);
   });
 };
-
-
-/**
- * Obtain a list of all clientPaths for resources served by Thywill.
- *
- * TODO: these should have callbacks, be implemented by descendant classes.
- *
- */
-p.getClientPathsServedByThywill = function() {
-  return this.clientPathsServedByThywill;
-};
-
-p.addClientPathServedByThywill = function(path) {
-  this.clientPathsServedByThywill[path] = true;
-};
-
-p.removeClientPathServedByThywill = function(path) {
-  delete clientPathsServedByThywill[path];
-};
-
 
 //-----------------------------------------------------------
 // Methods to be implemented by subclasses.
@@ -99,7 +78,7 @@ p.removeClientPathServedByThywill = function(path) {
  *
  * @see Resource
  */
-p.createResource = function(data, attributes) {
+p.createResource = function (data, attributes) {
   throw new Error("Not implemented.");
 };
 
@@ -111,7 +90,7 @@ p.createResource = function(data, attributes) {
  * @param {Resource} resource
  *   A Resource instance.
  * @param {function} callback
- *   Of the form function (error), where error == null on success.
+ *   Of the form function (error), where error === null on success.
  */
 p.store = function (key, resource, callback) {
   throw new Error("Not implemented.");
@@ -124,7 +103,7 @@ p.store = function (key, resource, callback) {
  * @param {string} key
  *   The key under which a resource was earlier stored.
  * @param {Function} callback
- *   Of the form function (error, resource), where error == null on success and
+ *   Of the form function (error, resource), where error === null on success and
  *   resource is the item stored, or null if no item is found.
  */
 p.remove = function (key, callback) {
@@ -137,10 +116,22 @@ p.remove = function (key, callback) {
  * @param {string} key
  *   The key under which a resource was earlier stored.
  * @param {Function} callback
- *   Of the form function (error, resource), where error == null on success and
+ *   Of the form function (error, resource), where error === null on success and
  *   resource is the item stored, or null if no item is found.
  */
 p.load = function (key, callback) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * Obtain a list of all keys for resources served by Thywill, i.e. for
+ * Resources where servedBy = Resource.SERVED_BY.THYWILL.
+ *
+ * @param {function} callback
+ *   Of the form function (error, object) where the properties of the object
+ *   are the keys served by Thywill.
+ */
+p.getKeysServedByThywill = function (callback) {
   throw new Error("Not implemented.");
 };
 

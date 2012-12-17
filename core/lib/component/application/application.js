@@ -14,6 +14,9 @@ var Thywill = require("thywill");
 /**
  * @class
  * The superclass for applications running on Thywill.
+ *
+ * @param {string} id
+ *   An ID uniquely identifying this application.
  */
 function Application(id) {
   Application.super_.call(this);
@@ -46,13 +49,13 @@ p.send = function (message) {
  *
  * @param {string} filePath
  *   An absolute path to the file to be loaded.
- * @param {Object} attributes
+ * @param {object} attributes
  *   An attributes object for creating a resource - see the Resource class for
  *   more information. This method automatically sets the originFilePath
  *   attribute to the passed filePath and the isGenerated  attribute to false
  *   (as the attribute data isn't altered).
- * @param {Function} callback
- *   Of the form function (error) where error = null on success.
+ * @param {function} callback
+ *   Of the form function (error, resource) where error === null on success.
  */
 p.storeBootstrapResourceFromFile = function (filePath, attributes, callback) {
   var self = this;
@@ -65,7 +68,7 @@ p.storeBootstrapResourceFromFile = function (filePath, attributes, callback) {
     attributes,
     function (error, resource) {
       if (error) {
-        callback.call(self, error);
+        callback(error);
       } else {
         self.thywill.clientInterface.storeBootstrapResource(resource, callback);
       }
@@ -90,9 +93,10 @@ p.storeBootstrapResourceFromFile = function (filePath, attributes, callback) {
  *   ...
  * }
  *
- * @param {Object} manifest
- * @param {Function} callback
- *   Of the form function (error) where error = null on success.
+ * @param {object} manifest
+ *   The manifest object.
+ * @param {function} callback
+ *   Of the form function (error) where error === null on success.
  */
 p.storeBootstrapResourcesFromManifest = function (manifest, callback) {
   var self = this;
@@ -130,8 +134,8 @@ p.storeBootstrapResourcesFromManifest = function (manifest, callback) {
  * var resource = this.thywill.resourceManager.createResource(type, ...);
  * this.thywill.clientInterface.storeBootstrapResource(resource, callback);
  *
- * @param {Function} callback
- *   Of the form function (error) {}, where error == null on success.
+ * @param {function} callback
+ *   Of the form function (error) {}, where error === null on success.
  */
 p._defineBootstrapResources = function (callback) {
   throw new Error("Not implemented.");

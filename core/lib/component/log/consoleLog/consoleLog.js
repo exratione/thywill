@@ -57,7 +57,7 @@ p._configure = function (thywill, config, callback) {
   this.readyCallback = callback;
 
   if (this.config.level) {
-    if (this.levels.indexOf(this.config.level) != -1) {
+    if (this.levels.indexOf(this.config.level) !== -1) {
       this.level = this.levels.indexOf(this.config.level);
     } else {
       this._announceReady("Invalid log level in configuration: " + this.config.level);

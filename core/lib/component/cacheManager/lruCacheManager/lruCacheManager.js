@@ -38,10 +38,10 @@ LRUCacheManager.CONFIG_TEMPLATE = null;
 p._configure = function (thywill, config, callback) {
   // Minimal configuration - all we're doing here is storing it for posterity.
   this.thywill = thywill;
-  this.config = config; 
+  this.config = config;
   this.readyCallback = callback;
-  
-  // There are no asynchronous initialization functions here or in the 
+
+  // There are no asynchronous initialization functions here or in the
   // superclasses. So we can just call them and forge ahead without having
   // to wait around or check for completion.
   this._announceReady(this.NO_ERRORS);
@@ -52,7 +52,7 @@ p._configure = function (thywill, config, callback) {
 */
 p._prepareForShutdown = function (callback) {
   // Nothing needed here.
-  callback.call(this);
+  callback();
 };
 
 //-----------------------------------------------------------

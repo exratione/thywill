@@ -8,6 +8,7 @@ var fs = require("fs");
 var path = require("path");
 var util = require("util");
 var async = require("async");
+var clone = require("clone");
 var http = require("http");
 
 var Component = require("./component/component");
@@ -125,7 +126,7 @@ Thywill.CONFIG_TEMPLATE = {
  * @param {Function} [callback]
  *   Of the form function (error, thywill, server) {}, called on completion of
  *   setup, where thywill is the Thywill instance, server is a the Express
- *   server used, and error == null on success.
+ *   server used, and error === null on success.
  */
 Thywill.launch = function (config, applications, server, callback) {
   console.log("Beginning Thywill initialization and launch.");
@@ -169,17 +170,17 @@ Thywill.launch = function (config, applications, server, callback) {
     // Drop the permissions of the process now that all ports are bound by
     // switching ownership to another user who still has sufficient permissions
     // to access the needed scripts.
-    if (config.thywill.launch && config.thywill.launch.groupId) {
-      process.setgid(config.thywill.launch.groupId);
+    if (thywill.config.thywill.launch && thywill.config.thywill.launch.groupId) {
+      process.setgid(thywill.config.thywill.launch.groupId);
     }
-    if (config.thywill.launch && config.thywill.launch.userId) {
-      process.setuid(config.thywill.launch.userId);
+    if (thywill.config.thywill.launch && thywill.config.thywill.launch.userId) {
+      process.setuid(thywill.config.thywill.launch.userId);
     }
 
     // Pass out the Thywill instance, the server, and any error message in the
     // callback.
     if (callback) {
-      callback.call(self, error, thywill, server);
+      callback(error, thywill, server);
     }
   });
 };
@@ -214,11 +215,11 @@ Thywill.prepareForShutdown = function (config, callback) {
   };
   var request = http.request(options, function (response) {
     console.log("Thywill has completed preparations for shutdown.");
-    callback.call(self, thywill.NO_ERRORS);
+    callback(thywill.NO_ERRORS);
   });
   request.on("error", function (error) {
-    console.log("Error on requesting preparation for shutdown: " + error);
-    callback.call(self, error);
+    console.log(error);
+    callback(error);
   });
   request.end();
 };
@@ -287,15 +288,20 @@ Thywill.getBaseClass = (function () {
  */
 p.getFinalUid = function() {
   if (this.config.thywill.launch && this.config.thywill.launch.userId) {
-    return this.config.thywill.launch.userId;
+    return this.config.thywill.launch.numericUserId;
   } else {
     return process.getuid();
   }
 };
 
+/**
+ * Obtain the process gid that will be used after Thywill setup is complete.
+ * For example, it might be the case that Thywill is launched as root to bind
+ * to privileged ports and then downgraded on completion of setup.
+ */
 p.getFinalGid = function() {
   if (this.config.thywill.launch && this.config.thywill.launch.groupId) {
-    return this.config.thywill.launch.groupId;
+    return this.config.thywill.launch.numericGroupId;
   } else {
     return process.getgid();
   }
@@ -308,17 +314,20 @@ p.getFinalGid = function() {
 /**
  * Configure this Thywill instance.
  *
- * @param {Object} obj
+ * @param {object} config
  *   An object representation of configuration parameters.
- * @return {Object}
+ * @return {object}
  *   The Thywill instance this function is called on.
  */
-p.configureFromObject = function (obj) {
-  if (!obj || !obj.thywill) {
-    throw new Error("Thywill.configureFromObject: null, undefined, or incompete configuration object.");
+p.configureFromObject = function (config) {
+  if (!config || !config.thywill) {
+    throw new Error("Null, undefined, or incomplete configuration object.");
   }
-  this._checkConfiguration(obj.thywill);
-  this.config = obj;
+  // Clone the configuration object to stop some annoyances, e.g. altered
+  // configuration data in an inadvertently shared object when running
+  // tests in series.
+  this.config = clone(config);
+  this._checkConfiguration(this.config.thywill);
   return this;
 };
 
@@ -359,11 +368,11 @@ p.configureFromFile = function (filepath) {
  * @param {Application|Application[]} applications
  *   A single application or array of application objects to be registered.
  * @param {Function} [callback]
- *   Of the form function (error) {}, where error == null on success.
+ *   Of the form function (error) {}, where error === null on success.
  */
 p.startup = function (server, applications, callback) {
   if (!this.config) {
-    this.announceReady("Thywill.startup(): not configured. Use one of the configuration functions before calling startup().");
+    this.announceReady(new Error("Thywill not configured. Use one of the configuration functions before calling startup()."));
     return;
   }
 
@@ -396,27 +405,27 @@ p._convertUserIdAndGroupId = function (callback) {
   var fns = [];
 
   if (this.config.thywill.launch && this.config.thywill.launch.userId) {
-    if (typeof this.config.thywill.launch.userId == "string") {
+    if (typeof this.config.thywill.launch.userId === "string") {
       fns.push(function (asyncCallback) {
         var childProcess = exec("id -u " + self.config.thywill.launch.userId, function (error, stdoutBuffer, stderrBuffer) {
           var response = stdoutBuffer.toString().trim();
           if (/^\d+$/.test(response)) {
-            self.config.thywill.launch.userId = parseInt(response, 10);
+            self.config.thywill.launch.numericUserId = parseInt(response, 10);
           }
-          asyncCallback.call(self, error);
+          asyncCallback(error);
         });
       });
     }
   }
   if (this.config.thywill.launch && this.config.thywill.launch.groupId) {
-    if (typeof this.config.thywill.launch.groupId == "string") {
+    if (typeof this.config.thywill.launch.groupId === "string") {
       fns.push(function (asyncCallback) {
         var childProcess = exec("id -u " + self.config.thywill.launch.groupId, function (error, stdoutBuffer, stderrBuffer) {
           var response = stdoutBuffer.toString().trim();
           if (/^\d+$/.test(response)) {
-            self.config.thywill.launch.groupId = parseInt(response, 10);
+            self.config.thywill.launch.numericGroupId = parseInt(response, 10);
           }
-          asyncCallback.call(self, error);
+          asyncCallback(error);
         });
       });
     }
@@ -438,12 +447,12 @@ p._setupAdminInterfaceListener = function () {
   // TODO: better admin responses, actual HTML.
 
   this.adminInterfaceServer.on("request", function (req, res) {
-    if (config.ipAddresses.indexOf(req.connection.remoteAddress) == -1) {
+    if (config.ipAddresses.indexOf(req.connection.remoteAddress) === -1) {
       res.statusCode = 500;
       res.end("No access permitted from: " + req.connection.remoteAddress);
       return;
     }
-    if (req.url == config.paths.prepareForShutdown) {
+    if (req.url === config.paths.prepareForShutdown) {
       self._managePreparationForShutdown(function () {
         // Don't complete the connection until the preparation is done.
         res.statusCode = 200;
@@ -465,17 +474,23 @@ p._setupAdminInterfaceListener = function () {
  *   Called when preparations are complete.
  */
 p._managePreparationForShutdown = function (callback) {
+  // Don't try to prepare for shutdown more than once.
+  if (this.preparedForShutdown) {
+    callback(new Error("Already prepared for shutdown."));
+    return;
+  }
+  this.preparedForShutdown = true;
+
   // Things are shut down in reverse order to the startup process.
   var self = this;
   var fns = [
     function (asyncCallback) {
-      // If the http.Server instance was created by Thywill, shut it
-      // down.
-      if (!self.providedServer) {
-        self.log.debug("Closing http.Server instance.");
-        self.server.on("close", asyncCallback);
-        self.server.close();
-      }
+      self.log.debug("Closing http.Server instance.");
+      self.server.on("close", function () {
+        self.serverClosed = true;
+        asyncCallback();
+      });
+      self.server.close();
     },
     function (asyncCallback) {
       self.log.debug("Preparing clientInterface for shutdown.");
@@ -525,7 +540,7 @@ p._managePreparationForShutdown = function (callback) {
  * @param {Application[]} passedApplications
  *   Array of object instances of classes derived from Application.
  * @param {Function} callback
- *   Of the form function (error), where error == null on success.
+ *   Of the form function (error), where error === null on success.
  */
 p._initializeComponents = function (passedApplications, callback) {
   var self = this;
@@ -600,13 +615,13 @@ p._initializeComponents = function (passedApplications, callback) {
  * @param {Application} application
  *   An application instance.
  * @param {Function} callback
- *   Of the form function (error), where error == null on success.
+ *   Of the form function (error), where error === null on success.
  */
 p._registerApplication = function (application, callback) {
   application.thywill = this;
   this.applications[application.id] = application;
   // all of the above is synchronous (for now), so invoke the callback;
-  callback.call(this);
+  callback();
 };
 
 /**
@@ -615,7 +630,7 @@ p._registerApplication = function (application, callback) {
  * @param {string} componentType
  *   The type of the component.
  * @param {Function} callback
- *   Of the form function (error), where error == null on success.
+ *   Of the form function (error), where error === null on success.
  */
 p._initializeComponent = function (componentType, callback) {
   // Maintain only a single instance of each component.
@@ -625,8 +640,8 @@ p._initializeComponent = function (componentType, callback) {
 
   // If there is no instance configured, then set it up. But do we have the
   // necessary configuration?
-  if (!this.config[componentType] || typeof this.config[componentType].implementation != "object") {
-    callback.call(this, "Thywill._initializeComponent: missing " + componentType + " component definition in configuration.");
+  if (!this.config[componentType] || typeof this.config[componentType].implementation !== "object") {
+    callback(new Error("Missing " + componentType + " component definition in configuration."));
     return;
   }
 
@@ -647,22 +662,22 @@ p._initializeComponent = function (componentType, callback) {
   //
   var implementation = this.config[componentType].implementation;
   var ComponentConstructor = null;
-  if (implementation.type == "core") {
+  if (implementation.type === "core") {
     // Loading a constructor for a core component implementation.
     var componentPath = "./component/" + componentType + "/" + implementation.name + "/" + implementation.name;
     try {
       require.resolve(componentPath);
     } catch (e) {
-      callback.call(this, "Thywill._initializeComponent: unsupported core component implementation '" + implementation.name + "' of type '" + componentType + "'");
+      callback(new Error("Unsupported core component implementation '" + implementation.name + "' of type '" + componentType + "'"));
       return;
     }
     ComponentConstructor = require(componentPath);
-  } else if (implementation.type == "package") {
+  } else if (implementation.type === "package") {
     // Loading a constructor for a component implementation provided by another package.
     try {
       require.resolve(implementation.name);
     } catch (e) {
-      callback.call(this, "Thywill._initializeComponent: missing component implementation package '" + implementation.name + "' of type '" + componentType + "'");
+      callback(new Error("Missing component implementation package '" + implementation.name + "' of type '" + componentType + "'"));
       return;
     }
     // Optionally, the constructor is in a property of this package export.
@@ -673,13 +688,13 @@ p._initializeComponent = function (componentType, callback) {
       ComponentConstructor = exported;
     }
   } else {
-    callback.call(this, "Thywill._initializeComponent: invalid implementation type '" + implementation.type + "' for " + componentType + " component definition.");
+    callback(new Error("Invalid implementation type '" + implementation.type + "' for " + componentType + " component definition."));
     return;
   }
 
   // Did we get a function? I hope so.
-  if (typeof ComponentConstructor != "function") {
-    callback.call(this, "Thywill._initializeComponent: component implementation definition for " + componentType + " did not yield a constructor function");
+  if (typeof ComponentConstructor !== "function") {
+    callback(new Error("Component implementation definition for " + componentType + " did not yield a constructor function."));
     return;
   }
 

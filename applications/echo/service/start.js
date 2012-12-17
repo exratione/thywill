@@ -18,8 +18,8 @@ var echo = new Echo("echo");
 // Optionally, define and start a server. For example:
 // var express = require("express");
 // var http = require("http");
-// var application = express.createApplication();
-// var server = http.createServer(app).listen(10080);
+// var app = express();
+// var server = http.createServer(app).listen(thywillConfig.thywill.launch.port);
 // Or just set it to null and Thywill will create its own bare-bones
 // HTTPServer listening on the port defined in the configuration.
 var server = null;

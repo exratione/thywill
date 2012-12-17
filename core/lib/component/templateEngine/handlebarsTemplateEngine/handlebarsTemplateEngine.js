@@ -66,7 +66,7 @@ p._configure = function (thywill, config, callback) {
  */
 p._prepareForShutdown = function (callback) {
   // Nothing needed.
-  callback.call(this);
+  callback();
 };
 
 //-----------------------------------------------------------

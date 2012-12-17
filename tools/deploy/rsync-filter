@@ -3,5 +3,5 @@ exclude .gitignore
 exclude .project
 exclude .settings
 exclude node_modules
-exclude npm-debug.log
+exclude npm-*
 exclude *sublime-*

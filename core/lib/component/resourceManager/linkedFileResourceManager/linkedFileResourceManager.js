@@ -91,7 +91,7 @@ p._prepareForShutdown = function (callback) {
 
 
 
-  callback.call(this);
+  callback();
 };
 
 //-----------------------------------------------------------
@@ -104,7 +104,7 @@ p._prepareForShutdown = function (callback) {
 p.createResource = function (data, attributes) {
   // If we have a string rather than null or a Buffer, then convert it into a
   // Buffer.
-  if (typeof data == "string") {
+  if (typeof data === "string") {
     data = new Buffer(data, attributes.encoding);
   }
 
@@ -115,7 +115,7 @@ p.createResource = function (data, attributes) {
   // Take the provided path as the basis for where this file will be stored.
   resource.filePath = this.config.baseDirectory + resource.path;
   // If path is not suitable for a file, add some file to the end of it, e.g. /dir/ -> /dir/default
-  if (resource.filePath[resource.filePath.length - 1] == "/") {
+  if (resource.filePath[resource.filePath.length - 1] === "/") {
     resource.filePath += "default";
     // TODO: add file type ending?
   }
@@ -131,10 +131,10 @@ p.store = function (key, resource, callback) {
   var self = this;
   var innerCallback = function(error) {
     if (error) {
-      callback.call(self, error);
+      callback(error);
     } else {
       // Store an in-memory reference as the parent class does.
-      this.invokeSuperclassMethod("store", key, resource, callback);
+      LinkedFileResourceManager.super_.prototype.store.call(this, key, resource, callback);
     }
   };
 
@@ -147,8 +147,8 @@ p.store = function (key, resource, callback) {
   } else {
     // This resource is not in a state where it can be written out to file or
     // symlinked.
-    var error = new Error("LinkedFileResourceManager.store(): Resource is not correctly configured: " + resource.clientPath);
-    callback.call(this, error);
+    var error = new Error("Resource is not correctly configured: " + resource.clientPath);
+    callback(error);
   }
 };
 
@@ -160,10 +160,10 @@ p.remove = function (key, callback) {
   var resource = this.data[key];
   fs.unlink(resource.fileSystemPath, function(error) {
     if (error) {
-      callback.call(self, error);
+      callback(error);
     } else {
       // Remove the in-memory reference as the parent class does.
-      this.invokeSuperclassMethod("remove", key, callback);
+      LinkedFileResourceManager.super_.prototype.remove.call(key, callback);
     }
   });
 };
@@ -176,14 +176,14 @@ p.remove = function (key, callback) {
  * Given a file or directory stats object, determine whether the present
  * process has write permissions.
  *
- * @params {Object} stats
+ * @params {object} stats
  *   A Stats instance, e.g. obtained from fs.stat().
  * @return {boolean}
  *   True if the present process can read the file or directory.
  */
 p.canRead = function (stats) {
-  var isOwner = stats.uid == this.thywill.getFinalUid();
-  var inGroup = stats.gid == this.thywill.getFinalGid();
+  var isOwner = stats.uid === this.thywill.getFinalUid();
+  var inGroup = stats.gid === this.thywill.getFinalGid();
   var readable =
     // User is owner and owner can read.
     isOwner && (stats.mode & 00400) ||
@@ -198,14 +198,14 @@ p.canRead = function (stats) {
  * Given a file or directory stats object, determine whether the present
  * process has write permissions.
  *
- * @params {Object} stats
+ * @params {object} stats
  *   A Stats instance, e.g. obtained from fs.stat().
  * @return {boolean}
  *   True if the present process can write to the file or directory.
  */
 p.canWrite = function (stats) {
-  var isOwner = stats.uid == this.thywill.getFinalUid();
-  var inGroup = stats.gid == this.thywill.getFinalGid();
+  var isOwner = stats.uid === this.thywill.getFinalUid();
+  var inGroup = stats.gid === this.thywill.getFinalGid();
   var writable =
     // User is owner and owner can write.
     isOwner && (stats.mode & 00200) ||
@@ -220,14 +220,14 @@ p.canWrite = function (stats) {
  * Given a file or directory stats object, determine whether the present
  * process has exec permissions.
  *
- * @params {Object} stats
+ * @params {object} stats
  *   A Stats instance, e.g. obtained from fs.stat().
  * @return {boolean}
  *   True if the present process has exec permissions on the file or directory.
  */
 p.canExec = function (stats) {
-  var isOwner = stats.uid == this.thywill.getFinalUid();
-  var inGroup = stats.gid == this.thywill.getFinalGid();
+  var isOwner = stats.uid === this.thywill.getFinalUid();
+  var inGroup = stats.gid === this.thywill.getFinalGid();
   var exec =
     // User is owner and owner can exec.
     isOwner && (stats.mode & 00100) ||
@@ -245,7 +245,7 @@ p.canExec = function (stats) {
  * @param {string} path
  *   A filesystem path.
  * @param {Function} callback
- *   Of the form function(error) where error = null if the directory exists
+ *   Of the form function(error) where error === null if the directory exists
  *   with suitable permissions.
  */
 p.directoryExists = function (path, callback) {
@@ -254,15 +254,15 @@ p.directoryExists = function (path, callback) {
     if (!error) {
       if (stats.isDirectory()) {
         if (!self.canWrite(stats)) {
-          error = "Directory exists but is not writable: " + path;
+          error = new Error("Directory exists but is not writable: " + path);
         } else if (!self.canExec(stats)) {
-          error = "Directory exists but without exec permission: " + path;
+          error = new Error("Directory exists but without exec permission: " + path);
         }
       } else {
-        error = "Path is a file not a directory: " + path;
+        error = new Error("Path is a file not a directory: " + path);
       }
     }
-    callback.call(this, error);
+    callback(error);
   });
 };
 
@@ -273,7 +273,7 @@ p.directoryExists = function (path, callback) {
  * @param {Resource} resource
  *   A Resource instance.
  * @param {Function} callback
- *   Of the form function(error) where error = null on success.
+ *   Of the form function(error) where error === null on success.
  */
 p.writeResourceToFile = function (resource, callback) {
   var self = this;
@@ -293,11 +293,11 @@ p.writeResourceToFile = function (resource, callback) {
       });
 
       stream.on("error", function(exception) {
-        callback.call(self, exception.message);
+        callback(exception);
       });
       stream.on("end", function() {
         stream.destroy();
-        callback.call(self, self.NO_ERRORS);
+        callback(self.NO_ERRORS);
       });
       stream.end(resource.buffer);
     }
@@ -313,7 +313,7 @@ p.writeResourceToFile = function (resource, callback) {
  * @param {Resource} resource
  *   A Resource instance.
  * @param {Function} callback
- *   Of the form function(error) where error = null on success.
+ *   Of the form function(error) where error === null on success.
  */
 p.createResourceSymlink = function (resource, callback) {
   var self = this;

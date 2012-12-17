@@ -37,7 +37,7 @@ suite.addBatch({
       return item;
     },
     "added successfully #1": function(item) {
-      assert.isTrue(item.value == tools.cache.get(item.key));
+      assert.isTrue(item.value === tools.cache.get(item.key));
     }
   }
 });
@@ -49,7 +49,7 @@ suite.addBatch({
       return item;
     },
     "added successfully #2": function(item) {
-      assert.isTrue(item.value == tools.cache.get(item.key));
+      assert.isTrue(item.value === tools.cache.get(item.key));
     }
   }
 });
@@ -61,7 +61,7 @@ suite.addBatch({
       return item;
     },
     "added successfully #3": function(item) {
-      assert.isTrue(item.value == tools.cache.get(item.key));
+      assert.isTrue(item.value === tools.cache.get(item.key));
       // First one should have been kicked out.
       assert.isUndefined(tools.cache.get("key 1"));
     }
@@ -77,7 +77,7 @@ suite.addBatch({
     "removed successfully": function(key) {
       assert.isUndefined(tools.cache.get(key));
     }
-  }   
+  }
 });
 suite.addBatch({
   "clear all remaining entries": {
@@ -88,7 +88,7 @@ suite.addBatch({
     "cleared successfully": function(key) {
       assert.isUndefined(tools.cache.get(key));
     }
-  }   
+  }
 });
 tools.finalizeVowsSuite(suite);
 

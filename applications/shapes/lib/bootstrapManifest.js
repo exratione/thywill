@@ -3,14 +3,14 @@
  * The bootstrap manifest is a way of listing files that will be turned into
  * bootstrap resources and presented to a client immediately on connection.
  * The exported manifest must be passed to this function:
- * 
+ *
  * Application#storeBootstrapResourcesFromManifest
- * 
+ *
  * This should be done during the invocation of:
- * 
+ *
  * Application#_defineBootstrapResources
- * 
- * Bootstrap resources can be otherwise be created and stored through 
+ *
+ * Bootstrap resources can be otherwise be created and stored through
  * ClientInterface, ResourceManager, and Application class methods.
  */
 
@@ -26,7 +26,7 @@ var manifest = {
     clientPath: "/shapes/js/modernizr.min.js",
     encoding: encoding,
     minified: true,
-    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
+    servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.JAVASCRIPT,
     weight: -30
   },
@@ -37,7 +37,7 @@ var manifest = {
     clientPath: "/shapes/js/jquery.min.js",
     encoding: encoding,
     minified: true,
-    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
+    servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.JAVASCRIPT,
     weight: -20
   },
@@ -46,16 +46,16 @@ var manifest = {
     clientPath: "/shapes/js/plugins.js",
     encoding: encoding,
     minified: false,
-    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
+    servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.JAVASCRIPT,
     weight: -10
-  },    
+  },
   // Add json2.js, required by Backbone.js.
   "../../../thirdParty/json/json2.js": {
     clientPath: "/shapes/js/json2.js",
     encoding: encoding,
     minified: false,
-    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
+    servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.JAVASCRIPT,
     weight: 10
   },
@@ -64,8 +64,8 @@ var manifest = {
     clientPath: "/shapes/js/underscore.min.js",
     encoding: encoding,
     minified: true,
-    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
-    type: Resource.TYPES.JAVASCRIPT, 
+    servedBy: Resource.SERVED_BY.EXPRESS,
+    type: Resource.TYPES.JAVASCRIPT,
     weight: 20
   },
   // Add Handlebars.js.
@@ -73,8 +73,8 @@ var manifest = {
     clientPath: "/shapes/js/handlebars.min.js",
     encoding: encoding,
     minified: true,
-    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
-    type: Resource.TYPES.JAVASCRIPT, 
+    servedBy: Resource.SERVED_BY.EXPRESS,
+    type: Resource.TYPES.JAVASCRIPT,
     weight: 40
   },
   // Add HTML5 Boilerplate CSS.
@@ -82,8 +82,8 @@ var manifest = {
     clientPath: "/shapes/css/html5boilerplate.css",
     encoding: encoding,
     minified: false,
-    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
-    type: Resource.TYPES.CSS, 
+    servedBy: Resource.SERVED_BY.EXPRESS,
+    type: Resource.TYPES.CSS,
     weight: 0
   },
   // Add the Shapes client CSS.
@@ -91,8 +91,8 @@ var manifest = {
     clientPath: "/shapes/css/client.css",
     encoding: encoding,
     minified: false,
-    servedBy: Resource.SERVED_BY.OTHER_LOCAL,
-    type: Resource.TYPES.CSS, 
+    servedBy: Resource.SERVED_BY.EXPRESS,
+    type: Resource.TYPES.CSS,
     weight: 10
   }
 };

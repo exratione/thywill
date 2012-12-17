@@ -10,6 +10,7 @@ var fs = require("fs");
 
 var async = require("async");
 var Thywill = require("thywill");
+var ExpressApplication = require("../../../core/lib/component/application/expressApplication/expressApplication");
 var bootstrapManifest = require("./bootstrapManifest");
 
 //-----------------------------------------------------------
@@ -19,19 +20,16 @@ var bootstrapManifest = require("./bootstrapManifest");
 /**
  * @class
  * An example application.
- * 
+ *
  * This provides a UI where a user can request new shapes to be made available
  * and then place the shapes on a canvas.
- * 
- * @param {string} id
- *   The application ID.
- * @param {object} app
- *   An Express application instance.
+ *
+ * @see ExpressApplication
  */
-function Shapes(id, app) {
-  Shapes.super_.call(this, id);
-};
-util.inherits(Shapes, Thywill.getBaseClass("Application"));
+function Shapes (id, app) {
+  Shapes.super_.call(this, id, app);
+}
+util.inherits(Shapes, ExpressApplication);
 var p = Shapes.prototype;
 
 //-----------------------------------------------------------
@@ -40,30 +38,44 @@ var p = Shapes.prototype;
 
 
 /**
- * @see Application#storeBootstrapResourcesFromManifest
- */
-p.storeBootstrapResourcesFromManifest = function (bootstrapManifest, callback) {
-  // Run through the manifest and add all the external items as Express routes.
-  
-  
-  
-
-  this.invokeSuperclassMethod(bootstrapManifest, callback);
-};
-
-/**
  * @see Application#_defineBootstrapResources
  */
 p._defineBootstrapResources = function (callback) {
   var self = this;
-  var resourceManager = this.thywill.resourceManager;
-  var clientInterface = this.thywill.clientInterface;
-  
-  
-  
-  
-  
-  
+
+  // Text encoding throughout.
+  var encoding = "utf8";
+
+  // An array of functions load up bootstrap resources.
+  var fns = [
+    // Add resources from files listed in the bootstrap manifest.
+    function (asyncCallback) {
+      self.storeBootstrapResourcesFromManifest(bootstrapManifest, asyncCallback);
+    },
+    // Add the Shapes client Javascript separately, as it needs to be rendered
+    // as a template.
+    function (asyncCallback) {
+      // Load the file.
+      var originFilePath = path.resolve(__dirname, "../client/js/shapesClient.js");
+      var data = fs.readFileSync(originFilePath, encoding);
+      // A little templating to insert the application ID.
+      data = self.thywill.templateEngine.render(data, {
+        applicationId: self.id
+      });
+      // Create and store the resource.
+      var resource = self.thywill.resourceManager.createResource(data, {
+        clientPath: "/shapes/js/shapesClient.js",
+        encoding: encoding,
+        isGenerated: true,
+        minified: false,
+        originFilePath: originFilePath,
+        type: self.thywill.resourceManager.types.JAVASCRIPT,
+        weight: 50
+      });
+      self.thywill.clientInterface.storeBootstrapResource(resource, asyncCallback);
+    }
+  ];
+  async.series(fns, callback);
 };
 
 /**
@@ -71,11 +83,11 @@ p._defineBootstrapResources = function (callback) {
  */
 p._prepareForShutdown = function (callback) {
   // Nothing needs doing here.
-  callback.call(this);
+  callback();
 };
 
 //-----------------------------------------------------------
-// Methods 
+// Methods
 //-----------------------------------------------------------
 
 /**
@@ -83,9 +95,9 @@ p._prepareForShutdown = function (callback) {
  */
 p.receive = function (message) {
 
-  
-  
-  
+
+
+
 };
 
 /**

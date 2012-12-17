@@ -48,4 +48,4 @@ config.resourceManager = {
 //Exports - Configuration
 //-----------------------------------------------------------
 
-module.exports = config; 
+module.exports = config;

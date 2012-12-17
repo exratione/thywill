@@ -77,7 +77,7 @@ p.disconnection = function (sessionId) {
 };
 
 //-----------------------------------------------------------
-//Methods to be implemented by subclasses.
+// Methods to be implemented by subclasses.
 //-----------------------------------------------------------
 
 /**
@@ -85,7 +85,7 @@ p.disconnection = function (sessionId) {
  * call, after all resources are set by all applications and components.
  *
  * @param {Function} [callback]
- *   Of the form function (error) {}, where error == null on success.
+ *   Of the form function (error) {}, where error === null on success.
  */
 p._startup = function (callback) {
   throw new Error("Not implemented.");
@@ -96,8 +96,10 @@ p._startup = function (callback) {
  *
  * @param {Resource} resource
  *   A Resource instance.
- * @param {Function} [callback]
- *   Of the form function (error) {}, where error == null on success.
+ * @param {function} callback
+ *   Of the form function (error, storedResource) {}, where error === null on
+ *   success and storedResource is the provided resource object with any
+ *   amendments that might have been made by the store.
  */
 p.storeBootstrapResource = function (resource, callback) {
   throw new Error("Not implemented.");
@@ -106,8 +108,9 @@ p.storeBootstrapResource = function (resource, callback) {
 /**
  * Return all bootstrap resource objects defined to date.
  *
- * @param {Function} [callback]
- *   Of the form function (error) {}, where error == null on success.
+ * @param {function} callback
+ *   Of the form function (error, resources) {}, where error === null on
+ *   success and resources is an array.
  */
 p.getBootstrapResources = function (callback) {
   throw new Error("Not implemented.");
@@ -116,8 +119,12 @@ p.getBootstrapResources = function (callback) {
 /**
  * Define a resource to be loaded at some point after client connection.
  *
- * @param {Function} [callback]
- *   Of the form function (error) {}, where error == null on success.
+ * @param {Resource} resource
+ *   A Resource instance.
+ * @param {function} callback
+ *   Of the form function (error, storedResource) {}, where error === null on
+ *   success and storedResource is the provided resource object with any
+ *   amendments that might have been made by the store.
  */
 p.storeResource = function (resource, callback) {
   throw new Error("Not implemented.");
@@ -129,8 +136,8 @@ p.storeResource = function (resource, callback) {
  *
  * @param {string} clientPath
  *   A request path.
- * @param {Function} [callback]
- *   Of the form function (error, resource) {}, where error == null on success
+ * @param {function} [callback]
+ *   Of the form function (error, resource), where error === null on success
  *   and resource is the resource to be returned.
  */
 p.getResource = function (clientPath, callback) {
@@ -156,8 +163,8 @@ p.send = function (message) {
  *   Key for the data.
  * @param {Object} value
  *   Any object.
- * @param {Function} [callback]
- *   Of the form function (error) {}, where error == null on success.
+ * @param {Function} callback
+ *   Of the form function (error) {}, where error === null on success.
  */
 p.setSessionData = function (sessionId, key, value, callback) {
   throw new Error("Not implemented.");
@@ -171,7 +178,7 @@ p.setSessionData = function (sessionId, key, value, callback) {
  * @param {string} key
  *   Key for the data.
  * @param {Function} [callback]
- *   Of the form function (error, value) {}, where error == null on success
+ *   Of the form function (error, value) {}, where error === null on success
  *   and value is the value to be returned.
  */
 p.getSessionData = function (sessionId, key, callback) {

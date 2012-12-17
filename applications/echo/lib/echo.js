@@ -37,11 +37,10 @@ var p = Echo.prototype;
  */
 p._defineBootstrapResources = function (callback) {
   var self = this;
-
   // Text encoding throughout.
   var encoding = "utf8";
 
-  // An array of functions to execute to load up bootstrap resources.
+  // An array of functions load up bootstrap resources.
   var fns = [
     // Add resources from files listed in the bootstrap manifest.
     function (asyncCallback) {
@@ -80,7 +79,7 @@ p._defineBootstrapResources = function (callback) {
  */
 p._prepareForShutdown = function (callback) {
   // Nothing needs doing here.
-  callback.call(this);
+  callback();
 };
 
 //-----------------------------------------------------------
