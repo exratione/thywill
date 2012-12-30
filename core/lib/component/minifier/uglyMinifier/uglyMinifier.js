@@ -158,11 +158,14 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
         }
 
         if (resource.buffer && resource.minified) {
-          minifiedJs += resource.buffer.toString(resource.encoding) + "\n\n";
+          // Have to put in a semicolon at the end because of things like Bootstrap
+          // which leave off the trailing semicolon.
+          minifiedJs += resource.buffer.toString(resource.encoding) + ";\n";
         } else {
           try {
-            // Javascript minification.
-            minifiedJs += self._minifyJavascript(resource) + "\n\n";
+          // Have to put in a semicolon at the end because of things like Bootstrap
+          // which leave off the trailing semicolon.
+            minifiedJs += self._minifyJavascript(resource) + ";\n";
           } catch (e) {
             self.thywill.log.error(e);
           }
@@ -186,11 +189,11 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
         }
 
         if (resource.minified) {
-          minifiedCss += resource.buffer.toString(resource.encoding) + "\n\n";
+          minifiedCss += resource.buffer.toString(resource.encoding) + "\n";
         } else {
           try {
             // CSS minification.
-            minifiedCss += self._minifyCss(resource) + "\n\n";
+            minifiedCss += self._minifyCss(resource) + "\n";
           } catch (e) {
             self.thywill.log.error(e);
           }
