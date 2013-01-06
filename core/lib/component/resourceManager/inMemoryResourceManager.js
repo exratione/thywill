@@ -5,7 +5,7 @@
 
 var util = require("util");
 var Thywill = require("thywill");
-var Resource = require("../resource");
+var Resource = require("./resource");
 
 //-----------------------------------------------------------
 // Class Definition

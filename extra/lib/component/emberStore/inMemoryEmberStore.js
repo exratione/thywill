@@ -1,11 +1,10 @@
 /**
  * @fileOverview
- * SimpleMessageManager class definition, a message manager implementation.
+ * InMemoryEmberStore class definition.
  */
 
 var util = require("util");
 var Thywill = require("thywill");
-var Message = require("../message");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -13,23 +12,22 @@ var Message = require("../message");
 
 /**
  * @class
- * A trivial synchronous in-memory resource manager.
+ * An EmberStore class to hold data in memory only.
  */
-function SimpleMessageManager() {
-  SimpleMessageManager.super_.call(this);
-  this.data = {};
+function InMemoryEmberStore() {
+  InMemoryEmberStore.super_.call(this);
 }
-util.inherits(SimpleMessageManager, Thywill.getBaseClass("MessageManager"));
-var p = SimpleMessageManager.prototype;
+util.inherits(InMemoryEmberStore, Thywill.getBaseClass("EmberStore"));
+var p = InMemoryEmberStore.prototype;
 
 //-----------------------------------------------------------
 // "Static" parameters
 //-----------------------------------------------------------
 
-SimpleMessageManager.CONFIG_TEMPLATE = null;
+InMemoryEmberStore.CONFIG_TEMPLATE = null;
 
 //-----------------------------------------------------------
-// Initialization
+// Initialization and Shutdown
 //-----------------------------------------------------------
 
 /**
@@ -51,7 +49,7 @@ p._configure = function (thywill, config, callback) {
  * @see Component#_prepareForShutdown
  */
 p._prepareForShutdown = function (callback) {
-  // Nothing needed here.
+  // Nothing needed.
   callback();
 };
 
@@ -59,15 +57,11 @@ p._prepareForShutdown = function (callback) {
 // Methods
 //-----------------------------------------------------------
 
-/**
- * @see MessageManager#createMessage
- */
-p.createMessage = function(data, sessionId, origin, destination, fromApplicationId, toApplicationId) {
-  return new Message(data, sessionId, origin, destination, fromApplicationId, toApplicationId);
-};
+
+
 
 //-----------------------------------------------------------
 // Exports - Class Constructor
 //-----------------------------------------------------------
 
-module.exports = SimpleMessageManager;
+module.exports = InMemoryEmberStore;

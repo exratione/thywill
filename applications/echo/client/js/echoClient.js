@@ -1,3 +1,7 @@
+/*global
+  Handlebars: false,
+  Thywill: false
+*/
 /**
  * @fileOverview
  * Client Javascript for the Echo application.
@@ -16,12 +20,12 @@
    *
    * @see Thywill.ApplicationInterface
    */
-  var EchoApplication = function (applicationId) {
+  function EchoApplication (applicationId) {
     Thywill.ApplicationInterface.call(this, applicationId);
     // For storing Handlebars.js templates.
     this.templates = {};
-  };
-  jQuery.extend(EchoApplication.prototype, Thywill.ApplicationInterface.prototype);
+  }
+  Thywill.inherits(EchoApplication, Thywill.ApplicationInterface);
   var p = EchoApplication.prototype;
 
   // ------------------------------------------
@@ -32,7 +36,6 @@
    * Create the application user interface and its event listeners.
    */
   p.uiSetup = function () {
-    var self = this;
     this.templates.uiTemplate = Handlebars.compile(jQuery("#{{{uiTemplateId}}}").html());
     this.templates.messageTemplate = Handlebars.compile(jQuery("#{{{messageTemplateId}}}").html());
 
@@ -61,10 +64,9 @@
     jQuery("#sender button").addClass("enabled").on("click", function () {
       var inputData = $("#sender textarea").val();
       if (inputData) {
-        // Thywill.Message(data, fromApplicationId, toApplicationId). Sending
-        // this message to the server side of the same application.
-        var message = new Thywill.Message(inputData, self.applicationId, self.applicationId);
-        self.send(message);
+        // Sending this user-entered data as a message to the server side of the
+        // this application.
+        self.send(inputData);
         $("#sender textarea").val("");
       }
      });

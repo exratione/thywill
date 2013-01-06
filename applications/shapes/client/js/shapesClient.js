@@ -1,3 +1,6 @@
+/*global
+  Thywill: false
+*/
 /**
  * @fileOverview
  * Client Javascript for the Shapes application.
@@ -11,17 +14,17 @@
 
   /**
    * @class
-   * An implementation of Thywill.ApplicationInterface for the Shapes
+   * An implementation of Thywill.EmberApplicationInterface for the Shapes
    * application.
    *
    * @see Thywill.ApplicationInterface
    */
-  var ShapesApplication = function (applicationId) {
-    Thywill.ApplicationInterface.call(this, applicationId);
+  function ShapesApplication (applicationId) {
+    Thywill.EmberApplicationInterface.call(this, applicationId);
     // For storing Handlebars.js templates.
     this.templates = {};
-  };
-  jQuery.extend(ShapesApplication.prototype, Thywill.ApplicationInterface.prototype);
+  }
+  Thywill.inherits(ShapesApplication, Thywill.EmberApplicationInterface);
   var p = ShapesApplication.prototype;
 
   // ------------------------------------------

@@ -10,7 +10,7 @@ var pathUtils = require("path");
 var util = require("util");
 var async = require("async");
 var Thywill = require("thywill");
-var InMemoryResourceManager = require("../inMemoryResourceManager/inMemoryResourceManager");
+var InMemoryResourceManager = require("./inMemoryResourceManager");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -67,7 +67,7 @@ p._configure = function (thywill, config, callback) {
   this.readyCallback = callback;
 
   // List of functions to call via async.
-  fns = [
+  var fns = [
   // Check on the existence of the base directory and that its has suitable
   // permissions.
     function(asyncCallback) {

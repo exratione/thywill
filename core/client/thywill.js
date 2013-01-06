@@ -25,7 +25,7 @@
  */
 
 var Thywill = (function() {
-  thywillObj = {};
+  var thywillObj = {};
 
   // -----------------------------------------------------
   // Application interface class.
@@ -36,19 +36,38 @@ var Thywill = (function() {
    * Applications must implement a child class in their client code. Most of
    * the functions in this class are called by Thywill as a result of
    * messages received from the server or other circumstances.
+   *
+   * @param {string} applicationId
+   *   The unique ID for this application.
    */
-  thywillObj.ApplicationInterface = function (applicationId) {
+  thywillObj.ApplicationInterface = function ApplicationInterface (applicationId) {
     this.applicationId = applicationId;
   };
   var p = thywillObj.ApplicationInterface.prototype;
 
   /**
-   * Send a message to the server.
+   * Send data to the server. This will be delivered to the server side
+   * component for this application.
+   *
+   * To address to other server applications, use sendMessage(message)
+   * with a Thywill.Message instance.
+   *
+   * @param {mixed} data
+   *   Any Javascript entity, but usually an object.
+   */
+  p.send = function (data) {
+    var message = new Thywill.Message(data, this.applicationId, this.applicationId);
+    this.sendMessage(message);
+  };
+
+  /**
+   * Send a Thywill.Message object to the server, which allows for addressing to
+   * specific applications.
    *
    * @param {Thywill.Message} message
    *   A Thywill.Message instance.
    */
-  p.send = function (message) {
+  p.sendMessage = function (message) {
     thywillObj.ServerInterface.send(message);
   };
 
@@ -108,7 +127,7 @@ var Thywill = (function() {
    * @param {string} [toApplicationId]
    *   If not null, the message is flagged for delivery to this application only.
    */
-  thywillObj.Message = function (data, fromApplicationId, toApplicationId) {
+  thywillObj.Message = function Message (data, fromApplicationId, toApplicationId) {
     this.data = data;
     this.fromApplicationId = fromApplicationId;
     this.toApplicationId = toApplicationId;
@@ -211,7 +230,7 @@ var Thywill = (function() {
     /**
      * Called when the initial connection or a reconnection attempt times out.
      */
-    connectionFailure: function() {
+    connectionFailure: function () {
       for (var applicationId in applications) {
         applications[applicationId].connectionFailure();
       }
@@ -227,6 +246,28 @@ var Thywill = (function() {
         applications[applicationId].disconnected();
       }
     }
+  };
+
+  // -----------------------------------------------------
+  // Utilities, odds and ends.
+  // -----------------------------------------------------
+
+  /**
+   * Since we don't depend on any specific framework, here's a utility for inheritance,
+   * as done in Node.js.
+   *
+   * TODO: Won't work in older browsers, of course.
+   *
+   * e.g. Thywill.inherits(subclass, superclass);
+   */
+  thywillObj.inherits = function inherits (ctor, superCtor) {
+    ctor.super_ = superCtor;
+    ctor.prototype = Object.create(superCtor.prototype, {
+      constructor: {
+          value: ctor,
+          enumerable: false
+      }
+    });
   };
 
   return thywillObj;

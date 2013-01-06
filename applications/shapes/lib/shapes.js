@@ -1,7 +1,14 @@
 /**
  * @fileOverview
- * Shapes class definition, an example application illustrated
- * staged availability of resources.
+ * Shapes class definition, an example application to illustrate:
+ *
+ * - Staged availability of resources: passed to the client as needed, rather
+ *   than loaded up front.
+ *
+ * - Use of Express in place of a vanilla HTTPServer.
+ *
+ * - User of Ember.js on the client, with Ember Data to link client models
+ *   with server data via socket communication.
  */
 
 var util = require("util");
@@ -10,7 +17,6 @@ var fs = require("fs");
 
 var async = require("async");
 var Thywill = require("thywill");
-var ExpressApplication = require("../../../core/lib/component/application/expressApplication/expressApplication");
 var bootstrapManifest = require("./bootstrapManifest");
 
 //-----------------------------------------------------------
@@ -26,16 +32,18 @@ var bootstrapManifest = require("./bootstrapManifest");
  *
  * @see ExpressApplication
  */
-function Shapes (id, app) {
+function Shapes(id, app) {
   Shapes.super_.call(this, id, app);
+
+  // TODO: initialize the emberstore with some data.
+
 }
-util.inherits(Shapes, ExpressApplication);
+util.inherits(Shapes, Thywill.getBaseClass("ExpressApplication"));
 var p = Shapes.prototype;
 
 //-----------------------------------------------------------
 // Initialization and Shutdown
 //-----------------------------------------------------------
-
 
 /**
  * @see Application#_defineBootstrapResources
@@ -70,7 +78,7 @@ p._defineBootstrapResources = function (callback) {
         minified: false,
         originFilePath: originFilePath,
         type: self.thywill.resourceManager.types.JAVASCRIPT,
-        weight: 50
+        weight: 60
       });
       self.thywill.clientInterface.storeBootstrapResource(resource, asyncCallback);
     }
@@ -94,10 +102,13 @@ p._prepareForShutdown = function (callback) {
  * @see Application#receive
  */
 p.receive = function (message) {
+  this.thywill.log.debug("Shapes.receive(): Message: " + message.encode());
+  // Is this a datastore message?
+  if (message.data.dsRequestId) {
 
+  } else {
 
-
-
+  }
 };
 
 /**

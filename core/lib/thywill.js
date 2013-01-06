@@ -5,7 +5,6 @@
 
 var exec = require('child_process').exec;
 var fs = require("fs");
-var path = require("path");
 var util = require("util");
 var async = require("async");
 var clone = require("clone");
@@ -130,7 +129,6 @@ Thywill.CONFIG_TEMPLATE = {
  */
 Thywill.launch = function (config, applications, server, callback) {
   console.log("Beginning Thywill initialization and launch.");
-  var self = this;
   // Create and configure the Thywill instance.
   var thywill = new Thywill();
   thywill.configureFromObject(config);
@@ -198,7 +196,6 @@ Thywill.launch = function (config, applications, server, callback) {
  *   Of the form
  */
 Thywill.prepareForShutdown = function (config, callback) {
-  var self = this;
   // Check the configuration with a dummy Thywill instance.
   var thywill = new Thywill();
   thywill.configureFromObject(config);
@@ -244,8 +241,10 @@ Thywill.getBaseClass = (function () {
   var baseClasses = {};
   // Accessor function for the encapsulated object.
   return function (className) {
+    var pathElement;
     if (!baseClasses[className]) {
       switch (className) {
+        // Core classes.
         case "Component":
           baseClasses[className] = Component;
           break;
@@ -257,7 +256,7 @@ Thywill.getBaseClass = (function () {
         case "Minifier":
         case "ResourceManager":
         case "TemplateEngine":
-          var pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
+          pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
           baseClasses[className] = require("./component/" + pathElement + "/" + pathElement);
           break;
         case "Cache":
@@ -269,6 +268,17 @@ Thywill.getBaseClass = (function () {
         case "Resource":
           baseClasses[className] = require("./component/resourceManager/resource");
           break;
+        // Application superclasses
+        case "ExpressApplication":
+          pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
+          baseClasses[className] = require("./component/application/" + pathElement);
+          break;
+        // Extra classes.
+        case "EmberStore":
+          pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
+          baseClasses[className] = require("../../extra/lib/component/" + pathElement + "/" + pathElement);
+          break;
+        // Out of luck, found nothing.
         default:
           throw new Error("No such base class: " + className);
       }
@@ -545,6 +555,7 @@ p._managePreparationForShutdown = function (callback) {
 p._initializeComponents = function (passedApplications, callback) {
   var self = this;
   var fns = [
+    // Core components, have to be in order.
     function (asyncCallback) {
       self._initializeComponent("log", asyncCallback);
     },
@@ -567,6 +578,16 @@ p._initializeComponents = function (passedApplications, callback) {
       self._initializeComponent("clientInterface", asyncCallback);
     }
   ];
+
+  // Are any extra components defined in the configuration?
+  var extraComponents = ["emberStore"];
+  extraComponents.forEach(function (extraComponent, index, array) {
+    if (self.config[extraComponent]) {
+      fns.push(function (asyncCallback) {
+        self._initializeComponent(extraComponent, asyncCallback);
+      });
+    }
+  });
 
   // Add two loops through the applications array, if we have one, to
   // the list of functions to call.
@@ -645,26 +666,34 @@ p._initializeComponent = function (componentType, callback) {
     return;
   }
 
-  // There are two types of definition, core and package. Core looks like:
+  // There are three types of definition, core, extra, and require. Core looks like:
   //
   // implementation: {
   //   type: "core",
   //   name: "someImplementationName"
   // }
   //
-  // Package looks like this:
+  // Extra looks like:
   //
   // implementation: {
-  //   type: "core",
-  //   name: "somePackageName",
+  //   type: "extra",
+  //   name: "someImplementationName"
+  // }
+  //
+  // Require looks like this:
+  //
+  // implementation: {
+  //   type: "require",
+  //   path: "some package name or path/to/desired/implementation",
   //   property: "optionalProperty"
   // }
   //
-  var implementation = this.config[componentType].implementation;
-  var ComponentConstructor = null;
+  var implementation = this.config[componentType].implementation,
+      ComponentConstructor,
+      componentPath;
+  // Loading a constructor for a core component implementation.
   if (implementation.type === "core") {
-    // Loading a constructor for a core component implementation.
-    var componentPath = "./component/" + componentType + "/" + implementation.name + "/" + implementation.name;
+    componentPath = "./component/" + componentType + "/" + implementation.name;
     try {
       require.resolve(componentPath);
     } catch (e) {
@@ -672,22 +701,35 @@ p._initializeComponent = function (componentType, callback) {
       return;
     }
     ComponentConstructor = require(componentPath);
-  } else if (implementation.type === "package") {
-    // Loading a constructor for a component implementation provided by another package.
+  }
+  // Loading a constructor for an extra component implementation.
+  else if (implementation.type === "extra") {
+    componentPath = "../../extra/lib/component/" + componentType + "/" + implementation.name;
     try {
-      require.resolve(implementation.name);
+      require.resolve(componentPath);
     } catch (e) {
-      callback(new Error("Missing component implementation package '" + implementation.name + "' of type '" + componentType + "'"));
+      callback(new Error("Unsupported extra component implementation '" + implementation.name + "' of type '" + componentType + "'"));
+      return;
+    }
+    ComponentConstructor = require(componentPath);
+  }
+  // Loading a constructor for a component implementation provided by another package.
+  else if (implementation.type === "require") {
+    try {
+      require.resolve(implementation.path);
+    } catch (e) {
+      callback(new Error("Missing require component implementation '" + implementation.path + "' of type '" + componentType + "'"));
       return;
     }
     // Optionally, the constructor is in a property of this package export.
-    var exported = require(implementation.name);
+    var exported = require(implementation.path);
     if (implementation.property) {
-      ComponentConstructor = exported[property];
+      ComponentConstructor = exported[implementation.property];
     } else {
       ComponentConstructor = exported;
     }
-  } else {
+  }
+  else {
     callback(new Error("Invalid implementation type '" + implementation.type + "' for " + componentType + " component definition."));
     return;
   }

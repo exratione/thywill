@@ -49,8 +49,8 @@ var manifest = {
     weight: -10
   },
   // Add Handlebars.js.
-  "../../../thirdParty/handlebars.js/handlebars.1.0.0.beta.6.min.js": {
-    clientPath: "/echo/js/handlebars.min.js",
+  "../../../thirdParty/handlebars.js/handlebars.1.0.0.rc.1.js": {
+    clientPath: "/echo/js/handlebars.js",
     encoding: encoding,
     minified: true,
     type: Resource.TYPES.JAVASCRIPT,
@@ -93,7 +93,7 @@ var manifest = {
 };
 
 // Convert all the relative paths to absolute paths.
-var absoluteManifest = {};
+var absolutePath, absoluteManifest = {};
 for (var originFilePath in manifest) {
   absolutePath = path.resolve(__dirname, originFilePath);
   absoluteManifest[absolutePath] = manifest[originFilePath];

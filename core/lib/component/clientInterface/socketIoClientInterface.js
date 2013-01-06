@@ -182,7 +182,7 @@ p._startup = function (callback) {
   this.thywill.server.on("request", function (req, res) {
     resourceManager.getKeysServedByThywill(function (error, paths) {
       if (error) {
-        thywill.log.error(error);
+        self.thywill.log.error(error);
       }
       if (!error && paths[req.url]) {
         self._handleResourceRequest(req, res);
@@ -279,7 +279,7 @@ p._startup = function (callback) {
   var fns = [
     // Create a resource for the main client-side Thywill Javascript.
     function (asyncCallback) {
-      createBootstrapResourceFromFile("../../../../client/thywill.js", {
+      createBootstrapResourceFromFile("../../../client/thywill.js", {
         clientPath: self.config.baseClientPath + "/js/thywill.js",
         encoding: self.config.textEncoding,
         minified: false,
@@ -293,7 +293,7 @@ p._startup = function (callback) {
     // Use Handlebar.js rather than the configured template engine for core
     // files.
     function (asyncCallback) {
-      var originFilePath = pathHelpers.resolve(__dirname, "../../../../client/component/clientInterface/socketIO/serverInterface.js");
+      var originFilePath = pathHelpers.resolve(__dirname, "../../../client/component/clientInterface/socketIoServerInterface.js");
       var data = fs.readFileSync(originFilePath, self.config.textEncoding);
       var serverInterfaceTemplate = handlebars.compile(data);
       // Template parameters.
@@ -322,7 +322,7 @@ p._startup = function (callback) {
     // for this because core Thywill doesn't assume any such framework is
     // present.
     function (asyncCallback) {
-      createBootstrapResourceFromFile("../../../../client/thywillLoadLast.js", {
+      createBootstrapResourceFromFile("../../../client/thywillLoadLast.js", {
         clientPath: self.config.baseClientPath + "/js/thywillLoadLast.js",
         encoding: self.config.textEncoding,
         minified: false,
@@ -375,7 +375,7 @@ p._startup = function (callback) {
     // Javascript resources. Again using Handlebar.js rather than the
     // configured template engine.
     function (asyncCallback) {
-      var originFilePath = pathHelpers.resolve(__dirname, "../../../../client/thywill.html");
+      var originFilePath = pathHelpers.resolve(__dirname, "../../../client/thywill.html");
       var data = fs.readFileSync(originFilePath, self.config.textEncoding);
       var mainPageTemplate = handlebars.compile(data);
 
@@ -452,7 +452,7 @@ p._initializeConnection = function (socket) {
   /**
    * A message arrives and the raw data object from Socket.IO code is passed in.
    */
-  socket.on("messageFromClient", function (messageObj) {
+  socket.on("fromClient", function (messageObj) {
     if (messageObj && messageObj.data) {
       var messageManager = self.thywill.messageManager;
       var message = messageManager.createMessage(
@@ -520,7 +520,7 @@ p._handleResourceRequest = function (req, res) {
       res.setHeader("Content-Type", resource.type);
       // Define an error handler.
       var errorHandler = function (error) {
-        log.error(error);
+        self.thywill.log.error(error);
       };
       send(req, resource.filePath)
         // TODO: maxage
@@ -581,7 +581,7 @@ p.send = function(message) {
     else {
       var destinationSocket = this.socketFactory.of(this.config.namespace).socket(socketId);
       if (destinationSocket) {
-        destinationSocket.emit("messageToClient", {
+        destinationSocket.emit("toClient", {
           data: message.data,
           fromApplicationId: message.fromApplicationId,
           toApplicationId: message.toApplicationId
@@ -649,11 +649,11 @@ p.getResource = function (clientPath, callback) {
  * @see ClientInterface#setSessionData
  */
 p.setSessionData = function(sessionId, key, value, callback) {
-  var socket = this.socketFactory.of(this.config.namespace).socket(socketId);
+  var socket = this.socketFactory.of(this.config.namespace).socket(sessionId);
   if (socket) {
     socket.set(key, value, callback);
   } else {
-    callback(new Error("SocketIO.setSessionData: no socket with ID: " + socketId));
+    callback(new Error("SocketIO.setSessionData: no socket with ID: " + sessionId));
   }
 };
 
@@ -661,11 +661,11 @@ p.setSessionData = function(sessionId, key, value, callback) {
  * @see ClientInterface#getSessionData
  */
 p.getSessionData = function(sessionId, key, callback) {
-  var socket = this.socketFactory.of(this.config.namespace).socket(socketId);
+  var socket = this.socketFactory.of(this.config.namespace).socket(sessionId);
   if (socket) {
     socket.get(key, callback);
   } else {
-    callback(new Error("SocketIO.getSessionData: no socket with ID: " + socketId));
+    callback(new Error("SocketIO.getSessionData: no socket with ID: " + sessionId));
   }
 };
 

@@ -1,4 +1,7 @@
-/**
+/*global
+  io: false,
+  Thywill: false
+*//**
  * @fileOverview
  * Client-side Javascript for the socketIO clientInterface component. This
  * manages the interface between thywill.serverInferface and socket.IO.
@@ -14,7 +17,7 @@
  * @see Thywill.ServerInterface#send
  */
 Thywill.ServerInterface.send = function (message) {
-  Thywill.socket.emit("messageFromClient", message);
+  Thywill.socket.emit("fromClient", message);
 };
 
 Thywill.ServerInterface.setupConnection = function () {
@@ -54,7 +57,7 @@ Thywill.ServerInterface.setupConnection = function () {
   });
 
   // Message received from the server.
-  Thywill.socket.on("messageToClient", function (message) {
+  Thywill.socket.on("toClient", function (message) {
     Thywill.ServerInterface.received(message);
   });
 

@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * A baseline configuration file for Thywill.
- * 
+ *
  * This is used by the example applications to save on repetition, and to
  * provide a single place where the configuration is fairly well documented.
  */
@@ -13,9 +13,9 @@
 /**
  * Thywill core configuration is a nested set of objects, one for each
  * of the core components. The configuration specifies which component
- * implementations to use, and provides their specific configuration 
+ * implementations to use, and provides their specific configuration
  * parameters.
- * 
+ *
  * Note that Thywill applications are not configured this way, but are
  * expected to use their own configuration methodology.
  */
@@ -31,7 +31,7 @@ module.exports = {
       // Group ID and User ID for the Thywill process to downgrade to
       // once launched - this allows for such things as launching as
       // root to bind to privileged ports, then running later as a lesser
-      // user. 
+      // user.
       //
       // Note that if you set either of these to a numeric uid, it must be a
       // number not a numeric string - 312, not "312".
@@ -39,7 +39,7 @@ module.exports = {
       userId: "node"
     },
     // The administrative interface is a separate HTTPServer instance that runs
-    // to offer a few limited functions, such as those needed to properly 
+    // to offer a few limited functions, such as those needed to properly
     // manage a Thywill process as a service.
     adminInterface: {
       // An array of IP addresses permitted to access the interface.
@@ -52,8 +52,8 @@ module.exports = {
       port: 20080
     }
   },
-  
-  // The cache manager in an interface for creating and managing (usually 
+
+  // The cache manager in an interface for creating and managing (usually
   // in-memory) caches.
   cacheManager: {
     // Here we specify the use of the core LRU implementation.
@@ -62,7 +62,7 @@ module.exports = {
       name: "lruCacheManager"
     }
   },
-  
+
   // The client interface component manages communication between web browser
   // and server, and thus will usually have a fairly large set of configuration
   // parameters.
@@ -83,7 +83,7 @@ module.exports = {
     // If true, minify and merge bootstrap Javascript into a single resource.
     // This is the Javascript initially loaded when a client connections.
     minifyJavascript: false,
-    // A namespace to apply to Socket.IO communications, allowing other 
+    // A namespace to apply to Socket.IO communications, allowing other
     // Socket.IO applications to run on the same server in their own, separate
     // namespaces.
     namespace: "/applicationNamespace",
@@ -100,10 +100,10 @@ module.exports = {
       // This MUST match the value of the socketConfig.*.resource value, but
       // with the leading / dropped.
       "resource": "application/socket.io"
-    },    
+    },
     // Configuration to apply to the Socket.IO server setup. Both the global
     // configuration and any environment-specific configurations are applied.
-    // Socket.IO will only use environment-specific parameters if the 
+    // Socket.IO will only use environment-specific parameters if the
     // environment name matches the NODE_ENV environment variable. See:
     // https://github.com/LearnBoost/Socket.IO/wiki/Configuring-Socket.IO
     socketConfig: {
@@ -138,7 +138,7 @@ module.exports = {
     // system.
     textEncoding: "utf8"
   },
-  
+
   // The resource manager is, as you might expect, the factory for creating and
   // keeping track of resources - the CSS, Javascript, HTML, and so forth, that
   // is delivered to the client.
@@ -150,7 +150,7 @@ module.exports = {
       name: "inMemoryResourceManager"
     }
   },
-  
+
   // This core component provides an interface for logging.
   log: {
     // We specify the simple console log implementation, which emits log
@@ -164,7 +164,7 @@ module.exports = {
     // levels are ignored. The log levels are, in order, [debug, warn, error].
     level: "debug"
   },
-  
+
   // The messageManager is a factory for creating messages, objects to
   // represent data passed back and forth between client and server.
   messageManager: {
@@ -176,7 +176,7 @@ module.exports = {
       name: "simpleMessageManager"
     }
   },
-  
+
   // The minifer component manages minification and merging of CSS and
   // Javascript resources that are assembled by Thywill.
   minifier: {
@@ -191,7 +191,7 @@ module.exports = {
     // The base path to use when defining a new resource for merged Javascript.
     jsBaseClientPath: "/application/js"
   },
-  
+
   // The template component provides an interface to a templating engine,
   // always useful when slinging around HTML and Javascript.
   templateEngine: {

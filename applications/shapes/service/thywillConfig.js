@@ -29,6 +29,16 @@ config.log.level = "debug";
 config.minifier.cssBaseClientPath = "/shapes/css";
 config.minifier.jsBaseClientPath = "/shapes/js";
 
+// Specify use of an EmberStore component. Since this is in extras, it is only
+// created and initialized at all because we mention it here.
+config.emberStore = {
+  // Specify the in-memory implementation.
+  implementation: {
+    type: "extra",
+    name: "inMemoryEmberStore"
+  }
+};
+
 /*
 // Use the linkedFileResourceManager in place of the default in-memory
 // implementation, allowing Nginx to serve resources as static files.

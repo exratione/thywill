@@ -16,7 +16,7 @@ var Thywill = require("thywill");
  */
 function TemplateEngine() {
   TemplateEngine.super_.call(this);
-  this.componentType = "template";
+  this.componentType = "templateEngine";
 }
 util.inherits(TemplateEngine, Thywill.getBaseClass("Component"));
 var p = TemplateEngine.prototype;

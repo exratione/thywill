@@ -50,32 +50,41 @@ var manifest = {
     type: Resource.TYPES.JAVASCRIPT,
     weight: -10
   },
-  // Add json2.js, required by Backbone.js.
-  "../../../thirdParty/json/json2.js": {
-    clientPath: "/shapes/js/json2.js",
-    encoding: encoding,
-    minified: false,
-    servedBy: Resource.SERVED_BY.EXPRESS,
-    type: Resource.TYPES.JAVASCRIPT,
-    weight: 10
-  },
-  // Add Underscore.js, required by Backbone.js.
-  "../../../thirdParty/underscore.js/underscore.1.3.3.min.js": {
-    clientPath: "/shapes/js/underscore.min.js",
+  // Add Handlebars.js.
+  "../../../thirdParty/handlebars.js/handlebars.1.0.0.rc.1.js": {
+    clientPath: "/shapes/js/handlebars.js",
     encoding: encoding,
     minified: true,
     servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.JAVASCRIPT,
     weight: 20
   },
-  // Add Handlebars.js.
-  "../../../thirdParty/handlebars.js/handlebars.1.0.0.beta.6.min.js": {
-    clientPath: "/shapes/js/handlebars.min.js",
+  // Add Ember.js
+  "../../../thirdParty/ember.js/ember.20130105.js": {
+    clientPath: "/shapes/js/ember.js",
+    encoding: encoding,
+    minified: true,
+    servedBy: Resource.SERVED_BY.EXPRESS,
+    type: Resource.TYPES.JAVASCRIPT,
+    weight: 30
+  },
+  // Add Ember Data.
+  "../../../thirdParty/ember.js/ember-data.20130105.js": {
+    clientPath: "/shapes/js/ember-data.js",
     encoding: encoding,
     minified: true,
     servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.JAVASCRIPT,
     weight: 40
+  },
+  // Add the Thywill EmberApplicationInterface.
+  "../../../extra/client/applicationInterface/emberApplicationInterface.js": {
+    clientPath: "/shapes/js/emberApplicationInterface.js",
+    encoding: encoding,
+    minified: false,
+    servedBy: Resource.SERVED_BY.EXPRESS,
+    type: Resource.TYPES.JAVASCRIPT,
+    weight: 50
   },
   // Add HTML5 Boilerplate CSS.
   "../../../thirdParty/html5boilerplate/html5boilerplate.css": {
@@ -98,7 +107,7 @@ var manifest = {
 };
 
 // Convert all the relative paths to absolute paths.
-var absoluteManifest = {};
+var absolutePath, absoluteManifest = {};
 for (var originFilePath in manifest) {
   absolutePath = path.resolve(__dirname, originFilePath);
   absoluteManifest[absolutePath] = manifest[originFilePath];
