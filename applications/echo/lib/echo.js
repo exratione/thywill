@@ -22,7 +22,7 @@ var bootstrapManifest = require("./bootstrapManifest");
  * This application provides a UI for the client to enter messages, and echoes
  * back all entered messages with the same content.
  */
-function Echo(id) {
+function Echo (id) {
   Echo.super_.call(this, id);
 }
 util.inherits(Echo, Thywill.getBaseClass("Application"));
@@ -68,7 +68,7 @@ p._defineBootstrapResources = function (callback) {
         type: self.thywill.resourceManager.types.JAVASCRIPT,
         weight: 50
       });
-      self.thywill.clientInterface.storeBootstrapResource(resource, asyncCallback);
+      self.storeBootstrapResource(resource, asyncCallback);
     }
   ];
   async.series(fns, callback);
@@ -91,31 +91,41 @@ p._prepareForShutdown = function (callback) {
  */
 p.receive = function (message) {
   this.thywill.log.debug("Echo.receive(): Message for echoing: " + message.encode());
+  // If the message came from a client connection, react by sending the same
+  // data right back to where it came from.
   var messageManager = this.thywill.messageManager;
-  var echoMessage = messageManager.createMessage(
-    message.data,
-    message.sessionId,
-    messageManager.origins.SERVER,
-    messageManager.destinations.CLIENT,
-    this.id
-  );
-  this.send(echoMessage);
+  if (message.connectionId && message.origin === messageManager.origins.CLIENT) {
+    var echoMessage = messageManager.createMessage({
+      data: message.data,
+      connectionId: message.connectionId,
+      origin: messageManager.origins.SERVER,
+      destination: messageManager.destinations.CLIENT,
+      fromApplicationId: this.id
+    });
+    this.send(echoMessage);
+  }
 };
 
 /**
  * @see Application#connection
+ *
+ * Note that since this application is configured to use no sessions,
+ * session === null and sessionId === connectionId.
  */
-p.connection = function (sessionId) {
+p.connection = function (connectionId, sessionId, session) {
   // Do nothing except log it.
-  this.thywill.log.debug("Echo: Client connected: " + sessionId);
+  this.thywill.log.debug("Echo: Client connected: " + connectionId);
 };
 
 /**
  * @see Application#disconnection
+ *
+ * Note that since this application is configured to use no sessions,
+ * session === null and sessionId === connectionId.
  */
-p.disconnection = function (sessionId) {
+p.disconnection = function (connectionId, sessionId) {
   // Do nothing except log it.
-  this.thywill.log.debug("Echo: Client disconnected: " + sessionId);
+  this.thywill.log.debug("Echo: Client disconnected: " + connectionId);
 };
 
 //-----------------------------------------------------------

@@ -31,7 +31,7 @@ ConsoleLog.CONFIG_TEMPLATE = {
       description: "The mimimum level of message that will be logged.",
       types: "string",
       required: true,
-      allowedValues: ['debug', 'warn', 'error']
+      allowedValues: ["debug", "info", "warn", "error"]
     }
   }
 };
@@ -51,7 +51,7 @@ ConsoleLog.CONFIG_TEMPLATE = {
  * @see Component#_configure
  */
 p._configure = function (thywill, config, callback) {
-  // Minimal configuration - all we're doing here is storing it for posterity.
+  // Minimal configuration - all we"re doing here is storing it for posterity.
   this.thywill = thywill;
   this.config = config;
   this.readyCallback = callback;
@@ -89,6 +89,15 @@ p._prepareForShutdown = function (callback) {
 p.debug = function (message) {
   if (this.levels.indexOf("debug") >= this.level) {
     this.log("DEBUG", message);
+  }
+};
+
+/**
+ * @see Log#info
+ */
+p.info = function (message) {
+  if (this.levels.indexOf("info") >= this.level) {
+    this.log("INFO", message);
   }
 };
 

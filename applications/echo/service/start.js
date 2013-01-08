@@ -27,9 +27,12 @@ var server = null;
 // And off we go: launch a Thywill instance to run the the application.
 Thywill.launch(thywillConfig, echo, server, function (error, thywill, server) {
   if (error) {
-    console.log("Thywill launch failed with error: " + error.toString());
+    if (error instanceof Error) {
+      error = error.stack;
+    }
+    console.error("Thywill launch failed with error: " + error);
     process.exit(1);
-  } else {
-    console.log("Thywill is ready to run the example application.");
-  };
+    return;
+  }
+  thywill.log.info("Thywill is ready to run the Echo example application.");
 });

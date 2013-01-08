@@ -80,6 +80,7 @@ p.createResource = function (data, attributes) {
 p.store = function (key, resource, callback) {
   this.data[key] = resource;
   resource.stored = true;
+  // Some resources may be served by other server components.
   if (resource.servedBy === this.servedBy.THYWILL) {
     this.keysServedByThywill[key] = true;
   }
@@ -94,6 +95,7 @@ p.remove = function (key, callback) {
   var error = this.NO_ERRORS;
   if (this.data[key]) {
     resource = this.data[key];
+    // Some resources may be served by other server components.
     if (resource.servedBy === this.servedBy.THYWILL) {
       delete this.keysServedByThywill[key];
     }

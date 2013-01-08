@@ -18,7 +18,7 @@ var Thywill = require("thywill");
  * @param {string} id
  *   An ID uniquely identifying this application.
  */
-function Application(id) {
+function Application (id) {
   Application.super_.call(this);
   if (!id) {
     throw new Error("Application class constructor requires an id parameter");
@@ -41,6 +41,20 @@ var p = Application.prototype;
  */
 p.send = function (message) {
   this.thywill.clientInterface.send(message);
+};
+
+/**
+ * Define a resource to be loaded immediately on client connection.
+ *
+ * @param {Resource} resource
+ *   A Resource instance.
+ * @param {function} callback
+ *   Of the form function (error, storedResource) {}, where error === null on
+ *   success and storedResource is the provided resource object with any
+ *   amendments that might have been made by the store.
+ */
+p.storeBootstrapResource = function (resource, callback) {
+  this.thywill.clientInterface.storeBootstrapResource(resource, callback);
 };
 
 /**
@@ -70,7 +84,7 @@ p.storeBootstrapResourceFromFile = function (filePath, attributes, callback) {
       if (error) {
         callback(error);
       } else {
-        self.thywill.clientInterface.storeBootstrapResource(resource, callback);
+        self.storeBootstrapResource(resource, callback);
       }
     }
   );
@@ -154,20 +168,29 @@ p.receive = function (message) {
 /**
  * Called when a client connects or reconnects.
  *
+ * @param {string} connectionId
+ *   Unique ID of the connection.
  * @param {string} sessionId
- *   Unique ID of the session.
+ *   Unique ID of the session associated with this connection - one session
+ *   might have multiple concurrent connections.
+ * @param {object} session
+ *   The session. This will be null if the clientInterface component is
+ *   configured not to use sessions.
  */
-p.connection = function (sessionId) {
+p.connection = function (connectionId, sessionId, session) {
   throw new Error("Not implemented.");
 };
 
 /**
  * Called when a client disconnects.
  *
+ * @param {string} connectionId
+ *   Unique ID of the connection.
  * @param {string} sessionId
- *   Unique ID of the session.
+ *   Unique ID of the session associated with this connection - one session
+ *   might have multiple concurrent connections.
  */
-p.disconnection = function (sessionId) {
+p.disconnection = function (connectionId, sessionId) {
   throw new Error("Not implemented.");
 };
 

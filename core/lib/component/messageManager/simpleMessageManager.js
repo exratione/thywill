@@ -15,7 +15,7 @@ var Message = require("./message");
  * @class
  * A trivial synchronous in-memory resource manager.
  */
-function SimpleMessageManager() {
+function SimpleMessageManager () {
   SimpleMessageManager.super_.call(this);
   this.data = {};
 }
@@ -62,8 +62,8 @@ p._prepareForShutdown = function (callback) {
 /**
  * @see MessageManager#createMessage
  */
-p.createMessage = function(data, sessionId, origin, destination, fromApplicationId, toApplicationId) {
-  return new Message(data, sessionId, origin, destination, fromApplicationId, toApplicationId);
+p.createMessage = function (params) {
+  return new Message(params);
 };
 
 //-----------------------------------------------------------

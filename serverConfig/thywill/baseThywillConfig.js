@@ -93,6 +93,33 @@ module.exports = {
     // the client interface - which should be at a minimum twice the number of
     // bootstrap and other resources defined by applications.
     resourceCacheLength: 100,
+    // Session management configuration. If sessions are being used, we want
+    // access to them for Socket.IO connections.
+    //
+    // You will probably want to use Express sessions with Socket.IO for any
+    // reasonable application. Configure that as follows:
+    //
+    // session: {
+    //   type: "express",
+    //   // Set the following values in the application start.js file, as that
+    //   // is where Express is set up.
+    //   //
+    //   // The Express application.
+    //   app: null,
+    //   // The session store instance.
+    //   store: null,
+    //   // The cookie key and secret there as well.
+    //   cookieKey: null,
+    //   cookieSecret: null
+    // }
+    //
+    // See /applications/shapes/service/start.js for an example.
+    //
+    // The default is for no session management. Not useful for much beyond
+    // demonstration applications.
+    sessions: {
+      type: "none"
+    },
     // Configuration to apply to the Socket.IO client on setup. This is
     // used as-is. See:
     // https://github.com/LearnBoost/Socket.IO/wiki/Configuring-Socket.IO
@@ -136,7 +163,7 @@ module.exports = {
     },
     // Other text file encodings, such as when loading resources from the file
     // system.
-    textEncoding: "utf8"
+    textEncoding: "utf-8"
   },
 
   // The resource manager is, as you might expect, the factory for creating and

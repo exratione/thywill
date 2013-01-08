@@ -38,7 +38,7 @@ function Shapes(id, app) {
   // TODO: initialize the emberstore with some data.
 
 }
-util.inherits(Shapes, Thywill.getBaseClass("ExpressApplication"));
+util.inherits(Shapes, Thywill.getBaseClass("Application"));
 var p = Shapes.prototype;
 
 //-----------------------------------------------------------
@@ -77,10 +77,11 @@ p._defineBootstrapResources = function (callback) {
         isGenerated: true,
         minified: false,
         originFilePath: originFilePath,
+        servedBy: self.thywill.resourceManager.servedBy.EXPRESS,
         type: self.thywill.resourceManager.types.JAVASCRIPT,
         weight: 60
       });
-      self.thywill.clientInterface.storeBootstrapResource(resource, asyncCallback);
+      self.storeBootstrapResource(resource, asyncCallback);
     }
   ];
   async.series(fns, callback);
@@ -113,18 +114,22 @@ p.receive = function (message) {
 
 /**
  * @see Application#connection
+ *
+ * Since this application is configured to use Express sessions, the sessionId
+ * and session should be the same as those associated with the initial
+ * application page view.
  */
-p.connection = function (sessionId) {
+p.connection = function (connectionId, sessionId, session) {
   // Do nothing except log it.
-  this.thywill.log.debug("Shapes: Client connected: " + sessionId);
+  this.thywill.log.debug("Shapes: Client connected with connectionId " + connectionId + ", sessionId " + sessionId);
 };
 
 /**
  * @see Application#disconnection
  */
-p.disconnection = function (sessionId) {
+p.disconnection = function (connectionId, sessionId) {
   // Do nothing except log it.
-  this.thywill.log.debug("Shapes: Client disconnected: " + sessionId);
+  this.thywill.log.debug("Shapes: Client disconnected with connectionId " + connectionId + ", sessionId " + sessionId);
 };
 
 //-----------------------------------------------------------

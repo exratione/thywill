@@ -43,6 +43,9 @@ function Thywill() {
   this.minifier = null;
   this.resourceManager = null;
   this.templateEngine = null;
+
+  // General utility code.
+  this.utility = require("./utility");
 }
 util.inherits(Thywill, Component);
 var p = Thywill.prototype;
@@ -267,11 +270,6 @@ Thywill.getBaseClass = (function () {
           break;
         case "Resource":
           baseClasses[className] = require("./component/resourceManager/resource");
-          break;
-        // Application superclasses
-        case "ExpressApplication":
-          pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
-          baseClasses[className] = require("./component/application/" + pathElement);
           break;
         // Extra classes.
         case "EmberStore":

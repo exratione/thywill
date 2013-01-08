@@ -35,22 +35,28 @@ var p = MessageManager.prototype;
 /**
  * Obtain a new Message object.
  *
- * @param {string} data
- *   The body of the message.
- * @param {string} sessionId
- *   The ID of the client, whether sender or recipient.
- * @param {string} origin
- *   Whether the message originated from server or client.
- * @param {string} destination
- *   Whether the message is delivered to server or client.
- * @param {string} fromApplicationId
- *   The ID of the originating application.
- * @param {string} [toApplicationId]
- *   If not null, the message is flagged for delivery to this application only.
+ * {
+ *   // The body of the message.
+ *   data: object
+ *   // The ID of the specific client connecton, whether sender or recipient.
+ *   connectionId: string
+ *   // Whether the message originated from server or client.
+ *   origin: Message.ORIGINS.CLIENT || Message.ORIGINS.SERVER
+ *   // Whether the message is delivered to server or client.
+ *   destination: Message.DESTINATIONS.CLIENT || Message.DESTINATIONS.SERVER
+ *   // The ID of the originating application.
+ *   fromApplicationId: string
+ *   // If not null, the message is flagged for delivery to this application
+ *   // only.
+ *   toApplicationId: string
+ * }
+ *
+ * @param {object} params
+ *   Message parameters.
  * @return {Message}
  *   A Message instance.
  */
-p.createMessage = function(data, sessionId, origin, destination, fromApplicationId, toApplicationId) {
+p.createMessage = function (params) {
   throw new Error("Not implemented.");
 };
 

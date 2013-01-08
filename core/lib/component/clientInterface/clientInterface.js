@@ -15,7 +15,7 @@ var Thywill = require("thywill");
  * The superclass for Thywill client interfaces. This is not intended to be
  * instantiated.
  */
-function ClientInterface() {
+function ClientInterface () {
   ClientInterface.super_.call(this);
   this.componentType = "clientInterface";
 }
@@ -49,14 +49,19 @@ p.receive = function (message) {
 /**
  * Called when a client connects or reconnects.
  *
+ * @param {string} connectionId
+ *   Unique ID of the connection.
  * @param {string} sessionId
- *   Unique ID of the session.
+ *   Unique ID of the session associated with this connection - one session
+ *   might have multiple concurrent connections.
+ * @param {object} session
+ *   The session.
  */
-p.connection = function (sessionId) {
+p.connection = function (connectionId, sessionId, session) {
   var self = this;
   for (var id in this.thywill.applications) {
     process.nextTick(function () {
-      self.thywill.applications[id].connection(sessionId);
+      self.thywill.applications[id].connection(connectionId, sessionId, session);
     });
   }
 };
@@ -64,14 +69,17 @@ p.connection = function (sessionId) {
 /**
  * Called when a client disconnects.
  *
+ * @param {string} connectionId
+ *   Unique ID of the connection.
  * @param {string} sessionId
- *   Unique ID of the session.
+ *   Unique ID of the session associated with this connection - one session
+ *   might have multiple concurrent connections.
  */
-p.disconnection = function (sessionId) {
+p.disconnection = function (connectionId, sessionId) {
   var self = this;
   for (var id in this.thywill.applications) {
     process.nextTick(function () {
-      self.thywill.applications[id].disconnection(sessionId);
+      self.thywill.applications[id].disconnection(connectionId, sessionId);
     });
   }
 };
@@ -151,37 +159,6 @@ p.getResource = function (clientPath, callback) {
  *   A Message instance.
  */
 p.send = function (message) {
-  throw new Error("Not implemented.");
-};
-
-/**
- * Store key-value data for a specific session.
- *
- * @param {string} sessionId
- *   A unique session ID.
- * @param {string} key
- *   Key for the data.
- * @param {Object} value
- *   Any object.
- * @param {Function} callback
- *   Of the form function (error) {}, where error === null on success.
- */
-p.setSessionData = function (sessionId, key, value, callback) {
-  throw new Error("Not implemented.");
-};
-
-/**
- * Retrieve the value data for a specific session and key.
- *
- * @param {string} sessionId
- *   A unique session ID.
- * @param {string} key
- *   Key for the data.
- * @param {Function} [callback]
- *   Of the form function (error, value) {}, where error === null on success
- *   and value is the value to be returned.
- */
-p.getSessionData = function (sessionId, key, callback) {
   throw new Error("Not implemented.");
 };
 

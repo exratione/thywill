@@ -15,6 +15,18 @@ config.thywill.adminInterface.port = 20081;
 // namespace.
 config.clientInterface.baseClientPath = "/shapes";
 config.clientInterface.namespace = "/shapes";
+
+// Using Express sessions.
+config.clientInterface.sessions = {
+  type: "express",
+  // The rest of the sessions configuration is set in start.js, as that is
+  // where Express is set up and configured.
+  app: null,
+  store: null,
+  cookieKey: null,
+  cookieSecret: null
+};
+
 // Note that the client resource has no leading /. These must otherwise match.
 config.clientInterface.socketClientConfig.resource = "shapes/socket.io";
 config.clientInterface.socketConfig.global.resource = "/shapes/socket.io";
@@ -29,8 +41,8 @@ config.log.level = "debug";
 config.minifier.cssBaseClientPath = "/shapes/css";
 config.minifier.jsBaseClientPath = "/shapes/js";
 
-// Specify use of an EmberStore component. Since this is in extras, it is only
-// created and initialized at all because we mention it here.
+// Specify use of an EmberStore component. Since this is in extras, the component
+// is optional: only created and initialized at all because it appears here.
 config.emberStore = {
   // Specify the in-memory implementation.
   implementation: {

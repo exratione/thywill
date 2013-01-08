@@ -11,28 +11,35 @@ var Thywill = require("thywill");
 
 /**
  * @class
- * A Message instance wraps data for delivery between client and server.
+ * A Message instance wraps data for delivery between client and server. It
+ * expects values of the form:
  *
- * @param {string} data
- *   The body of the message.
- * @param {string} sessionId
- *   The ID of the client, whether sender or recipient.
- * @param {string} origin
- *   Whether the message originated from server or client.
- * @param {string} destination
- *   Whether the message is delivered to server or client.
- * @param {string} fromApplicationId
- *   The ID of the originating application.
- * @param {string} [toApplicationId]
- *   If not null, the message is flagged for delivery to this application only.
+ * {
+ *   // The body of the message.
+ *   data: object
+ *   // The ID of the specific client connecton, whether sender or recipient.
+ *   connectionId: string
+ *   // Whether the message originated from server or client.
+ *   origin: Message.ORIGINS.CLIENT || Message.ORIGINS.SERVER
+ *   // Whether the message is delivered to server or client.
+ *   destination: Message.DESTINATIONS.CLIENT || Message.DESTINATIONS.SERVER
+ *   // The ID of the originating application.
+ *   fromApplicationId: string
+ *   // If not null, the message is flagged for delivery to this application
+ *   // only.
+ *   toApplicationId: string
+ * }
+ *
+ * @param {object} params
+ *   Message parameters.
  */
-function Message(data, sessionId, origin, destination, fromApplicationId, toApplicationId) {
-  this.data = data;
-  this.sessionId = sessionId;
-  this.origin = origin;
-  this.destination = destination;
-  this.fromApplicationId = fromApplicationId;
-  this.toApplicationId = toApplicationId;
+function Message (params) {
+  this.data = params.data;
+  this.connectionId = params.connectionId;
+  this.origin = params.origin;
+  this.destination = params.destination;
+  this.fromApplicationId = params.fromApplicationId;
+  this.toApplicationId = params.toApplicationId;
 }
 var p = Message.prototype;
 
@@ -67,7 +74,7 @@ p.encode = function () {
 };
 
 /**
- * A valid message has at least values for data and sessionId. A null
+ * A valid message has at least values for data and connectionId. A null
  * toApplicationId implies delivery to all applications, but is still valid.
  *
  * @return {boolean}
@@ -75,7 +82,19 @@ p.encode = function () {
  */
 p.isValid = function () {
   // TODO more rigorous check.
-  return (this.data && this.sessionId && this.fromApplicationId);
+
+  // A message to or from the client.
+  if (this.data && this.connectionId && this.fromApplicationId) {
+    return true;
+  }
+  // A message between two server application components.
+  else if (this.data && this.origin === Message.ORIGINS.SERVER && this.destination === Message.DESTINATIONS.SERVER && this.fromApplicationId) {
+    return true;
+  }
+  // Otherwise invalid.
+  else {
+    return false;
+  }
 };
 
 //-----------------------------------------------------------

@@ -26,11 +26,14 @@ var Thywill = require("thywill");
  * Thywill. This involves setting up resources for the initial page load, and
  * then interfacing with the client Javascript after the page has loaded.
  */
-function SocketIoClientInterface() {
+function SocketIoClientInterface () {
   SocketIoClientInterface.super_.call(this);
   this.socketFactory = null;
   this.bootstrapResourceClientPaths = [];
   this.resourceCache = null;
+
+  // Convenience reference.
+  this.SESSIONS = SocketIoClientInterface.SESSIONS;
 }
 util.inherits(SocketIoClientInterface, Thywill.getBaseClass("ClientInterface"));
 var p = SocketIoClientInterface.prototype;
@@ -39,68 +42,107 @@ var p = SocketIoClientInterface.prototype;
 // "Static" parameters
 // -----------------------------------------------------------
 
+SocketIoClientInterface.SESSIONS = {
+  NONE: "none",
+  EXPRESS: "express"
+};
+
 SocketIoClientInterface.CONFIG_TEMPLATE = {
-  baseClientPath : {
-    _configInfo : {
-      description : "The base path for all Thywill URLs with a leading but no trailing slash. e.g. '/thywill'.",
-      types : "string",
-      required : true
+  baseClientPath: {
+    _configInfo: {
+      description: "The base path for all Thywill URLs with a leading but no trailing slash. e.g. '/thywill'.",
+      types: "string",
+      required: true
     }
   },
-  minifyCss : {
-    _configInfo : {
-      description : "If true, merge and minify CSS resources.",
-      types : "boolean",
-      required : true
+  minifyCss: {
+    _configInfo: {
+      description: "If true, merge and minify CSS resources.",
+      types: "boolean",
+      required: true
     }
   },
   minifyJavascript : {
-    _configInfo : {
-      description : "If true, merge and minify Javascript resources.",
-      types : "boolean",
-      required : true
+    _configInfo: {
+      description: "If true, merge and minify Javascript resources.",
+      types: "boolean",
+      required: true
     }
   },
   namespace : {
-    _configInfo : {
-      description : "Socket.IO allows connection multiplexing by assigning a namespace; this is generally a good idea.",
-      types : "string",
-      required : true
+    _configInfo: {
+      description: "Socket.IO allows connection multiplexing by assigning a namespace; this is generally a good idea.",
+      types: "string",
+      required: true
     }
   },
-  pageEncoding : {
-    _configInfo : {
-      description : "The content encoding for the web page provided by the client interface.",
-      types : "string",
-      required : true
+  pageEncoding: {
+    _configInfo: {
+      description: "The content encoding for the web page provided by the client interface.",
+      types: "string",
+      required: true
     }
   },
-  resourceCacheLength : {
-    _configInfo : {
-      description : "Maximum number of items held by the cache for resources served by the client interface. This should be at least twice the count of bootstrap resources defined in applications.",
-      types : "integer",
-      required : true
+  resourceCacheLength: {
+    _configInfo: {
+      description: "Maximum number of items held by the cache for resources served by the client interface. This should be at least twice the count of bootstrap resources defined in applications.",
+      types: "integer",
+      required: true
     }
   },
-  socketClientConfig : {
-    _configInfo : {
-      description : "Container object for Socket.IO client configuration parameters.",
-      types : "object",
-      required : false
+  sessions: {
+    type: {
+      _configInfo: {
+        description: "The type of session management being used.",
+        types: "string",
+        allowedValues: [
+          SocketIoClientInterface.SESSIONS.NONE,
+          SocketIoClientInterface.SESSIONS.EXPRESS
+        ],
+        required: true
+      }
+    },
+    store: {
+      _configInfo: {
+        description: "The session store instance.",
+        types: "object",
+        required: false
+      }
+    },
+    cookieKey: {
+      _configInfo: {
+        description: "The name used for Express session cookies.",
+        types: "string",
+        required: false
+      }
+    },
+    cookieSecret: {
+      _configInfo: {
+        description: "The secret value used for Express session cookies.",
+        types: "string",
+        required: false
+      }
     }
   },
-  socketConfig : {
-    _configInfo : {
-      description : "Container object for environment-specific Socket.IO configuration objects.",
-      types : "object",
-      required : false
+  socketClientConfig: {
+    _configInfo: {
+      description: "Container object for Socket.IO client configuration parameters.",
+      types: "object",
+      required: false
     }
   },
-  textEncoding : {
-    _configInfo : {
-      description : "The content encoding for text resources.",
-      types : "string",
-      required : true
+  socketConfig: {
+    _configInfo: {
+      description: "Container object for environment-specific Socket.IO configuration objects.",
+      types: "object",
+      required: false
+    }
+  },
+  textEncoding: {
+    _configInfo: {
+      description: "The content encoding for text resources.",
+      types: "string",
+      required: true
     }
   }
 };
@@ -123,6 +165,9 @@ SocketIoClientInterface.CONFIG_TEMPLATE = {
  *    namespace: "/echoNamespace",
  *    pageEncoding: "utf-8",
  *    resourceCacheLength: 100,
+ *    sessions: {
+ *      type: "none",
+ *    },
  *    socketClientConfig: {
  *      "resource": "echo/socket.io",
  *       ... Socket.IO client configuration ...
@@ -173,12 +218,19 @@ p._startup = function (callback) {
   var self = this;
   var resourceManager = this.thywill.resourceManager;
 
+  // --------------------------------------------------------------------------
+  // Hijack the server request listeners.
+  // --------------------------------------------------------------------------
+
   // Grab the listeners on the server object:
   this.serverListeners = this.thywill.server.listeners('request').splice(0);
 
   // And set our own listener to manage resource requests. This will be trumped
   // by Socket.IO's request handler, and only called if that doesn't find
   // something.
+  //
+  // If we are using Express sessions, then this will serve nothing much, and
+  // just pass things on to Express.
   this.thywill.server.on("request", function (req, res) {
     resourceManager.getKeysServedByThywill(function (error, paths) {
       if (error) {
@@ -195,6 +247,10 @@ p._startup = function (callback) {
     });
   });
 
+  // --------------------------------------------------------------------------
+  // Set up Socket.IO.
+  // --------------------------------------------------------------------------
+
   // Set up Socket.IO on the server object.
   this.socketFactory = io.listen(this.thywill.server);
 
@@ -205,8 +261,8 @@ p._startup = function (callback) {
   var socketClientConfig = this.config.socketClientConfig;
   var resourceSettings = [];
   if (socketConfig) {
+    // If there is a global configuration set, then use it.
     if (socketConfig.global && socketConfig.global instanceof Object) {
-      // There's a global configuration set, so use it.
       this.socketFactory.configure(function () {
         for (var property in socketConfig.global) {
           self.socketFactory.set(property, socketConfig.global[property]);
@@ -214,18 +270,15 @@ p._startup = function (callback) {
       });
     }
 
-    // Now walk through the async series below applying whatever
-    // environment-specific Socket.IO configurations are provided in the
-    // configuration object. These configuration properties will only be used
-    // if the NODE_ENV environment variable matches the environmentName - e.g.
-    // "production", "development", etc.
-    var properties = [];
-    for ( var property in socketConfig) {
-      if (property !== "global") {
-        properties.push(property);
-      }
-    }
-    async.forEachSeries(properties, function (environmentName) {
+    // Now walk through to apply whatever environment-specific Socket.IO
+    // configurations are provided in the configuration object. These
+    // configuration properties will only be used if the NODE_ENV environment
+    // variable matches the environmentName - e.g. "production", "development",
+    // etc.
+    var environmentNames = Object.keys(socketConfig);
+    environmentNames.filter(function (environmentName, index, array) {
+      return (environmentName !== "global");
+    }).forEach(function (environmentName, index, array) {
       var environmentConfig = socketConfig[environmentName];
       if (environmentConfig && environmentConfig instanceof Object) {
         self.socketFactory.configure(environmentName, function() {
@@ -234,9 +287,6 @@ p._startup = function (callback) {
           }
         });
       }
-    }, function (error) {
-      // We don't much care about this callback or when the series
-      // completes.
     });
   }
 
@@ -245,6 +295,50 @@ p._startup = function (callback) {
   this.socketFactory.of(this.config.namespace).on("connection", function (socket) {
     self._initializeConnection(socket);
   });
+
+  // This is how we attach Express sessions to the sockets. The result is that
+  // socket.handshake.session holds the session, and socket.handshake.sessionId
+  // has the session ID.
+  //
+  // This code was adapted from:
+  // https://github.com/alphapeter/socket.io-express
+  if (this.config.sessions.type === this.SESSIONS.EXPRESS) {
+    var express = require("express");
+    var cookieParser = express.cookieParser(this.config.sessions.cookieSecret);
+    // We're using the authorization hook, but there is no authorizing going on
+    // here - we're only attaching the session to the socket handshake.
+    this.socketFactory.set("authorization", function (data, callback) {
+      if (data && data.headers && data.headers.cookie) {
+        cookieParser(data, {}, function (error) {
+          if (error) {
+            callback("COOKIE_PARSE_ERROR", false);
+          }
+          var sessionId = data.signedCookies[self.config.sessions.cookieKey];
+          self.config.sessions.store.get(sessionId, function (error, session) {
+            // Add the sessionId. This will show up in
+            // socket.handshake.sessionId.
+            data.sessionId = sessionId;
+            if (error) {
+              callback("ERROR", false);
+            } else if (!session) {
+              callback("NO_SESSION", false);
+            } else {
+              // Add the session. This will show up in
+              // socket.handshake.session.
+              data.session = session;
+              callback(null, true);
+            }
+          });
+        });
+      } else {
+        callback("NO_COOKIE", false);
+      }
+    });
+  }
+
+  // --------------------------------------------------------------------------
+  // Set up bootstrap resources for Thywill main page requests.
+  // --------------------------------------------------------------------------
 
   // Set up an array of functions to be executed in series that will build the
   // array of bootstrap resources needed for the main Thywill page.
@@ -261,7 +355,7 @@ p._startup = function (callback) {
    * @param {Function}
    * callback Of the form function (error) where error === null on success.
    */
-  var createBootstrapResourceFromFile = function(relativePath, attributes, callback) {
+  function createBootstrapResourceFromFile (relativePath, attributes, callback) {
     // Add some attributes.
     attributes.originFilePath = pathHelpers.resolve(__dirname, relativePath);
     attributes.isGenerated = false;
@@ -273,7 +367,16 @@ p._startup = function (callback) {
         self.storeBootstrapResource(resource, callback);
       }
     });
-  };
+  }
+
+  // If we're using Express sessions, then these resources - and especially
+  // the main Thywill application page -  are to be served by Express.
+  var servedBy;
+  if (self.config.sessions.type === resourceManager.servedBy.EXPRESS) {
+    servedBy = resourceManager.servedBy.EXPRESS;
+  } else {
+    servedBy = resourceManager.servedBy.THYWILL;
+  }
 
   // Array of loader functions to be called in series.
   var fns = [
@@ -283,6 +386,7 @@ p._startup = function (callback) {
         clientPath: self.config.baseClientPath + "/js/thywill.js",
         encoding: self.config.textEncoding,
         minified: false,
+        servedBy: servedBy,
         type: resourceManager.types.JAVASCRIPT,
         weight: 0
       }, asyncCallback);
@@ -311,6 +415,7 @@ p._startup = function (callback) {
         isGenerated: true,
         minified: false,
         originFilePath: originFilePath,
+        servedBy: servedBy,
         type: resourceManager.types.JAVASCRIPT,
         weight: 1
       });
@@ -326,6 +431,7 @@ p._startup = function (callback) {
         clientPath: self.config.baseClientPath + "/js/thywillLoadLast.js",
         encoding: self.config.textEncoding,
         minified: false,
+        servedBy: servedBy,
         type: resourceManager.types.JAVASCRIPT,
         weight: 999999
       }, asyncCallback);
@@ -364,6 +470,8 @@ p._startup = function (callback) {
           // Store any newly added resources, which should be the
           // merged/minified Javascript and CSS.
           async.forEach(addedResources, function (resource, innerAsyncCallback) {
+            // Set servedBy:
+            resource.servedBy = servedBy;
             self.storeResource(resource, innerAsyncCallback);
           }, function (error) {
             asyncCallback(error);
@@ -415,6 +523,7 @@ p._startup = function (callback) {
         encoding: self.config.textEncoding,
         isGenerated: true,
         originFilePath: originFilePath,
+        servedBy: servedBy,
         type: resourceManager.types.HTML
       });
       self.storeResource(resource, asyncCallback);
@@ -442,9 +551,9 @@ p._prepareForShutdown = function (callback) {
  * A new connection is made over Socket.IO, so sort out what needs to be done
  * with it, and set up its ability to send and receive.
  *
- * @param {Object}
- * socket We are expecting a socket object with socket.handshake and
- * socket.handshake.session, where session is an Express session.
+ * @param {Object} socket
+ *   We are expecting a socket object with socket.handshake and
+ *   socket.handshake.session, where session is an Express session.
  */
 p._initializeConnection = function (socket) {
   var self = this;
@@ -455,14 +564,14 @@ p._initializeConnection = function (socket) {
   socket.on("fromClient", function (messageObj) {
     if (messageObj && messageObj.data) {
       var messageManager = self.thywill.messageManager;
-      var message = messageManager.createMessage(
-        messageObj.data,
-        socket.id,
-        messageManager.origins.CLIENT,
-        messageManager.destinations.SERVER,
-        messageObj.fromApplicationId,
-        messageObj.toApplicationId
-      );
+      var message = messageManager.createMessage({
+        data: messageObj.data,
+        connectionId: socket.id,
+        origin: messageManager.origins.CLIENT,
+        destination: messageManager.destinations.SERVER,
+        fromApplicationId: messageObj.fromApplicationId,
+        toApplicationId: messageObj.toApplicationId
+      });
       self.receive(message);
     } else {
       self.thywill.log.debug("Empty or broken message received from session: " + socket.id);
@@ -470,26 +579,65 @@ p._initializeConnection = function (socket) {
   });
 
   socket.on("disconnect", function() {
-    self.disconnection(socket.id);
+    var data = self._connectionDataFromSocket(socket);
+    self.disconnection(data.connectionId, data.sessionId);
   });
 
   // Socket.io connections will try to reconnect automatically if configured
   // to do so, and emit this event on successful reconnection.
+  /*
   socket.on("reconnect", function() {
-    self.connection(socket.id);
+    // Do nothing here, as a reconnection also emits "connect", and so it'll
+    // be handled. This code is left as a reminder that this happens.
   });
+  */
 
   // Finally, tell applications that a new client has connected.
-  self.connection(socket.id);
+  var data = this._connectionDataFromSocket(socket);
+  this.connection(data.connectionId, data.sessionId, data.session);
 };
 
 /**
- * Handle a request from the server.
+ * Extract the session data we're going to be using from the socket.
+ *
+ * @param {object} socket
+ *   A socket.
+ * @param {object}
+ *   Of the form {connectionId: string, sessionId: string, session: object}.
+ *   Either sessionId or session can be undefined under some circumstances,
+ *   so check.
+ */
+p._connectionDataFromSocket = function (socket) {
+  var data = {
+    connectionId: socket.id,
+    sessionId: undefined,
+    session: undefined
+  };
+  switch (this.config.sessions.type) {
+    case this.SESSIONS.NONE:
+      // Use the socket ID as a sessionID. As remarked elsewhere, not very
+      // useful for anything other than example code, as it will change if
+      // the socket disconnects and then reconnects.
+      data.sessionId = socket.id;
+      break;
+    case this.SESSIONS.EXPRESS:
+      if (socket.handshake) {
+        data.sessionId = socket.handshake.sessionId;
+        data.session = socket.handshake.session;
+      }
+      break;
+  }
+  return data;
+};
+
+/**
+ * Handle a request from the server. Used to serve resources when Thywill is
+ * not set up to work with Express or another server framework.
  *
  * @param {Object} req
- *   Request object from the Express server.
+ *   Request object from the server.
  * @param {Object} res
- *   Response object from the Express server.
+ *   Response object from the server.
  */
 p._handleResourceRequest = function (req, res) {
   var self = this;
@@ -541,7 +689,7 @@ p._handleResourceRequest = function (req, res) {
     }
   };
 
-  // Is this cached?
+  // Is this resource cached?
   var resource = this.resourceCache.get(requestData.pathname);
   if (resource) {
     sendResourceToClient(resource);
@@ -566,8 +714,8 @@ p._handleResourceRequest = function (req, res) {
 /**
  * @see ClientInterface#send
  */
-p.send = function(message) {
-  var socketId = message.sessionId;
+p.send = function (message) {
+  var socketId = message.connectionId;
   if (message.isValid()) {
     var messageManager = this.thywill.messageManager;
     // Is this a message for the server rather than the client? It's always
@@ -576,9 +724,16 @@ p.send = function(message) {
     if (message.destination === messageManager.destinations.SERVER) {
       this.receive(message);
     }
-    // Otherwise it's for a client browser, so send it out through the
+    // Otherwise it's for a client connection, so send it out through the
     // pertinent socket instance.
     else {
+
+      // TODO: this won't work in clustering with a Redis backend for sockets.
+      // Not all the sockets will be available in this process.
+      // When we get that set as an option here, we have to either:
+      // a) do this: http://stackoverflow.com/a/9818600
+      // b) give each socket a unique uuid channel allowing broadcast to it.
+
       var destinationSocket = this.socketFactory.of(this.config.namespace).socket(socketId);
       if (destinationSocket) {
         destinationSocket.emit("toClient", {
@@ -587,11 +742,11 @@ p.send = function(message) {
           toApplicationId: message.toApplicationId
         });
       } else {
-        this.thywill.log.debug("SocketIO.send(): invalid socketId / sessionId: " + socketId);
+        this.thywill.log.debug(new Error("Invalid socketId: " + socketId));
       }
     }
   } else {
-    this.thywill.log.debug("SocketIO.send(): invalid Message: " + message.encode());
+    this.thywill.log.debug(new Error("Invalid Message: " + message.encode()));
   }
 };
 
@@ -631,7 +786,20 @@ p.getBootstrapResources = function (callback) {
  */
 p.storeResource = function (resource, callback) {
   var self = this;
-  this.thywill.resourceManager.store(resource.clientPath, resource, callback);
+  this.thywill.resourceManager.store(resource.clientPath, resource, function (error, storedResource) {
+    if (!error) {
+      // If we are using Express sessions, then client resources have to be
+      // served via Express, so as to appropriately populate the session
+      // before the websocket connection occurs.
+      if (
+        self.config.sessions.type === self.SESSIONS.EXPRESS &&
+        resource.servedBy === self.thywill.resourceManager.servedBy.EXPRESS
+      ) {
+        self.thywill.utility.express.serveResource(self.config.sessions.app, resource);
+      }
+    }
+    callback (error, storedResource);
+  });
 };
 
 /**
@@ -639,34 +807,6 @@ p.storeResource = function (resource, callback) {
  */
 p.getResource = function (clientPath, callback) {
   this.thywill.resourceManager.load(clientPath, callback);
-};
-
-// -----------------------------------------------------------
-// Session methods
-// -----------------------------------------------------------
-
-/**
- * @see ClientInterface#setSessionData
- */
-p.setSessionData = function(sessionId, key, value, callback) {
-  var socket = this.socketFactory.of(this.config.namespace).socket(sessionId);
-  if (socket) {
-    socket.set(key, value, callback);
-  } else {
-    callback(new Error("SocketIO.setSessionData: no socket with ID: " + sessionId));
-  }
-};
-
-/**
- * @see ClientInterface#getSessionData
- */
-p.getSessionData = function(sessionId, key, callback) {
-  var socket = this.socketFactory.of(this.config.namespace).socket(sessionId);
-  if (socket) {
-    socket.get(key, callback);
-  } else {
-    callback(new Error("SocketIO.getSessionData: no socket with ID: " + sessionId));
-  }
 };
 
 // -----------------------------------------------------------
