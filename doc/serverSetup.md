@@ -1,5 +1,5 @@
-Thywill Server Setup for Ubuntu
-===============================
+Thywill Server Setup for Ubuntu 12.04
+=====================================
 
 This document outlines the setup and configuration of a Thywill server on
 Ubuntu, in which Nginx and Node.js act as backend servers to provide static
@@ -258,13 +258,17 @@ The following arrangement of server processes is used:
   * Nginx on port 8080
   * Thywill Node.js applications on ports 10080+
 
+Set Up HAProxy
+--------------
+
 HAProxy must be of version 1.5-dev13 or later in order to support both SSL traffic
 and websockets. At the time of writing, this means that there is no package install,
 and HAProxy must be built from source as follows:
 
     apt-get install libpcre3 libpcre3-dev libssl-dev
-    wget http://haproxy.1wt.eu/download/1.5/src/devel/haproxy-1.5-dev14.tar.gz
-    tar -xf haproxy-1.5-dev14.tar.gz
+    wget http://haproxy.1wt.eu/download/1.5/src/devel/haproxy-1.5-dev17.tar.gz
+    tar -xf haproxy-1.5-dev17.tar.gz
+    cd haproxy-1.5-dev17
     make TARGET=linux2628 USE_PCRE=1 USE_OPENSSL=1 USE_ZLIB=1
     make install
     useradd haproxy
@@ -293,3 +297,38 @@ You must update the service definitions:
 
     cd /etc/init.d
     update-rc.d haproxy defaults
+
+Set Up HAProxy Logging
+----------------------
+
+HAPRroxy logs to a UDP port expecting to be accepted by rsyslog - which doesn't
+listen by default. So uncomment these lines in /etc/rsyslog.conf:
+
+    # provides UDP syslog reception
+    $ModLoad imudp
+    $UDPServerAddress 127.0.0.1
+    $UDPServerRun 514
+
+Create the file /etc/rsyslog.d/30-haproxy.conf and put this in it:
+
+    local1.* -/var/log/haproxy_1.log
+    & ~
+
+Lastly, set up log rotation by creating /etc/logrotate.d/haproxy:
+
+    /var/log/haproxy*.log{
+        rotate 4
+        weekly
+        missingok
+        notifempty
+        compress
+        delaycompress
+        sharedscripts
+        postrotate
+            reload rsyslog >/dev/null 2>&1 || true
+        endscript
+    }
+
+And restart the rsyslog service:
+
+    restart rsyslog
