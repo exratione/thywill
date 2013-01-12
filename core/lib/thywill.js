@@ -164,7 +164,10 @@ Thywill.launch = function (config, applications, callback) {
 Thywill.prepareForShutdown = function (config, callback) {
   // Check the configuration with a dummy Thywill instance.
   var thywill = new Thywill();
-  thywill.configureFromObject(config);
+  if (!config || !config.thywill) {
+    throw new Error("Null, undefined, or incomplete configuration object.");
+  }
+  thywill._checkConfiguration(config.thywill);
 
   // Now go on to send a request to what is hopefully a running Thywill
   // instance and tell it to prepare for impending shutdown.
@@ -404,14 +407,6 @@ p._managePreparationForShutdown = function (callback) {
   // Things are shut down in reverse order to the startup process.
   var self = this;
   var fns = [
-    function (asyncCallback) {
-      self.log.info("Closing http.Server instance.");
-      self.server.on("close", function () {
-        self.serverClosed = true;
-        asyncCallback();
-      });
-      self.server.close();
-    },
     function (asyncCallback) {
       self.log.info("Preparing clientInterface for shutdown.");
       self.clientInterface._prepareForShutdown(asyncCallback);
