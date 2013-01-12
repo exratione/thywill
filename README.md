@@ -1,5 +1,11 @@
-Thywill: a Framework for Secure Asynchronous Message Applications
-=================================================================
+Thywill
+=======
+
+A framework for building single page web applications that use secure
+asynchronous messaging to communicate between client and server.
+
+Overview
+--------
 
 Thywill is a Node.js framework for building a particular type of single-page
 web application:
@@ -18,7 +24,7 @@ You can manually run the simplest example Thywill application, Echo, as
 follows:
 
     cd path/to/thywill
-    node ./applications/echo/service/start.js
+    node ./applications/echo/service/start
 
 Navigate to the following URL on your server to see it in action.
 
