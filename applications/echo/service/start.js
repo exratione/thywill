@@ -19,6 +19,14 @@ var echo = new Echo("echo");
 var http = require("http");
 config.clientInterface.server.server = http.createServer().listen(10080);
 
+// Add a trivial catch-all listener. Only really necessary because this is an
+// example and there is no other functionality or framework associated with
+// this server instance.
+config.clientInterface.server.server.on("request", function (req, res) {
+  res.statusCode = 404;
+  res.end("No such resource.");
+});
+
 // And off we go: launch a Thywill instance to run the the application.
 Thywill.launch(config, echo, function (error, thywill) {
   if (error) {

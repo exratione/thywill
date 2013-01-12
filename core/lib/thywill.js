@@ -405,7 +405,7 @@ p._managePreparationForShutdown = function (callback) {
   var self = this;
   var fns = [
     function (asyncCallback) {
-      self.log.debug("Closing http.Server instance.");
+      self.log.info("Closing http.Server instance.");
       self.server.on("close", function () {
         self.serverClosed = true;
         asyncCallback();
@@ -413,31 +413,31 @@ p._managePreparationForShutdown = function (callback) {
       self.server.close();
     },
     function (asyncCallback) {
-      self.log.debug("Preparing clientInterface for shutdown.");
+      self.log.info("Preparing clientInterface for shutdown.");
       self.clientInterface._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
-      self.log.debug("Preparing minifier for shutdown.");
+      self.log.info("Preparing minifier for shutdown.");
       self.minifier._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
-      self.log.debug("Preparing templateEngine for shutdown.");
+      self.log.info("Preparing templateEngine for shutdown.");
       self.templateEngine._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
-      self.log.debug("Preparing messageManager for shutdown.");
+      self.log.info("Preparing messageManager for shutdown.");
       self.messageManager._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
-      self.log.debug("Preparing resourceManager for shutdown.");
+      self.log.info("Preparing resourceManager for shutdown.");
       self.resourceManager._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
-      self.log.debug("Preparing cacheManager for shutdown.");
+      self.log.info("Preparing cacheManager for shutdown.");
       self.cacheManager._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
-      self.log.debug("Preparing log for shutdown.");
+      self.log.info("Preparing log for shutdown.");
       self.log._prepareForShutdown(asyncCallback);
     }
   ];

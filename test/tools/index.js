@@ -19,11 +19,11 @@ var tools = {
    * Create a partially formed Vows suite that launches a Thywill instance as
    * its first batch.
    *
-   * @param {object} config
+   * @param {Object} config
    *   Thywill configuration.
    * @param {Application|Applications[]} [applications]
    *   Optional applications.
-   * @return {object}
+   * @return {Object}
    *   A Vows suite with a batch added to launch a Thywill server.
    */
   createVowsSuite: function (name, config, applications) {
@@ -58,7 +58,7 @@ var tools = {
    * Add batches to a Thywill test suite that shut down the servers, so as to
    * free up the port for the next test.
    *
-   * @param {object} suite
+   * @param {Object} suite
    *   A Vows suite originally obtained via tools.vowsSuite().
    */
   finalizeVowsSuite: function(suite) {

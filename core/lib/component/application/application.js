@@ -63,7 +63,7 @@ p.storeBootstrapResource = function (resource, callback) {
  *
  * @param {string} filePath
  *   An absolute path to the file to be loaded.
- * @param {object} attributes
+ * @param {Object} attributes
  *   An attributes object for creating a resource - see the Resource class for
  *   more information. This method automatically sets the originFilePath
  *   attribute to the passed filePath and the isGenerated  attribute to false
@@ -107,7 +107,7 @@ p.storeBootstrapResourceFromFile = function (filePath, attributes, callback) {
  *   ...
  * }
  *
- * @param {object} manifest
+ * @param {Object} manifest
  *   The manifest object.
  * @param {function} callback
  *   Of the form function (error) where error === null on success.
@@ -173,7 +173,7 @@ p.receive = function (message) {
  * @param {string} sessionId
  *   Unique ID of the session associated with this connection - one session
  *   might have multiple concurrent connections.
- * @param {object} session
+ * @param {Object} session
  *   The session. This will be null if the clientInterface component is
  *   configured not to use sessions.
  */

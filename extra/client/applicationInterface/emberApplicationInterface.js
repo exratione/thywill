@@ -99,7 +99,7 @@
     /**
      * Find an instance of a specific type.
      *
-     * @param {object} store
+     * @param {Object} store
      *   An Ember Data store.
      * @param {DS.Model} type
      *   A DS.Model implementation.

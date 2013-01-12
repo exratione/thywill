@@ -70,7 +70,7 @@ p.createResourceFromFile = function (path, attributes, callback) {
  *   be used to create a Buffer with the encoding provided in the attributes
  *   object. This can be null for resources that don't need to have data in
  *   memory.
- * @param {object} attributes
+ * @param {Object} attributes
  *   Other attributes of this resource - see the Resource class
  *   for more information.
  *

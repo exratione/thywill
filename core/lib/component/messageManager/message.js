@@ -30,7 +30,7 @@ var Thywill = require("thywill");
  *   toApplicationId: string
  * }
  *
- * @param {object} params
+ * @param {Object} params
  *   Message parameters.
  */
 function Message (params) {

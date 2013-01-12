@@ -68,7 +68,7 @@ p._announceReady = function (error) {
   }
   // Log if there is a log to log to.
   if (log && !error) {
-    log.debug("Initialized component: " + this.componentType);
+    log.info("Initialized component: " + this.componentType);
   }
   // Emit and invoke the callback.
   this.emit(eventName, error);

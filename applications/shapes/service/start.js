@@ -30,18 +30,21 @@ config.clientInterface.sessions.cookieKey = "sid";
 // session middleware.
 app.use(express.cookieParser(config.clientInterface.sessions.cookieSecret));
 app.use(express.session({
-  //cookie: {
-  //  secure: true
-  //},
+  cookie: {
+    httpOnly: true
+  },
   key: config.clientInterface.sessions.cookieKey,
   secret: config.clientInterface.sessions.cookieSecret,
   store: config.clientInterface.sessions.store
 }));
 
-// Middleware and routes might be added here or after Thywill launches, either
-// way is just fine. But don't add any catch-all routes! Thywill will add
-// Express routes for the resources defined in the application, and they will
-// be made unreachable if you preempt them with a catch-all.
+// Middleware and routes might be added here or after Thywill launches. Either
+// way is just fine and won't interfere with Thywill's use of Express to serve
+// resources. e.g. adding a catch-all here is acceptable:
+app.all("*", function (req, res, next) {
+  res.statusCode = 404;
+  res.send("No such resource.");
+});
 
 // Instantiate an application object.
 var shapes = new Shapes("shapes", app);

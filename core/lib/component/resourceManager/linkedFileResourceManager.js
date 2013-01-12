@@ -176,7 +176,7 @@ p.remove = function (key, callback) {
  * Given a file or directory stats object, determine whether the present
  * process has write permissions.
  *
- * @params {object} stats
+ * @params {Object} stats
  *   A Stats instance, e.g. obtained from fs.stat().
  * @return {boolean}
  *   True if the present process can read the file or directory.
@@ -198,7 +198,7 @@ p.canRead = function (stats) {
  * Given a file or directory stats object, determine whether the present
  * process has write permissions.
  *
- * @params {object} stats
+ * @params {Object} stats
  *   A Stats instance, e.g. obtained from fs.stat().
  * @return {boolean}
  *   True if the present process can write to the file or directory.
@@ -220,7 +220,7 @@ p.canWrite = function (stats) {
  * Given a file or directory stats object, determine whether the present
  * process has exec permissions.
  *
- * @params {object} stats
+ * @params {Object} stats
  *   A Stats instance, e.g. obtained from fs.stat().
  * @return {boolean}
  *   True if the present process has exec permissions on the file or directory.

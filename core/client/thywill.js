@@ -155,7 +155,7 @@ var Thywill = (function() {
     /**
      * Register an application so that Thywill can pass it messages.
      *
-     * @param {object} applicationInterface
+     * @param {Object} applicationInterface
      *   An instance of a child class of Thywill.ApplicationInterface.
      */
     registerApplication: function (applicationInterface) {

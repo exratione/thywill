@@ -54,7 +54,7 @@ p.receive = function (message) {
  * @param {string} sessionId
  *   Unique ID of the session associated with this connection - one session
  *   might have multiple concurrent connections.
- * @param {object} session
+ * @param {Object} session
  *   The session.
  */
 p.connection = function (connectionId, sessionId, session) {

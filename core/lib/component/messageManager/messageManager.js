@@ -51,7 +51,7 @@ var p = MessageManager.prototype;
  *   toApplicationId: string
  * }
  *
- * @param {object} params
+ * @param {Object} params
  *   Message parameters.
  * @return {Message}
  *   A Message instance.
