@@ -9,7 +9,7 @@ Assumptions
 -----------
 
 The example scripts makes some assumptions about the Node.js server setup
-are using, expecting you to have followed the instructions in 
+are using, expecting you to have followed the instructions in
 /doc/server-setup.md:
 
   * You have installed Node.js on some variety of Linux
@@ -22,9 +22,9 @@ some of the paths in the various scripts used here.
 Option 1: init.d and Forever on RPM-based Linux
 -----------------------------------------------
 
-Running as a service on Fedora, Red Hat, and similar RPM-based Linux 
+Running as a service on Fedora, Red Hat, and similar RPM-based Linux
 distributions is best accomplished through the Forever package. After building
-your server as described in /doc/server-setup.md, install Forever globally via 
+your server as described in /doc/server-setup.md, install Forever globally via
 NPM:
 
     npm -g install forever

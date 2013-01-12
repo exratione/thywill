@@ -5,12 +5,12 @@
 # This is suitable for Fedora, Red Hat, CentOS and similar distributions.
 # It will not work on Ubuntu or other Debian-style distributions!
 #
-# If your Node installation does not follow the defaults outlined in the 
+# If your Node installation does not follow the defaults outlined in the
 # Thywill documentation, then you will have to change the paths in this script.
 #
 # This script relies upon the Forever package being installed for Node.js.
 #
-# There is some perhaps unnecessary complexity going on in the relationship 
+# There is some perhaps unnecessary complexity going on in the relationship
 # between Forever and the server process. See: https://github.com/indexzero/forever
 #
 # 1) Forever starts its own watchdog process, and keeps its own configuration
@@ -65,7 +65,7 @@ start() {
     touch $pidfile
     chown $user $pidfile
 
-    # Launch the application. Note that the -m 0 option means that Forever 
+    # Launch the application. Note that the -m 0 option means that Forever
     # will not attempt to restart a failed process.
     $daemon --user=root \
       $forever start -p $forever_dir --pidfile $pidfile -m 0 -l $logfile \
@@ -92,7 +92,7 @@ if [ -f $pidfile ]; then
   read pid < $pidfile
 else
   pid=""
-fi 
+fi
 
 if [ "$pid" != "" ]; then
   # Gnarly sed usage to obtain the foreverid.
