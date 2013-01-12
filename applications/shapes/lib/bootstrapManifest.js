@@ -26,7 +26,6 @@ var manifest = {
     clientPath: "/shapes/js/modernizr.min.js",
     encoding: encoding,
     minified: true,
-    servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.JAVASCRIPT,
     weight: -30
   },
@@ -37,7 +36,6 @@ var manifest = {
     clientPath: "/shapes/js/jquery.min.js",
     encoding: encoding,
     minified: true,
-    servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.JAVASCRIPT,
     weight: -20
   },
@@ -46,7 +44,6 @@ var manifest = {
     clientPath: "/shapes/js/plugins.js",
     encoding: encoding,
     minified: false,
-    servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.JAVASCRIPT,
     weight: -10
   },
@@ -55,7 +52,6 @@ var manifest = {
     clientPath: "/shapes/js/handlebars.js",
     encoding: encoding,
     minified: true,
-    servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.JAVASCRIPT,
     weight: 20
   },
@@ -64,7 +60,6 @@ var manifest = {
     clientPath: "/shapes/js/ember.js",
     encoding: encoding,
     minified: true,
-    servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.JAVASCRIPT,
     weight: 30
   },
@@ -73,7 +68,6 @@ var manifest = {
     clientPath: "/shapes/js/ember-data.js",
     encoding: encoding,
     minified: true,
-    servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.JAVASCRIPT,
     weight: 40
   },
@@ -82,7 +76,6 @@ var manifest = {
     clientPath: "/shapes/js/emberApplicationInterface.js",
     encoding: encoding,
     minified: false,
-    servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.JAVASCRIPT,
     weight: 50
   },
@@ -91,7 +84,6 @@ var manifest = {
     clientPath: "/shapes/css/html5boilerplate.css",
     encoding: encoding,
     minified: false,
-    servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.CSS,
     weight: 0
   },
@@ -100,7 +92,6 @@ var manifest = {
     clientPath: "/shapes/css/client.css",
     encoding: encoding,
     minified: false,
-    servedBy: Resource.SERVED_BY.EXPRESS,
     type: Resource.TYPES.CSS,
     weight: 10
   }

@@ -7,8 +7,8 @@
 
 var config = require("../../../serverConfig/thywill/baseThywillConfig");
 
-// Every example application process should run on a different port.
-config.thywill.launch.port = 10080;
+// Every example application process admin interface should run on a
+// different port.
 config.thywill.adminInterface.port = 20080;
 
 // An example application should have its own base path and Socket.IO
@@ -21,6 +21,9 @@ config.clientInterface.socketConfig.global.resource = "/echo/socket.io";
 // Resource minification settings.
 config.clientInterface.minifyCss = true;
 config.clientInterface.minifyJavascript = true;
+
+// Set the http.Server instance in start.js
+config.clientInterface.server.server = null;
 
 // Set an appropriate log level for an example application.
 config.log.level = "debug";

@@ -10,65 +10,60 @@ var Thywill = require("thywill");
 var Shapes = require("../lib/shapes");
 
 // Load the Thywill core configuration.
-var thywillConfig = require("./thywillConfig");
+var config = require("./thywillConfig");
 
-// Set up an Express server.
+// Create an Express application.
 var express = require("express");
 var http = require("http");
 var app = express();
 
 // Create a session store, and set it in the Thywill config so that Express
-// sessions can be assigned to websocket connections.
-//
-// Here this is only a MemoryStore - you would probably want something more
-// useful, such as a Redis-backed store.
-thywillConfig.clientInterface.sessions.store = new express.session.MemoryStore();
+// sessions can be assigned to websocket connections. This is only a
+// MemoryStore - not much use past demonstrations. You'd probably want to
+// be using a RedisStore.
+config.clientInterface.sessions.store = new express.session.MemoryStore();
 // Thywill also needs access to the session cookie secret and key.
-thywillConfig.clientInterface.sessions.cookieSecret = "some long random string";
-thywillConfig.clientInterface.sessions.cookieKey = "sid";
-// And the Express application itself.
-thywillConfig.clientInterface.sessions.app = app;
+config.clientInterface.sessions.cookieSecret = "some long random string";
+config.clientInterface.sessions.cookieKey = "sid";
 
-// Add minimal configuration to the Express application.
-// Start with cookie and session middleware.
-app.use(express.cookieParser(thywillConfig.clientInterface.sessions.cookieSecret));
+// Add minimal configuration to the Express application: just the cookie and
+// session middleware.
+app.use(express.cookieParser(config.clientInterface.sessions.cookieSecret));
 app.use(express.session({
-  key: thywillConfig.clientInterface.sessions.cookieKey,
-  secret: thywillConfig.clientInterface.sessions.cookieSecret,
-  store: thywillConfig.clientInterface.sessions.store
+  //cookie: {
+  //  secure: true
+  //},
+  key: config.clientInterface.sessions.cookieKey,
+  secret: config.clientInterface.sessions.cookieSecret,
+  store: config.clientInterface.sessions.store
 }));
 
-// Other middleware might be added here or after Thywill launches, either way
-// is just fine.
+// Middleware and routes might be added here or after Thywill launches, either
+// way is just fine. But don't add any catch-all routes! Thywill will add
+// Express routes for the resources defined in the application, and they will
+// be made unreachable if you preempt them with a catch-all.
 
 // Instantiate an application object.
 var shapes = new Shapes("shapes", app);
 
 // Start the server that we'll pass to Thywill.
-var server = http.createServer(app).listen(thywillConfig.thywill.launch.port);
+var server = http.createServer(app).listen(10081);
+
+// Add the server and Express application to the clientInterface configuration.
+config.clientInterface.server = {
+  app: app,
+  server: server
+};
 
 // And off we go: launch a Thywill instance to run the the application.
-Thywill.launch(thywillConfig, shapes, server, function (error, thywill, server) {
+Thywill.launch(config, shapes, function (error, thywill) {
   if (error) {
     if (error instanceof Error) {
       error = error.stack;
     }
     console.error("Thywill launch failed with error: " + error);
     process.exit(1);
-    return;
+  } else {
+    thywill.log.info("Thywill is ready to run the Shapes example application.");
   }
-
-  thywill.log.info("Thywill is ready to run the Shapes example application.");
-
-  // Now add your Express routes. You have to add them after Thywill launches,
-  // as it will add a few Express routes itself, and they must be added prior
-  // to any catch-all you might define.
-
-  // Adding app.get(...), app.post(...), etc would happen here.
-
-  // Finish up with a catch-all 404 route.
-  app.all("*", function (req, res, next) {
-    res.statusCode = 404;
-    res.send("Not found.");
-  });
 });

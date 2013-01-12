@@ -10,29 +10,24 @@ var Thywill = require("thywill");
 var Echo = require("../lib/echo");
 
 // Load the Thywill core configuration.
-var thywillConfig = require("./thywillConfig");
+var config = require("./thywillConfig");
 
 // Instantiate an application object.
 var echo = new Echo("echo");
 
-// Optionally, define and start a server. For example:
-// var express = require("express");
-// var http = require("http");
-// var app = express();
-// var server = http.createServer(app).listen(thywillConfig.thywill.launch.port);
-// Or just set it to null and Thywill will create its own bare-bones
-// HTTPServer listening on the port defined in the configuration.
-var server = null;
+// Create a server and add it to the clientInterface configuration.
+var http = require("http");
+config.clientInterface.server.server = http.createServer().listen(10080);
 
 // And off we go: launch a Thywill instance to run the the application.
-Thywill.launch(thywillConfig, echo, server, function (error, thywill, server) {
+Thywill.launch(config, echo, function (error, thywill) {
   if (error) {
     if (error instanceof Error) {
       error = error.stack;
     }
     console.error("Thywill launch failed with error: " + error);
     process.exit(1);
-    return;
+  } else {
+    thywill.log.info("Thywill is ready to run the Echo example application.");
   }
-  thywill.log.info("Thywill is ready to run the Echo example application.");
 });

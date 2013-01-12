@@ -93,6 +93,21 @@ module.exports = {
     // the client interface - which should be at a minimum twice the number of
     // bootstrap and other resources defined by applications.
     resourceCacheLength: 100,
+    // The server (required) and Express application (optional) are set here.
+    // This happens in the start.js script.
+    //
+    // See these for examples:
+    // /applications/echo/service/start.js
+    // /applications/shapes/service/start.js
+    //
+    //
+    server: {
+      // An Express instance. Optional unless Express sessions are being used.
+      // If an Express server is provided, it will be used to serve content.
+      app: null,
+      // An http.Server instance.
+      server: null
+    },
     // Session management configuration. If sessions are being used, we want
     // access to them for Socket.IO connections.
     //
@@ -103,9 +118,6 @@ module.exports = {
     //   type: "express",
     //   // Set the following values in the application start.js file, as that
     //   // is where Express is set up.
-    //   //
-    //   // The Express application.
-    //   app: null,
     //   // The session store instance.
     //   store: null,
     //   // The cookie key and secret there as well.

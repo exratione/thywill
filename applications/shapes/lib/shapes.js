@@ -77,7 +77,6 @@ p._defineBootstrapResources = function (callback) {
         isGenerated: true,
         minified: false,
         originFilePath: originFilePath,
-        servedBy: self.thywill.resourceManager.servedBy.EXPRESS,
         type: self.thywill.resourceManager.types.JAVASCRIPT,
         weight: 60
       });

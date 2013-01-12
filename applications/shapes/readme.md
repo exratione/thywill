@@ -5,4 +5,7 @@ This application provides an interface for a user to select and place shapes on
 a canvas. It demonstrates staggered creation and delivery of resources (e.g.
 images) to the client.
 
-Static content is served by Express rather than Thywill.
+Static content is served by Express rather than Thywill, and Express sessions
+are managed via a Redis store.
+
+This example requires Redis to be running on the same machine.

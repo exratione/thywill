@@ -19,8 +19,6 @@ function InMemoryResourceManager () {
   InMemoryResourceManager.super_.call(this);
   // Resources are stashed away as properties of this object.
   this.data = {};
-  // For resources with resource.servedBy = Resource.SERVED_BY.THYWILL
-  this.keysServedByThywill = {};
 }
 util.inherits(InMemoryResourceManager, Thywill.getBaseClass("ResourceManager"));
 var p = InMemoryResourceManager.prototype;
@@ -80,10 +78,6 @@ p.createResource = function (data, attributes) {
 p.store = function (key, resource, callback) {
   this.data[key] = resource;
   resource.stored = true;
-  // Some resources may be served by other server components.
-  if (resource.servedBy === this.servedBy.THYWILL) {
-    this.keysServedByThywill[key] = true;
-  }
   callback(this.NO_ERRORS, resource);
 };
 
@@ -95,10 +89,6 @@ p.remove = function (key, callback) {
   var error = this.NO_ERRORS;
   if (this.data[key]) {
     resource = this.data[key];
-    // Some resources may be served by other server components.
-    if (resource.servedBy === this.servedBy.THYWILL) {
-      delete this.keysServedByThywill[key];
-    }
     delete this.data[key];
   }
   callback(error, resource);
@@ -113,13 +103,6 @@ p.load = function (key, callback) {
   } else {
     callback(this.NO_ERRORS, null);
   }
-};
-
-/**
- * @see ResourceManager#getKeysServedByThywill
- */
-p.getKeysServedByThywill = function (callback) {
-  callback(this.NO_ERRORS, this.keysServedByThywill);
 };
 
 //-----------------------------------------------------------

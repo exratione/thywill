@@ -5,6 +5,7 @@
 
 var vows = require("vows");
 var assert = require("assert");
+var http = require("http");
 var baseConfig = require("./baseTestThywillConfig");
 var Thywill = require("thywill");
 
@@ -36,8 +37,12 @@ var tools = {
     suite.addBatch({
       "set up Thywill": {
         topic: function () {
-          // Launch Thywill with no applications.
-          Thywill.launch(self.config, applications, null, this.callback);
+          // Launch Thywill with no applications and using only http.Server
+          // rather than Express.
+          var server = http.createServer().listen(10080);
+          config.clientInterface.server.server = server;
+
+          Thywill.launch(self.config, applications, this.callback);
         },
         "successful launch": function (error, thywill, server) {
           self.thywill = thywill;

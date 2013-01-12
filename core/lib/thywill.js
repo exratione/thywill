@@ -7,7 +7,6 @@ var exec = require('child_process').exec;
 var fs = require("fs");
 var util = require("util");
 var async = require("async");
-var clone = require("clone");
 var http = require("http");
 
 var Component = require("./component/component");
@@ -43,9 +42,6 @@ function Thywill() {
   this.minifier = null;
   this.resourceManager = null;
   this.templateEngine = null;
-
-  // General utility code.
-  this.utility = require("./utility");
 }
 util.inherits(Thywill, Component);
 var p = Thywill.prototype;
@@ -58,14 +54,7 @@ var p = Thywill.prototype;
  * Template used to validate configuration.
  */
 Thywill.CONFIG_TEMPLATE = {
-  launch: {
-    port: {
-      _configInfo: {
-        description: "Listen port if starting an Express server rather than using a provided server.",
-        types: "integer",
-        required: false
-      }
-    },
+  process: {
     groupId: {
       _configInfo: {
         description: "The group name or ID to own the Node process after startup.",
@@ -122,66 +111,40 @@ Thywill.CONFIG_TEMPLATE = {
  *   An object representation of configuration.
  * @param {Application|Application[]} applications
  *   A single Application or array of Application instances to be registered.
- * @param {Object} [server]
- *   An http.Server or https.Server instance. If not provided, an HTTPServer will
- *   be created.
  * @param {Function} [callback]
  *   Of the form function (error, thywill, server) {}, called on completion of
  *   setup, where thywill is the Thywill instance, server is a the Express
  *   server used, and error === null on success.
  */
-Thywill.launch = function (config, applications, server, callback) {
-  console.log("Beginning Thywill initialization and launch.");
+Thywill.launch = function (config, applications, callback) {
   // Create and configure the Thywill instance.
   var thywill = new Thywill();
-  thywill.configureFromObject(config);
 
-  // Check to see that there is a port defined if no server is provided, so
-  // that a default server can be created.
-  if (!server && (!config.thywill.launch || !config.thywill.launch.port)) {
-    throw new Error("Configuration passed to Thywill.launch() must include thywill.launch.port if no Express server is provided.");
+  if (!config || !config.thywill) {
+    throw new Error("Null, undefined, or incomplete configuration object.");
   }
-
-  if (!server) {
-    thywill.providedServer = false;
-
-    // Start up an HTTP server. Note that this will need sufficient privileges
-    // to bind to a privileged port of < 1024. E.g. you are running the script
-    // while logged in as root or through sudo via something like:
-    //
-    // sudo /full/path/to/node /full/path/to/simpleExample.js
-    //
-    // Or more sensibly, you are using an init.d script.
-    //
-    console.log("No server provided: starting http.Server on port " + config.thywill.launch.port);
-    server = http.createServer(function (req, res) {
-      res.statusCode = 404;
-      res.end("No such resource.");
-    });
-    server.listen(config.thywill.launch.port);
-    console.log("http.Server started.");
-  }
+  thywill._checkConfiguration(config.thywill);
+  thywill.config = config;
 
   // Start thywill running.
   //
   // We can either pass thywill.startup() a callback function that will be
   // invoked when startup is complete, or we can listen for the "thywill.ready"
   // event elsewhere in our code. Here we are passing a callback.
-  thywill.startup(server, applications, function (error) {
+  thywill.startup(applications, function (error) {
     // Drop the permissions of the process now that all ports are bound by
     // switching ownership to another user who still has sufficient permissions
     // to access the needed scripts.
-    if (thywill.config.thywill.launch && thywill.config.thywill.launch.groupId) {
-      process.setgid(thywill.config.thywill.launch.groupId);
+    if (thywill.config.thywill.process && thywill.config.thywill.process.groupId) {
+      process.setgid(thywill.config.thywill.process.groupId);
     }
-    if (thywill.config.thywill.launch && thywill.config.thywill.launch.userId) {
-      process.setuid(thywill.config.thywill.launch.userId);
+    if (thywill.config.thywill.process && thywill.config.thywill.process.userId) {
+      process.setuid(thywill.config.thywill.process.userId);
     }
 
-    // Pass out the Thywill instance, the server, and any error message in the
-    // callback.
+    // Pass the Thywill instance and any error message in the callback.
     if (callback) {
-      callback(error, thywill, server);
+      callback(error, thywill);
     }
   });
 };
@@ -295,8 +258,8 @@ Thywill.getBaseClass = (function () {
  * to privileged ports and then downgraded on completion of setup.
  */
 p.getFinalUid = function() {
-  if (this.config.thywill.launch && this.config.thywill.launch.userId) {
-    return this.config.thywill.launch.numericUserId;
+  if (this.config.thywill.process && this.config.thywill.process.userId) {
+    return this.config.thywill.process.numericUserId;
   } else {
     return process.getuid();
   }
@@ -308,85 +271,34 @@ p.getFinalUid = function() {
  * to privileged ports and then downgraded on completion of setup.
  */
 p.getFinalGid = function() {
-  if (this.config.thywill.launch && this.config.thywill.launch.groupId) {
-    return this.config.thywill.launch.numericGroupId;
+  if (this.config.thywill.process && this.config.thywill.process.groupId) {
+    return this.config.thywill.process.numericGroupId;
   } else {
     return process.getgid();
   }
 };
 
 //-----------------------------------------------------------
-// Configuration - Synchronous Methods
-//-----------------------------------------------------------
-
-/**
- * Configure this Thywill instance.
- *
- * @param {object} config
- *   An object representation of configuration parameters.
- * @return {object}
- *   The Thywill instance this function is called on.
- */
-p.configureFromObject = function (config) {
-  if (!config || !config.thywill) {
-    throw new Error("Null, undefined, or incomplete configuration object.");
-  }
-  // Clone the configuration object to stop some annoyances, e.g. altered
-  // configuration data in an inadvertently shared object when running
-  // tests in series.
-  this.config = clone(config);
-  this._checkConfiguration(this.config.thywill);
-  return this;
-};
-
-/**
- * Configure this Thywill instance.
- *
- * @param {string} json
- *   A JSON representation of configuration parameters.
- * @return {Object}
- *   The Thywill instance this function is called on.
- */
-p.configureFromJSON = function (json) {
-  return this.configureFromObject(JSON.parse(json));
-};
-
-/**
- * Configure this Thywill instance.
- *
- * @param {string} [filepath]
- *   Path to a JSON configuration file.
- * @return {Object}
- *   The Thywill instance this function is called on.
- */
-p.configureFromFile = function (filepath) {
-  return this.configureFromJSON(fs.readFileSync(filepath, "utf-8"));
-};
-
-//-----------------------------------------------------------
-// Startup - Asynchronous Methods
+// Startup methods
 //-----------------------------------------------------------
 
 /**
  * Start this thywill instance running: set up the configured components and
  * then register applications.
  *
- * @param {Object} server
- *   An Express server object.
  * @param {Application|Application[]} applications
  *   A single application or array of application objects to be registered.
  * @param {Function} [callback]
  *   Of the form function (error) {}, where error === null on success.
  */
-p.startup = function (server, applications, callback) {
+p.startup = function (applications, callback) {
   if (!this.config) {
-    this.announceReady(new Error("Thywill not configured. Use one of the configuration functions before calling startup()."));
+    this.announceReady(new Error("Thywill not configured. Use Thywill.launch(config, application, callback) to create and launch a Thywill instance."));
     return;
   }
 
   var self = this;
   this.readyCallback = callback;
-  this.server = server;
   this._setupAdminInterfaceListener();
   var fns = [
     // Convert uid and gid names in configuration to numeric ids.
@@ -412,26 +324,26 @@ p._convertUserIdAndGroupId = function (callback) {
   var self = this;
   var fns = [];
 
-  if (this.config.thywill.launch && this.config.thywill.launch.userId) {
+  if (this.config.thywill.process && this.config.thywill.process.userId) {
     if (typeof this.config.thywill.launch.userId === "string") {
       fns.push(function (asyncCallback) {
-        var childProcess = exec("id -u " + self.config.thywill.launch.userId, function (error, stdoutBuffer, stderrBuffer) {
+        var childProcess = exec("id -u " + self.config.thywill.process.userId, function (error, stdoutBuffer, stderrBuffer) {
           var response = stdoutBuffer.toString().trim();
           if (/^\d+$/.test(response)) {
-            self.config.thywill.launch.numericUserId = parseInt(response, 10);
+            self.config.thywill.process.numericUserId = parseInt(response, 10);
           }
           asyncCallback(error);
         });
       });
     }
   }
-  if (this.config.thywill.launch && this.config.thywill.launch.groupId) {
+  if (this.config.thywill.process && this.config.thywill.process.groupId) {
     if (typeof this.config.thywill.launch.groupId === "string") {
       fns.push(function (asyncCallback) {
-        var childProcess = exec("id -u " + self.config.thywill.launch.groupId, function (error, stdoutBuffer, stderrBuffer) {
+        var childProcess = exec("id -u " + self.config.thywill.process.groupId, function (error, stdoutBuffer, stderrBuffer) {
           var response = stdoutBuffer.toString().trim();
           if (/^\d+$/.test(response)) {
-            self.config.thywill.launch.numericGroupId = parseInt(response, 10);
+            self.config.thywill.process.numericGroupId = parseInt(response, 10);
           }
           asyncCallback(error);
         });

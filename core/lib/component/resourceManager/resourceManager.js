@@ -24,8 +24,6 @@ function ResourceManager() {
   // needs the type, and it's easier if you don't have to go load the Resource
   // class to get the type definitions.
   this.types = Resource.TYPES;
-  // Another convenience copy.
-  this.servedBy = Resource.SERVED_BY;
 }
 util.inherits(ResourceManager, Thywill.getBaseClass("Component"));
 var p = ResourceManager.prototype;
@@ -120,18 +118,6 @@ p.remove = function (key, callback) {
  *   resource is the item stored, or null if no item is found.
  */
 p.load = function (key, callback) {
-  throw new Error("Not implemented.");
-};
-
-/**
- * Obtain a list of all keys for resources served by Thywill, i.e. for
- * Resources where servedBy = Resource.SERVED_BY.THYWILL.
- *
- * @param {function} callback
- *   Of the form function (error, object) where the properties of the object
- *   are the keys served by Thywill.
- */
-p.getKeysServedByThywill = function (callback) {
   throw new Error("Not implemented.");
 };
 

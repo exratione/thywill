@@ -90,6 +90,22 @@ SocketIoClientInterface.CONFIG_TEMPLATE = {
       required: true
     }
   },
+  server: {
+    app: {
+      _configInfo: {
+        description: "An Express application instance.",
+        types: "function",
+        required: false
+      }
+    },
+    server: {
+      _configInfo: {
+        description: "An http.Server instance.",
+        types: "object",
+        required: true
+      }
+    }
+  },
   sessions: {
     type: {
       _configInfo: {
@@ -104,21 +120,21 @@ SocketIoClientInterface.CONFIG_TEMPLATE = {
     },
     store: {
       _configInfo: {
-        description: "The session store instance.",
+        description: "For Express sessions: the session store instance.",
         types: "object",
         required: false
       }
     },
     cookieKey: {
       _configInfo: {
-        description: "The name used for Express session cookies.",
+        description: "For Express sessions: The name used for session cookies.",
         types: "string",
         required: false
       }
     },
     cookieSecret: {
       _configInfo: {
-        description: "The secret value used for Express session cookies.",
+        description: "For Express sessions: The secret value used for session cookies.",
         types: "string",
         required: false
       }
@@ -165,8 +181,15 @@ SocketIoClientInterface.CONFIG_TEMPLATE = {
  *    namespace: "/echoNamespace",
  *    pageEncoding: "utf-8",
  *    resourceCacheLength: 100,
+ *    server {
+ *      app: (express application instance)
+ *      server: (http.Server instance)
+ *    },
  *    sessions: {
- *      type: "none",
+ *      type: "none" | "express",
+ *      store: (express store if using Express sessions)
+ *      cookieKey: (string if using Express sessions)
+ *      cookieSecret: (string if using Express sessions)
  *    },
  *    socketClientConfig: {
  *      "resource": "echo/socket.io",
@@ -223,7 +246,7 @@ p._startup = function (callback) {
   // --------------------------------------------------------------------------
 
   // Grab the listeners on the server object:
-  this.serverListeners = this.thywill.server.listeners('request').splice(0);
+  this.serverListeners = this.config.server.server.listeners('request').splice(0);
 
   // And set our own listener to manage resource requests. This will be trumped
   // by Socket.IO's request handler, and only called if that doesn't find
@@ -231,28 +254,26 @@ p._startup = function (callback) {
   //
   // If we are using Express sessions, then this will serve nothing much, and
   // just pass things on to Express.
-  this.thywill.server.on("request", function (req, res) {
-    resourceManager.getKeysServedByThywill(function (error, paths) {
-      if (error) {
-        self.thywill.log.error(error);
-      }
-      if (!error && paths[req.url]) {
-        self._handleResourceRequest(req, res);
-      } else {
-        // Not a resource URL, so pass it to the other listeners.
-        self.serverListeners.forEach(function (element, index, array) {
-          element.call(self.thywill.server, req, res);
-        });
-      }
-    });
+  this.config.server.server.on("request", function (req, res) {
+    // Thywill only stoops to serve files if there is no Express application
+    // provided.
+    if (!self.config.server.app) {
+      self._handleResourceRequest(req, res);
+    } else {
+      // Otherwise pass it to the other listeners, which we can assume means
+      // passing it to an Express instance to handle.
+      self.serverListeners.forEach(function (listener, index, array) {
+        listener.call(self.config.server.server, req, res);
+      });
+    }
   });
 
   // --------------------------------------------------------------------------
   // Set up Socket.IO.
   // --------------------------------------------------------------------------
 
-  // Set up Socket.IO on the server object.
-  this.socketFactory = io.listen(this.thywill.server);
+  // Establish Socket.IO on the server instance.
+  this.socketFactory = io.listen(this.config.server.server);
 
   // Configure Socket.IO based on what we have in the configuration object.
   // This first set is server configuration - client configuration happens
@@ -290,7 +311,7 @@ p._startup = function (callback) {
     });
   }
 
-  // Tell socket what to do when a connection starts - this will kick off the
+  // Tell socket.io what to do when a connection starts - this will kick off the
   // necessary setup for an ongoing connection with a client.
   this.socketFactory.of(this.config.namespace).on("connection", function (socket) {
     self._initializeConnection(socket);
@@ -311,14 +332,22 @@ p._startup = function (callback) {
       if (data && data.headers && data.headers.cookie) {
         cookieParser(data, {}, function (error) {
           if (error) {
+            self.thywill.debug(error);
             callback("COOKIE_PARSE_ERROR", false);
+            return;
           }
+
           var sessionId = data.signedCookies[self.config.sessions.cookieKey];
           self.config.sessions.store.get(sessionId, function (error, session) {
             // Add the sessionId. This will show up in
             // socket.handshake.sessionId.
+            //
+            // It's useful to set the ID and session separately because of
+            // those fun times when you have an ID but no session - it makes
+            // debugging that much easier.
             data.sessionId = sessionId;
             if (error) {
+              self.thywill.debug(error);
               callback("ERROR", false);
             } else if (!session) {
               callback("NO_SESSION", false);
@@ -337,7 +366,7 @@ p._startup = function (callback) {
   }
 
   // --------------------------------------------------------------------------
-  // Set up bootstrap resources for Thywill main page requests.
+  // Set up the bootstrap resources for Thywill main page requests.
   // --------------------------------------------------------------------------
 
   // Set up an array of functions to be executed in series that will build the
@@ -369,24 +398,14 @@ p._startup = function (callback) {
     });
   }
 
-  // If we're using Express sessions, then these resources - and especially
-  // the main Thywill application page -  are to be served by Express.
-  var servedBy;
-  if (self.config.sessions.type === resourceManager.servedBy.EXPRESS) {
-    servedBy = resourceManager.servedBy.EXPRESS;
-  } else {
-    servedBy = resourceManager.servedBy.THYWILL;
-  }
-
   // Array of loader functions to be called in series.
-  var fns = [
+  var fns = {
     // Create a resource for the main client-side Thywill Javascript.
-    function (asyncCallback) {
+    createMainThywillJsResource: function (asyncCallback) {
       createBootstrapResourceFromFile("../../../client/thywill.js", {
         clientPath: self.config.baseClientPath + "/js/thywill.js",
         encoding: self.config.textEncoding,
         minified: false,
-        servedBy: servedBy,
         type: resourceManager.types.JAVASCRIPT,
         weight: 0
       }, asyncCallback);
@@ -396,7 +415,7 @@ p._startup = function (callback) {
     // needs minor templating to add in Socket.io client configuration values.
     // Use Handlebar.js rather than the configured template engine for core
     // files.
-    function (asyncCallback) {
+    createClientInterfaceJsResource: function (asyncCallback) {
       var originFilePath = pathHelpers.resolve(__dirname, "../../../client/component/clientInterface/socketIoServerInterface.js");
       var data = fs.readFileSync(originFilePath, self.config.textEncoding);
       var serverInterfaceTemplate = handlebars.compile(data);
@@ -415,7 +434,6 @@ p._startup = function (callback) {
         isGenerated: true,
         minified: false,
         originFilePath: originFilePath,
-        servedBy: servedBy,
         type: resourceManager.types.JAVASCRIPT,
         weight: 1
       });
@@ -426,12 +444,11 @@ p._startup = function (callback) {
     // Javascript resources. We can't use things like jQuery(document).ready()
     // for this because core Thywill doesn't assume any such framework is
     // present.
-    function (asyncCallback) {
+    createLoadLastJsResource: function (asyncCallback) {
       createBootstrapResourceFromFile("../../../client/thywillLoadLast.js", {
         clientPath: self.config.baseClientPath + "/js/thywillLoadLast.js",
         encoding: self.config.textEncoding,
         minified: false,
-        servedBy: servedBy,
         type: resourceManager.types.JAVASCRIPT,
         weight: 999999
       }, asyncCallback);
@@ -439,7 +456,7 @@ p._startup = function (callback) {
 
     // Load up bootstrap resources defined here and elsewhere (i.e. in
     // applications) and stash them in an accessible array.
-    function (asyncCallback) {
+    loadAllBootstrapResources: function (asyncCallback) {
       self.getBootstrapResources(function(error, otherResources) {
         if (otherResources instanceof Array) {
           resources = resources.concat(otherResources);
@@ -449,7 +466,7 @@ p._startup = function (callback) {
     },
 
     // Order the bootstrap resources by weight.
-    function (asyncCallback) {
+    orderAllBootstrapResources: function (asyncCallback) {
       async.sortBy(resources, function (resource, innerAsyncCallback) {
         innerAsyncCallback.call(self, null, resource.weight);
       }, function(error, sortedResources) {
@@ -458,8 +475,8 @@ p._startup = function (callback) {
       });
     },
 
-    // If we are compressing and merging CSS/JS resources, then get to it.
-    function (asyncCallback) {
+    // If we are minifying and aggregating CSS and Javascript, then get to it.
+    minifyResources: function (asyncCallback) {
       self.thywill.minifier.minifyResources(
         resources,
         self.config.minifyJavascript,
@@ -470,8 +487,6 @@ p._startup = function (callback) {
           // Store any newly added resources, which should be the
           // merged/minified Javascript and CSS.
           async.forEach(addedResources, function (resource, innerAsyncCallback) {
-            // Set servedBy:
-            resource.servedBy = servedBy;
             self.storeResource(resource, innerAsyncCallback);
           }, function (error) {
             asyncCallback(error);
@@ -482,7 +497,7 @@ p._startup = function (callback) {
     // Template the main thywill HTML page, adding the necessary CSS and
     // Javascript resources. Again using Handlebar.js rather than the
     // configured template engine.
-    function (asyncCallback) {
+    createMainPageResource: function (asyncCallback) {
       var originFilePath = pathHelpers.resolve(__dirname, "../../../client/thywill.html");
       var data = fs.readFileSync(originFilePath, self.config.textEncoding);
       var mainPageTemplate = handlebars.compile(data);
@@ -523,12 +538,11 @@ p._startup = function (callback) {
         encoding: self.config.textEncoding,
         isGenerated: true,
         originFilePath: originFilePath,
-        servedBy: servedBy,
         type: resourceManager.types.HTML
       });
       self.storeResource(resource, asyncCallback);
     }
-  ];
+  };
   // Call the above functions in series. Any errors will abort part-way through
   // and be passed back in the callback.
   async.series(fns, callback);
@@ -788,14 +802,13 @@ p.storeResource = function (resource, callback) {
   var self = this;
   this.thywill.resourceManager.store(resource.clientPath, resource, function (error, storedResource) {
     if (!error) {
+      // If we have an Express application, then serve content that way.
+      //
       // If we are using Express sessions, then client resources have to be
       // served via Express, so as to appropriately populate the session
       // before the websocket connection occurs.
-      if (
-        self.config.sessions.type === self.SESSIONS.EXPRESS &&
-        resource.servedBy === self.thywill.resourceManager.servedBy.EXPRESS
-      ) {
-        self.thywill.utility.express.serveResource(self.config.sessions.app, resource);
+      if (self.config.server.app) {
+        self.serveResourceViaExpress(self.config.sessions.app, resource);
       }
     }
     callback (error, storedResource);
@@ -807,6 +820,52 @@ p.storeResource = function (resource, callback) {
  */
 p.getResource = function (clientPath, callback) {
   this.thywill.resourceManager.load(clientPath, callback);
+};
+
+// -----------------------------------------------------------
+// Express utility methods
+// -----------------------------------------------------------
+
+/**
+ * Generate a route for Express to serve this resource
+ *
+ * @param {Resource} resource
+ *   A resource.
+ * @return {function}
+ *   A suitable route function for Express to use to serve the provided resource.
+ */
+p.generateExpressRoute = function (resource) {
+  return function (req, res, next) {
+    if (resource.isInMemory()) {
+      res.setHeader("Content-Type", resource.type);
+      // TODO: Using the buffer length is only going to be correct if people
+      // always use right-sized buffers for the content they contain.
+      res.setHeader("Content-Length", resource.buffer.length);
+      res.send(resource.buffer);
+    } else if (resource.isPiped()) {
+      res.setHeader("Content-Type", resource.type);
+      res.sendFile(resource.filePath, {
+        // TODO maxage configuration?
+        maxAge: 0
+      }, function (error) {
+        next(error);
+      });
+    } else {
+      next(new Error("Invalid resource."));
+    }
+  };
+};
+
+/**
+ * Tell Express to serve this resource.
+ *
+ * @param {object} app
+ *   An Express application.
+ * @param {Resource} resource
+ *   A resource.
+ */
+p.serveResourceViaExpress = function (app, resource) {
+  this.config.server.app.all(resource.clientPath, this.generateExpressRoute(resource));
 };
 
 // -----------------------------------------------------------

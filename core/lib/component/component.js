@@ -139,7 +139,7 @@ p._checkConfigurationRecursively = function (configObj, templateObj, propertyCha
     }
 
     // Is this property required and/or missing?
-    if (configValue === undefined) {
+    if (configValue === undefined || configValue === null) {
       if (configInfo.required) {
         this._throwConfigurationError(thisPropertyChain, "required, but missing");
       } else {
@@ -150,29 +150,25 @@ p._checkConfigurationRecursively = function (configObj, templateObj, propertyCha
 
     // Check type.
     if (configInfo.types) {
-      if (!(configInfo.types instanceof Array)) {
+      if (!Array.isArray(configInfo.types)) {
         configInfo.types = [configInfo.types];
       }
-      var found = false;
       var configValueType = this._getType(configValue);
-      for (var i = 0, l = configInfo.types.length; i < l; i++) {
-        if (configValueType === configInfo.types[i]) {
-          found = true;
-          break;
-        }
-      }
-      if (!found) {
-        this._throwConfigurationError(thisPropertyChain, "invalid type, found " + configValueType + " expecting one of [" + configInfo.types.toString() + "]");
+      var isValidType = configInfo.types.some(function (type, index, array) {
+        return (configValueType === type);
+      });
+      if (!isValidType) {
+        this._throwConfigurationError(thisPropertyChain, "invalid type, found " + configValueType + " expecting one of [" + configInfo.types + "]");
       }
     }
 
     // Check allowed values.
-    if (configInfo.allowedValues instanceof Array) {
-      var isAllowed = configInfo.allowedValues.some(function (element, index, array) {
-        return (element === configValue);
+    if (Array.isArray(configInfo.allowedValues)) {
+      var isAllowed = configInfo.allowedValues.some(function (allowedValue, index, array) {
+        return (allowedValue === configValue);
       });
       if (!isAllowed) {
-        this._throwConfigurationError(thisPropertyChain, "invalid value, found " + configValue + " expecting one of [" + configInfo.allowedValues.toString() + "]");
+        this._throwConfigurationError(thisPropertyChain, "invalid value, found " + configValue + " expecting one of [" + configInfo.allowedValues + "]");
       }
     }
 
@@ -191,7 +187,7 @@ p._checkConfigurationRecursively = function (configObj, templateObj, propertyCha
 p._getType = function (value) {
   var type = typeof value;
   if (type === "object") {
-    if (value instanceof Array) {
+    if (Array.isArray(value)) {
       type = "array";
     } else if (value === null) {
       type = "null";

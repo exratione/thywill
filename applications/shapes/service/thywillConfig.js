@@ -7,8 +7,8 @@
 
 var config = require("../../../serverConfig/thywill/baseThywillConfig");
 
-// Every example application process should run on a different port.
-config.thywill.launch.port = 10081;
+// Every example application process admin interface should run on a
+// different port.
 config.thywill.adminInterface.port = 20081;
 
 // An example application should have its own base path and Socket.IO
@@ -16,12 +16,17 @@ config.thywill.adminInterface.port = 20081;
 config.clientInterface.baseClientPath = "/shapes";
 config.clientInterface.namespace = "/shapes";
 
+// Set the Express application and the http.Server instance in start.js
+config.clientInterface.server = {
+  app: null,
+  server: null
+};
+
 // Using Express sessions.
 config.clientInterface.sessions = {
   type: "express",
   // The rest of the sessions configuration is set in start.js, as that is
   // where Express is set up and configured.
-  app: null,
   store: null,
   cookieKey: null,
   cookieSecret: null
