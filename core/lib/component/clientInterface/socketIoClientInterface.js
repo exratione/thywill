@@ -13,6 +13,7 @@ var handlebars = require("handlebars");
 var io = require("socket.io");
 var send = require("send");
 var Thywill = require("thywill");
+var Message = require("../messageManager/message");
 
 // -----------------------------------------------------------
 // Class Definition
@@ -305,15 +306,27 @@ p._startup = function (callback) {
 
   // Array of loader functions to be called in series.
   var fns = {
-    // Create a resource for the main client-side Thywill Javascript.
+    // Create a resource for the main client-side Thywill Javascript. We are
+    // passing in some additional code via templating.
     createMainThywillJsResource: function (asyncCallback) {
-      createBootstrapResourceFromFile("../../../client/thywill.js", {
+      var originFilePath = pathHelpers.resolve(__dirname, "../../../client/socketIoClientInterface/thywill.js");
+      var data = fs.readFileSync(originFilePath, self.config.textEncoding);
+      var thywillTemplate = handlebars.compile(data);
+      // Template parameters.
+      var params = {
+        messageClass: self.classToCodeString(Message, "  ")
+      };
+      // Generate a resource from the rendered template.
+      var resource = resourceManager.createResource(thywillTemplate(params), {
         clientPath: self.config.baseClientPath + "/js/thywill.js",
         encoding: self.config.textEncoding,
+        isGenerated: true,
         minified: false,
+        originFilePath: originFilePath,
         type: resourceManager.types.JAVASCRIPT,
         weight: 0
-      }, asyncCallback);
+      });
+      self.storeBootstrapResource(resource, asyncCallback);
     },
 
     // Client-side Javascript for this clientInterface component. This one
@@ -321,7 +334,7 @@ p._startup = function (callback) {
     // Use Handlebar.js rather than the configured template engine for core
     // files.
     createClientInterfaceJsResource: function (asyncCallback) {
-      var originFilePath = pathHelpers.resolve(__dirname, "../../../client/component/clientInterface/socketIoServerInterface.js");
+      var originFilePath = pathHelpers.resolve(__dirname, "../../../client/socketIoClientInterface/socketIoServerInterface.js");
       var data = fs.readFileSync(originFilePath, self.config.textEncoding);
       var serverInterfaceTemplate = handlebars.compile(data);
       // Template parameters.
@@ -350,7 +363,7 @@ p._startup = function (callback) {
     // for this because core Thywill doesn't assume any such framework is
     // present.
     createLoadLastJsResource: function (asyncCallback) {
-      createBootstrapResourceFromFile("../../../client/thywillLoadLast.js", {
+      createBootstrapResourceFromFile("../../../client/socketIoClientInterface/thywillLoadLast.js", {
         clientPath: self.config.baseClientPath + "/js/thywillLoadLast.js",
         encoding: self.config.textEncoding,
         minified: false,
@@ -403,7 +416,7 @@ p._startup = function (callback) {
     // Javascript resources. Again using Handlebar.js rather than the
     // configured template engine.
     createMainPageResource: function (asyncCallback) {
-      var originFilePath = pathHelpers.resolve(__dirname, "../../../client/thywill.html");
+      var originFilePath = pathHelpers.resolve(__dirname, "../../../client/socketIoClientInterface/thywill.html");
       var data = fs.readFileSync(originFilePath, self.config.textEncoding);
       var mainPageTemplate = handlebars.compile(data);
 
@@ -692,24 +705,23 @@ p._attachExpressSessionsToSockets = function () {
  */
 p.initializeNewSocketConnection = function (socket) {
   var self = this;
+  var messageManager = self.thywill.messageManager;
 
   /**
    * A message arrives and the raw data object from Socket.IO code is passed in.
    */
-  socket.on("fromClient", function (messageObj) {
-    if (messageObj && messageObj.data) {
-      var messageManager = self.thywill.messageManager;
-      var message = messageManager.createMessage({
-        data: messageObj.data,
-        connectionId: socket.id,
-        origin: messageManager.origins.CLIENT,
-        destination: messageManager.destinations.SERVER,
-        fromApplicationId: messageObj.fromApplicationId,
-        toApplicationId: messageObj.toApplicationId
-      });
+  socket.on("fromClient", function (rawMessage) {
+    var message = messageManager.createMessage(rawMessage.data, rawMessage._);
+    // Set the connectionId.
+    message.setMetadata(messageManager.metadata.CONNECTION_ID, socket.id);
+    // Sort out origin and destination - always from client, to server.
+    message.setMetadata(messageManager.metadata.ORIGIN, messageManager.origins.CLIENT);
+    message.setMetadata(messageManager.metadata.DESTINATION, messageManager.destinations.SERVER);
+    // If valid now, send it onward.
+    if (message.isValid()) {
       self.receive(message);
     } else {
-      self.thywill.log.debug("Empty or broken message received from session: " + socket.id);
+      self.thywill.log.debug("Empty or broken message received from session: " + socket.id + " with contents: " + JSON.stringify(rawMessage));
     }
   });
 
@@ -844,13 +856,15 @@ p.handleResourceRequest = function (req, res, next, error, resource) {
  * @see ClientInterface#send
  */
 p.send = function (message) {
-  var socketId = message.connectionId;
   if (message.isValid()) {
     var messageManager = this.thywill.messageManager;
+    var socketId = message.getMetadata(messageManager.metadata.CONNECTION_ID);
+    var destination = message.getMetadata(messageManager.metadata.DESTINATION);
+
     // Is this a message for the server rather than the client? It's always
     // possible we'll have server applications talking to each other this
     // way.
-    if (message.destination === messageManager.destinations.SERVER) {
+    if (destination === messageManager.destinations.SERVER) {
       this.receive(message);
     }
     // Otherwise it's for a client connection, so send it out through the
@@ -865,17 +879,13 @@ p.send = function (message) {
 
       var destinationSocket = this.socketFactory.of(this.config.namespace).socket(socketId);
       if (destinationSocket) {
-        destinationSocket.emit("toClient", {
-          data: message.data,
-          fromApplicationId: message.fromApplicationId,
-          toApplicationId: message.toApplicationId
-        });
+        destinationSocket.emit("toClient", message);
       } else {
         this.thywill.log.debug(new Error("Invalid socketId: " + socketId));
       }
     }
   } else {
-    this.thywill.log.debug(new Error("Invalid Message: " + message.encode()));
+    this.thywill.log.debug(new Error("Invalid Message: " + message));
   }
 };
 
@@ -994,6 +1004,63 @@ p.generateExpressRoute = function (resource) {
  */
 p.serveResourceViaExpress = function (app, resource) {
   this.config.server.app.all(resource.clientPath, this.generateExpressRoute(resource));
+};
+
+// -----------------------------------------------------------
+// Other utility methods
+// -----------------------------------------------------------
+
+/**
+ * Given a class definition, create Javascript code for it. This is used to
+ * share some minor classes with the front end and save duplication of code.
+ *
+ * @param {function} classFunction
+ *   A class definition.
+ * @param {string} [property]
+ *   If the function should be a property, e.g. of "Thywill.className".
+ * @param {string} [indent]
+ *   Indent string, e.g. "  ";
+ * @return {string}
+ *   Javascript code.
+ */
+p.classToCodeString = function (classFunction, indent) {
+  var code = "";
+  if (indent) {
+    code += indent;
+  }
+  code += classFunction.toString();
+  code += "\n\n";
+
+  function getPropertyCode(property) {
+    if (typeof property === "function") {
+      return property.toString();
+    } else {
+      return JSON.stringify(property, null, "  ");
+    }
+  }
+
+  var prop, propCode;
+
+  // "Static" items.
+  for (prop in classFunction) {
+    propCode = getPropertyCode(classFunction[prop]);
+    code += classFunction.name + "." + prop + " = " + propCode + ";\n";
+  }
+
+  code += "\n";
+
+  // Prototype functions.
+  for (prop in classFunction.prototype) {
+    propCode = getPropertyCode(classFunction.prototype[prop]);
+    code += classFunction.name + ".prototype." + prop + " = " + propCode + ";\n\n";
+  }
+
+  // Add the indent.
+  if (indent) {
+    code = code.replace(/\n/g, "\n" + indent);
+  }
+
+  return code;
 };
 
 // -----------------------------------------------------------

@@ -102,7 +102,7 @@ p._prepareForShutdown = function (callback) {
  * @see Application#receive
  */
 p.receive = function (message) {
-  this.thywill.log.debug("Shapes.receive(): Message: " + message.encode());
+  this.thywill.log.debug("Shapes.receive(): Message: " + message);
   // Is this a datastore message?
   if (message.data.dsRequestId) {
 

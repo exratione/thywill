@@ -12,11 +12,11 @@
 // --------------------------------------------------------
 
 /**
- * Send a message to the server.
+ * Send a Thywill.Message instance to the server.
  *
  * @see Thywill.ServerInterface#send
  */
-Thywill.ServerInterface.send = function (message) {
+Thywill.ServerInterface.sendMessage = function (message) {
   Thywill.socket.emit("fromClient", message);
 };
 

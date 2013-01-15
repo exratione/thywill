@@ -20,7 +20,7 @@ config.clientInterface.socketClientConfig.resource = "echo/socket.io";
 config.clientInterface.socketConfig.global.resource = "/echo/socket.io";
 // Resource minification settings.
 config.clientInterface.minifyCss = true;
-config.clientInterface.minifyJavascript = true;
+config.clientInterface.minifyJavascript = false;
 
 // Set the http.Server instance in start.js
 config.clientInterface.server.server = null;

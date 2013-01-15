@@ -90,18 +90,12 @@ p._prepareForShutdown = function (callback) {
  * @see Application#receive
  */
 p.receive = function (message) {
-  this.thywill.log.debug("Echo.receive(): Message for echoing: " + message.encode());
+  this.thywill.log.debug("Echo.receive(): Message for echoing: " + message);
   // If the message came from a client connection, react by sending the same
   // data right back to where it came from.
   var messageManager = this.thywill.messageManager;
-  if (message.connectionId && message.origin === messageManager.origins.CLIENT) {
-    var echoMessage = messageManager.createMessage({
-      data: message.data,
-      connectionId: message.connectionId,
-      origin: messageManager.origins.SERVER,
-      destination: messageManager.destinations.CLIENT,
-      fromApplicationId: this.id
-    });
+  if (message.getMetadata(messageManager.metadata.ORIGIN) === messageManager.origins.CLIENT) {
+    var echoMessage = this.thywill.messageManager.createReplyMessage(message.getData(), message);
     this.send(echoMessage);
   }
 };

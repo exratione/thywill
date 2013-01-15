@@ -1,9 +1,14 @@
 /**
  * @fileOverview
  * Message class definition.
+ *
+ * This is shared with the front end, so watch out for inclusion of references
+ * that won't work in that environment: this has to be very self-contained.
  */
 
-var Thywill = require("thywill");
+// Defined out here so that it isn't passed to the front end with the class
+// definition.
+var window;
 
 //-----------------------------------------------------------
 // Class Definition
@@ -11,35 +16,13 @@ var Thywill = require("thywill");
 
 /**
  * @class
- * A Message instance wraps data for delivery between client and server. It
- * expects values of the form:
+ * A Message instance wraps data for delivery between client and server.
  *
- * {
- *   // The body of the message.
- *   data: object
- *   // The ID of the specific client connecton, whether sender or recipient.
- *   connectionId: string
- *   // Whether the message originated from server or client.
- *   origin: Message.ORIGINS.CLIENT || Message.ORIGINS.SERVER
- *   // Whether the message is delivered to server or client.
- *   destination: Message.DESTINATIONS.CLIENT || Message.DESTINATIONS.SERVER
- *   // The ID of the originating application.
- *   fromApplicationId: string
- *   // If not null, the message is flagged for delivery to this application
- *   // only.
- *   toApplicationId: string
- * }
- *
- * @param {Object} params
- *   Message parameters.
+ * Construct messages using MessageManager implementations.
  */
-function Message (params) {
-  this.data = params.data;
-  this.connectionId = params.connectionId;
-  this.origin = params.origin;
-  this.destination = params.destination;
-  this.fromApplicationId = params.fromApplicationId;
-  this.toApplicationId = params.toApplicationId;
+function Message () {
+  // Metadata.
+  this._ = {};
 }
 var p = Message.prototype;
 
@@ -54,8 +37,81 @@ Message.ORIGINS = {
 
 Message.DESTINATIONS = Message.ORIGINS;
 
+Message.METADATA = {
+  // The ID of the specific client connection, either as sender or recipient.
+  CONNECTION_ID: "cid",
+  // Whether the message is delivered to server or client.
+  DESTINATION: "dest",
+  // The ID of the originating application.
+  FROM_APPLICATION: "faid",
+  // The ID of the destination application. If not set, the message is for
+  // delivery to all applications.
+  TO_APPLICATION: "taid",
+  // Whether the message originated from server or client.
+  ORIGIN: "orig",
+  // Used to identify messages with replies or otherwise distinguish
+  // between messages where important. Not particularly unique.
+  IDENTIFIER: "id",
+  // The type of the message.
+  TYPE: "type"
+};
+
+Message.TYPES = {
+  NONE: undefined
+};
+
 //-----------------------------------------------------------
-// Methods
+// Methods: getters and setters
+//-----------------------------------------------------------
+
+/**
+ * Getter for message contents.
+ */
+p.getData = function () {
+  return this.data;
+};
+
+/**
+ * Setter for message data.
+ */
+p.setData = function (data) {
+  this.data = data;
+};
+
+/**
+ * Getter for message data. Usage:
+ *
+ * getMetadata() => object
+ * getMetadata(name) => value
+ */
+p.getMetadata = function () {
+  if (typeof arguments[0] === "string") {
+    return this._[arguments[0]];
+  } else {
+    return this._;
+  }
+};
+
+/**
+ * Setter for message metadata. Usage:
+ *
+ * setMetadata(object);
+ * setMetadata(name, value);
+ */
+p.setMetadata = function () {
+  if (!arguments[0]) {
+    return;
+  }
+  var type = typeof arguments[0];
+  if (type === "object") {
+    this._ = arguments[0];
+  } else if (type === "string" && arguments.length > 1) {
+    this._[arguments[0]] = arguments[1];
+  }
+};
+
+//-----------------------------------------------------------
+// Methods: utilities
 //-----------------------------------------------------------
 
 /**
@@ -64,37 +120,63 @@ Message.DESTINATIONS = Message.ORIGINS;
  * @return {string}
  *   A JSON string representing this instance.
  */
-p.encode = function () {
-  try {
-    return JSON.stringify(this);
-  } catch (e) {
-    // TODO log it.
-    return null;
-  }
+p.toString = function () {
+  return JSON.stringify(this);
 };
 
 /**
- * A valid message has at least values for data and connectionId. A null
- * toApplicationId implies delivery to all applications, but is still valid.
+ * Determine whether this message is valid: it has data and the required
+ * metadata is populated.
+ *
+ * Messages created on the client for sending to the server lack a
+ * connectionId, origin, and destination metadata.
  *
  * @return {boolean}
  *   True if this instance is a valid message.
  */
 p.isValid = function () {
-  // TODO more rigorous check.
-
-  // A message to or from the client.
-  if (this.data && this.connectionId && this.fromApplicationId) {
-    return true;
-  }
-  // A message between two server application components.
-  else if (this.data && this.origin === Message.ORIGINS.SERVER && this.destination === Message.DESTINATIONS.SERVER && this.fromApplicationId) {
-    return true;
-  }
-  // Otherwise invalid.
-  else {
+  if (!this.getMetadata(Message.METADATA.TO_APPLICATION)) {
     return false;
   }
+  if (!this.getMetadata(Message.METADATA.FROM_APPLICATION)) {
+    return false;
+  }
+  if (!this.getData()) {
+    return false;
+  }
+
+  var origin = this.getMetadata(Message.METADATA.ORIGIN);
+  if (!origin) {
+    return false;
+  }
+  var validOrigin = Object.keys(Message.ORIGINS).some(function (key, index, array) {
+    return (Message.ORIGINS[key] === origin);
+  });
+  if (!validOrigin) {
+    return false;
+  }
+  var destination = this.getMetadata(Message.METADATA.DESTINATION);
+  if (!destination) {
+    return false;
+  }
+  var validDestination = Object.keys(Message.DESTINATIONS).some(function (key, index, array) {
+    return (Message.DESTINATIONS[key] === destination);
+  });
+  if (!validDestination) {
+    return false;
+  }
+
+  // Server-side only
+  if (!window) {
+    // A message to or from the client has to have a connection ID.
+    if (origin === Message.ORIGINS.CLIENT || destination === Message.DESTINATIONS.CLIENT) {
+      if(!this.getMetadata(Message.METADATA.CONNECTION_ID)) {
+        return false;
+      }
+    }
+  }
+
+  return true;
 };
 
 //-----------------------------------------------------------

@@ -54,21 +54,43 @@ var Thywill = (function() {
    *
    * @param {mixed} data
    *   Any Javascript entity, but usually an object.
+   * @param {string} [type]
+   *   Optionally, set the message type metadata.
    */
-  p.send = function (data) {
-    var message = new Thywill.Message(data, this.applicationId, this.applicationId);
+  p.send = function (data, type) {
+    if (!data) {
+      return;
+    }
+
+    var message = new Thywill.Message();
+    message.setData(data);
+    var metadata = {};
+    // Note: no filling in the connectionId on the client side, since we don't
+    // know what it is here nor do we need to. That is populated when the
+    // message gets to the server.
+    metadata[Thywill.Message.METADATA.FROM_APPLICATION] = this.applicationId;
+    metadata[Thywill.Message.METADATA.TO_APPLICATION] = this.applicationId;
+    // Technically these two aren't necessary either, but may as well put them
+    // there to indicate intent.
+    metadata[Thywill.Message.METADATA.DESTINATION] = Thywill.Message.DESTINATIONS.SERVER;
+    metadata[Thywill.Message.METADATA.ORIGIN] = Thywill.Message.ORIGINS.CLIENT;
+    // If a message type is provided, set it.
+    if (type) {
+      metadata[Thywill.Message.METADATA.TYPE] = type;
+    }
+    message.setMetadata(metadata);
     this.sendMessage(message);
   };
 
   /**
    * Send a Thywill.Message object to the server, which allows for addressing to
-   * specific applications.
+   * specific applications, setting other metadata such as type, etc.
    *
    * @param {Thywill.Message} message
    *   A Thywill.Message instance.
    */
   p.sendMessage = function (message) {
-    thywillObj.ServerInterface.send(message);
+    thywillObj.ServerInterface.sendMessage(message);
   };
 
   /**
@@ -119,19 +141,9 @@ var Thywill = (function() {
   /**
    * @class
    * A Message instance wraps data for delivery between client and server.
-   *
-   * @param {string} data
-   *   The body of the message.
-   * @param {string} fromApplicationId
-   *   The ID of the originating application.
-   * @param {string} [toApplicationId]
-   *   If not null, the message is flagged for delivery to this application only.
    */
-  thywillObj.Message = function Message (data, fromApplicationId, toApplicationId) {
-    this.data = data;
-    this.fromApplicationId = fromApplicationId;
-    this.toApplicationId = toApplicationId;
-  };
+{{{messageClass}}}
+  thywillObj.Message = Message;
 
   // -----------------------------------------------------
   // Main server interface.
@@ -172,7 +184,7 @@ var Thywill = (function() {
      * @param {Message} message
      *   Instance of the Thywill.Message class.
      */
-    send: function (message) {
+    sendMessage: function (message) {
       console.log("Thywill.ServerInterface.send() not implemented.");
     },
 
@@ -189,21 +201,23 @@ var Thywill = (function() {
 
     /**
      * A message has arrived from the server. This function routes it to a
-     * specific application, or to all applications if it isn't specifically
-     * addressed.
+     * specific application.
      *
      * @param {Object} rawMessage
      *   An object representation of the message.
      */
     received: function (rawMessage) {
-      var message = new Thywill.Message(rawMessage.data, rawMessage.fromApplicationId, rawMessage.toApplicationId);
-      if (message.toApplicationId) {
-        if (applications[message.toApplicationId]) {
-          applications[message.toApplicationId].received(message);
-        }
-      } else {
-        for (var applicationId in applications) {
-          applications[applicationId].received(message);
+      if (typeof rawMessage !== "object") {
+        return;
+      }
+
+      var message = new Thywill.Message();
+      message.setData(rawMessage.data);
+      message.setMetadata(rawMessage._);
+      if (message.isValid()) {
+        var to = message.getMetadata(Thywill.Message.METADATA.TO_APPLICATION);
+        if (applications[to]) {
+          applications[to].received(message);
         }
       }
     },

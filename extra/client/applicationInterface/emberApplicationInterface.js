@@ -45,7 +45,7 @@
       // Type object to a string.
       data.type = this.typeName(data.type);
       // Stash the store away to await the reply.
-      this.requestStores[data.ds] = store;
+      this.requestStores[data.dsRequestId] = store;
       // And send.
       this.applicationInterface.send(data);
     },
@@ -61,7 +61,7 @@
       if (!store) {
         return;
       }
-      delete this.requestStores[data.ds];
+      delete this.requestStores[data.dsRequestId];
 
 
       // TODO: Expand data.type string back out to a DS.Model object.

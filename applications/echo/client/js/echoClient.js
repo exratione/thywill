@@ -108,7 +108,9 @@
     // correctly.
     jQuery("#echo-output").scrollTop(0);
     // Render the message HTML.
-    var rendered = this.templates.messageTemplate(message);
+    var rendered = this.templates.messageTemplate({
+      data: message.getData()
+    });
     // Add the message content to the output div, and slide it in.
     jQuery(rendered).hide().prependTo("#echo-output").slideDown();
   };

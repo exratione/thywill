@@ -30,7 +30,7 @@ util.inherits(Application, Thywill.getBaseClass("Component"));
 var p = Application.prototype;
 
 //-----------------------------------------------------------
-// Methods
+// Methods: sending
 //-----------------------------------------------------------
 
 /**
@@ -42,6 +42,37 @@ var p = Application.prototype;
 p.send = function (message) {
   this.thywill.clientInterface.send(message);
 };
+
+/**
+ * A shortcut way of sending a message with default addressing and other
+ * metadata. It goes to the client side of this application.
+ *
+ * @param {mixed} data
+ *   The data to be passed to the client.
+ * @param {string} connectionId
+ *   The ID of the client connection to send to.
+ * @param {string} [type]
+ *   Optionally, set the message type.
+ */
+p.sendTo = function (data, connectionId, type) {
+  var messageManager = this.thywill.messageManager;
+  var message = messageManager.createMessage(data);
+  var metadata = {};
+  metadata[messageManager.metadata.CONNECTION_ID] = connectionId;
+  metadata[messageManager.metadata.FROM_APPLICATION] = this.id;
+  metadata[messageManager.metadata.TO_APPLICATION] = this.id;
+  metadata[messageManager.metadata.DESTINATION] = messageManager.destinations.CLIENT;
+  metadata[messageManager.metadata.ORIGIN] = messageManager.origins.SERVER;
+  if (type) {
+    metadata[messageManager.metadata.TYPE] = type;
+  }
+  message.setMetadata(metadata);
+  this.send(message);
+};
+
+//-----------------------------------------------------------
+// Methods: resources
+//-----------------------------------------------------------
 
 /**
  * Define a resource to be loaded immediately on client connection.
