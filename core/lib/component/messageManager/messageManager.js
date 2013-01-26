@@ -76,12 +76,10 @@ p.createMessage = function (data, metadata) {
  *   The message data.
  * @param {Message} message
  *   A message. Metadata from this message will be used.
- * @param {Object} overrideMetadata
- *   Message metadata to override those specified in the message.
  * @return {Message}
  *   A Message instance.
  */
-p.createReplyMessage = function (data, message, overrideMetadata) {
+p.createReplyMessage = function (data, message) {
   throw new Error("Not implemented.");
 };
 

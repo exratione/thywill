@@ -57,16 +57,14 @@ p.send = function (message) {
 p.sendTo = function (data, connectionId, type) {
   var messageManager = this.thywill.messageManager;
   var message = messageManager.createMessage(data);
-  var metadata = {};
-  metadata[messageManager.metadata.CONNECTION_ID] = connectionId;
-  metadata[messageManager.metadata.FROM_APPLICATION] = this.id;
-  metadata[messageManager.metadata.TO_APPLICATION] = this.id;
-  metadata[messageManager.metadata.DESTINATION] = messageManager.destinations.CLIENT;
-  metadata[messageManager.metadata.ORIGIN] = messageManager.origins.SERVER;
+  message.setConnectionId(connectionId);
+  message.setFromApplication(this.id);
+  message.setToApplication(this.id);
+  message.setDestination(messageManager.destinations.CLIENT);
+  message.setOrigin(messageManager.origins.SERVER);
   if (type) {
-    metadata[messageManager.metadata.TYPE] = type;
+    message.setType(type);
   }
-  message.setMetadata(metadata);
   this.send(message);
 };
 

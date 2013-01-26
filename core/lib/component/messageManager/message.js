@@ -44,20 +44,21 @@ Message.METADATA = {
   DESTINATION: "dest",
   // The ID of the originating application.
   FROM_APPLICATION: "faid",
-  // The ID of the destination application. If not set, the message is for
-  // delivery to all applications.
-  TO_APPLICATION: "taid",
-  // Whether the message originated from server or client.
-  ORIGIN: "orig",
   // Used to identify messages with replies or otherwise distinguish
   // between messages where important. Not particularly unique.
   IDENTIFIER: "id",
+  // Whether the message originated from server or client.
+  ORIGIN: "orig",
+  // The ID of the destination application. If not set, the message is for
+  // delivery to all applications.
+  TO_APPLICATION: "taid",
   // The type of the message.
   TYPE: "type"
 };
 
 Message.TYPES = {
-  NONE: undefined
+  NONE: undefined,
+  RPC: "rpc"
 };
 
 //-----------------------------------------------------------
@@ -99,7 +100,7 @@ p.getMetadata = function () {
  * setMetadata(name, value);
  */
 p.setMetadata = function () {
-  if (!arguments[0]) {
+  if (!arguments.length) {
     return;
   }
   var type = typeof arguments[0];
@@ -108,6 +109,59 @@ p.setMetadata = function () {
   } else if (type === "string" && arguments.length > 1) {
     this._[arguments[0]] = arguments[1];
   }
+};
+
+//-----------------------------------------------------------
+// Methods: metadata convenience getters and setters.
+//-----------------------------------------------------------
+
+p.getConnectionId = function () {
+  return this.getMetadata(Message.METADATA.CONNECTION_ID);
+};
+p.setConnectionId = function (connectionId) {
+  this.setMetadata(Message.METADATA.CONNECTION_ID, connectionId);
+};
+
+p.getDestination = function () {
+  return this.getMetadata(Message.METADATA.DESTINATION);
+};
+p.setDestination = function (destination) {
+  this.setMetadata(Message.METADATA.DESTINATION, destination);
+};
+
+p.getFromApplication = function () {
+  return this.getMetadata(Message.METADATA.FROM_APPLICATION);
+};
+p.setFromApplication = function (applicationId) {
+  this.setMetadata(Message.METADATA.FROM_APPLICATION, applicationId);
+};
+
+p.getId = function () {
+  return this.getMetadata(Message.METADATA.IDENTIFIER);
+};
+p.setId = function (id) {
+  this.setMetadata(Message.METADATA.IDENTIFIER, id);
+};
+
+p.getOrigin = function () {
+  return this.getMetadata(Message.METADATA.ORIGIN);
+};
+p.setOrigin = function (origin) {
+  this.setMetadata(Message.METADATA.ORIGIN, origin);
+};
+
+p.getToApplication = function () {
+  return this.getMetadata(Message.METADATA.TO_APPLICATION);
+};
+p.setToApplication = function (applicationId) {
+  this.setMetadata(Message.METADATA.TO_APPLICATION, applicationId);
+};
+
+p.getType = function () {
+  return this.getMetadata(Message.METADATA.TYPE);
+};
+p.setType = function (type) {
+  this.setMetadata(Message.METADATA.TYPE, type);
 };
 
 //-----------------------------------------------------------
@@ -135,17 +189,17 @@ p.toString = function () {
  *   True if this instance is a valid message.
  */
 p.isValid = function () {
-  if (!this.getMetadata(Message.METADATA.TO_APPLICATION)) {
+  if (!this.getToApplication()) {
     return false;
   }
-  if (!this.getMetadata(Message.METADATA.FROM_APPLICATION)) {
+  if (!this.getFromApplication()) {
     return false;
   }
   if (!this.getData()) {
     return false;
   }
 
-  var origin = this.getMetadata(Message.METADATA.ORIGIN);
+  var origin = this.getOrigin();
   if (!origin) {
     return false;
   }
@@ -155,7 +209,7 @@ p.isValid = function () {
   if (!validOrigin) {
     return false;
   }
-  var destination = this.getMetadata(Message.METADATA.DESTINATION);
+  var destination = this.getDestination();
   if (!destination) {
     return false;
   }
@@ -170,7 +224,7 @@ p.isValid = function () {
   if (!window) {
     // A message to or from the client has to have a connection ID.
     if (origin === Message.ORIGINS.CLIENT || destination === Message.DESTINATIONS.CLIENT) {
-      if(!this.getMetadata(Message.METADATA.CONNECTION_ID)) {
+      if(!this.getConnectionId()) {
         return false;
       }
     }

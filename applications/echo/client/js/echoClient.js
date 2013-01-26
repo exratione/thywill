@@ -162,7 +162,7 @@
   // Initial UI setup.
   jQuery(document).ready(function () {
     app.uiSetup();
-    Thywill.ServerInterface.registerApplication(app);
+    Thywill.serverInterface.registerApplication(app);
   });
 
 })();

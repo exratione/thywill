@@ -1,11 +1,27 @@
 /*global
   io: false,
   Thywill: false
-*//**
+*/
+/**
  * @fileOverview
- * Client-side Javascript for the socketIO clientInterface component. This
- * manages the interface between thywill.serverInferface and socket.IO.
+ * Client-side Javascript for the Socket.IO clientInterface component. This
+ * links Thywill.serverInterface and Socket.IO functionality.
  */
+
+// --------------------------------------------------------
+// Class definition.
+// --------------------------------------------------------
+
+/**
+ * @class
+ * @see Thywill.ServerInterface
+ *
+ * Use Socket.IO for the interface to the server.
+ */
+Thywill.SocketIoServerInterface = function SocketIoServerInterface () {
+  Thywill.ServerInterface.call(this);
+};
+Thywill.inherits(Thywill.SocketIoServerInterface, Thywill.ServerInterface);
 
 // --------------------------------------------------------
 // Override necessary functions in Thywill.ServerInterface.
@@ -16,11 +32,12 @@
  *
  * @see Thywill.ServerInterface#send
  */
-Thywill.ServerInterface.sendMessage = function (message) {
+Thywill.SocketIoServerInterface.prototype.sendMessage = function (message) {
   Thywill.socket.emit("fromClient", message);
 };
 
-Thywill.ServerInterface.setupConnection = function () {
+Thywill.SocketIoServerInterface.prototype.setupConnection = function () {
+  var self = this;
   // Create the socket and connect. The parameters here are provided by
   // Handlebars.js templating when this Javascript file is turned into a
   // resource by the server.
@@ -38,41 +55,47 @@ Thywill.ServerInterface.setupConnection = function () {
 
   // Initial connection succeeds.
   Thywill.socket.on("connect", function () {
-    Thywill.ServerInterface.connected();
+    self.connected();
   });
 
   // Initial connection failed with timeout.
   Thywill.socket.on("connect_failed", function() {
-    Thywill.ServerInterface.connectionFailure();
+    self.connectionFailure();
   });
 
   // Client is trying to initially connect.
   Thywill.socket.on("connecting", function (transport_type) {
-    Thywill.ServerInterface.connecting();
+    self.connecting();
   });
 
   // Client is disconnected.
   Thywill.socket.on("disconnect", function () {
-    Thywill.ServerInterface.disconnected();
+    self.disconnected();
   });
 
   // Message received from the server.
   Thywill.socket.on("toClient", function (message) {
-    Thywill.ServerInterface.received(message);
+    self.received(message);
   });
 
   // Client manages to reconnect after disconnection.
   Thywill.socket.on("reconnect", function (transport_type, reconnectionAttempts) {
-    Thywill.ServerInterface.connected();
+    self.connected();
   });
 
   // Attempts to reconnect are abandoned, timed out.
   Thywill.socket.on("reconnect_failed", function() {
-    Thywill.ServerInterface.connectionFailure();
+    self.connectionFailure();
   });
 
   // Client is trying to reconnect after disconnection.
   Thywill.socket.on("reconnecting", function (reconnectionDelay, reconnectionAttempts) {
-    Thywill.ServerInterface.connecting();
+    self.connecting();
   });
 };
+
+// --------------------------------------------------------
+// Set the server interface.
+// --------------------------------------------------------
+
+Thywill.serverInterface = new Thywill.SocketIoServerInterface();

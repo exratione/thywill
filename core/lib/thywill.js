@@ -238,6 +238,10 @@ Thywill.getBaseClass = (function () {
           baseClasses[className] = require("./component/resourceManager/resource");
           break;
         // Extra classes.
+        case "RpcCapableApplication":
+          pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
+          baseClasses[className] = require("../../extra/lib/component/application/" + pathElement);
+          break;
         case "EmberStore":
           pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
           baseClasses[className] = require("../../extra/lib/component/" + pathElement + "/" + pathElement);

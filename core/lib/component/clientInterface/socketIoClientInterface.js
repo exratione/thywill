@@ -314,7 +314,7 @@ p._startup = function (callback) {
       var thywillTemplate = handlebars.compile(data);
       // Template parameters.
       var params = {
-        messageClass: self.classToCodeString(Message, "  ")
+        messageClass: self.classToCodeString(Message, "  ", "  ")
       };
       // Generate a resource from the rendered template.
       var resource = resourceManager.createResource(thywillTemplate(params), {
@@ -713,10 +713,10 @@ p.initializeNewSocketConnection = function (socket) {
   socket.on("fromClient", function (rawMessage) {
     var message = messageManager.createMessage(rawMessage.data, rawMessage._);
     // Set the connectionId.
-    message.setMetadata(messageManager.metadata.CONNECTION_ID, socket.id);
+    message.setConnectionId(socket.id);
     // Sort out origin and destination - always from client, to server.
-    message.setMetadata(messageManager.metadata.ORIGIN, messageManager.origins.CLIENT);
-    message.setMetadata(messageManager.metadata.DESTINATION, messageManager.destinations.SERVER);
+    message.setOrigin(messageManager.origins.CLIENT);
+    message.setDestination(messageManager.destinations.SERVER);
     // If valid now, send it onward.
     if (message.isValid()) {
       self.receive(message);
@@ -858,8 +858,8 @@ p.handleResourceRequest = function (req, res, next, error, resource) {
 p.send = function (message) {
   if (message.isValid()) {
     var messageManager = this.thywill.messageManager;
-    var socketId = message.getMetadata(messageManager.metadata.CONNECTION_ID);
-    var destination = message.getMetadata(messageManager.metadata.DESTINATION);
+    var socketId = message.getConnectionId();
+    var destination = message.getDestination();
 
     // Is this a message for the server rather than the client? It's always
     // possible we'll have server applications talking to each other this
@@ -1016,17 +1016,19 @@ p.serveResourceViaExpress = function (app, resource) {
  *
  * @param {function} classFunction
  *   A class definition.
- * @param {string} [property]
- *   If the function should be a property, e.g. of "Thywill.className".
  * @param {string} [indent]
- *   Indent string, e.g. "  ";
+ *   Indent string, e.g. two spaces: "  "
+ * @param {string} [extraIndent]
+ *   An additional indent to apply to all rows to get them to line up with
+ *   whatever output they are put into. e.g. an extra two spaces "  ";
  * @return {string}
  *   Javascript code.
  */
-p.classToCodeString = function (classFunction, indent) {
+p.classToCodeString = function (classFunction, indent, extraIndent) {
+  indent = indent || "  ";
   var code = "";
-  if (indent) {
-    code += indent;
+  if (extraIndent) {
+    code += extraIndent;
   }
   code += classFunction.toString();
   code += "\n\n";
@@ -1035,7 +1037,7 @@ p.classToCodeString = function (classFunction, indent) {
     if (typeof property === "function") {
       return property.toString();
     } else {
-      return JSON.stringify(property, null, "  ");
+      return JSON.stringify(property, null, indent);
     }
   }
 
@@ -1055,9 +1057,9 @@ p.classToCodeString = function (classFunction, indent) {
     code += classFunction.name + ".prototype." + prop + " = " + propCode + ";\n\n";
   }
 
-  // Add the indent.
-  if (indent) {
-    code = code.replace(/\n/g, "\n" + indent);
+  // Add the extraIndent.
+  if (extraIndent) {
+    code = code.replace(/\n/g, "\n" + extraIndent);
   }
 
   return code;

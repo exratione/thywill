@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * Echo class definition, a trivial example application.
+ * Calculations class definition, a trivial example application.
  */
 
 var util = require("util");
@@ -10,6 +10,7 @@ var fs = require("fs");
 var async = require("async");
 var Thywill = require("thywill");
 var bootstrapManifest = require("./bootstrapManifest");
+var rpcFunctions = require("./rpcFunctions");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -19,14 +20,15 @@ var bootstrapManifest = require("./bootstrapManifest");
  * @class
  * A trivial example application.
  *
- * This application provides a UI for the client to enter messages, and echoes
- * back all entered messages with the same content.
+ * This application provides a UI for the client to enter some numbers and
+ * provoke a few simple RPC calls to the server.
  */
-function Echo (id) {
-  Echo.super_.call(this, id);
+function Calculations (id) {
+  Calculations.super_.call(this, id);
+  this._setupRpcFunctions();
 }
-util.inherits(Echo, Thywill.getBaseClass("Application"));
-var p = Echo.prototype;
+util.inherits(Calculations, Thywill.getBaseClass("RpcCapableApplication"));
+var p = Calculations.prototype;
 
 //-----------------------------------------------------------
 // Initialization and Shutdown
@@ -46,21 +48,20 @@ p._defineBootstrapResources = function (callback) {
     function (asyncCallback) {
       self.storeBootstrapResourcesFromManifest(bootstrapManifest, asyncCallback);
     },
-    // Add the Echo client Javascript separately, as it needs to be rendered
+    // Add the Calculations client Javascript separately, as it needs to be rendered
     // as a template.
     function (asyncCallback) {
       // Load the file.
-      var originFilePath = path.resolve(__dirname, "../client/js/echoClient.js");
+      var originFilePath = path.resolve(__dirname, "../client/js/calculationsClient.js");
       var data = fs.readFileSync(originFilePath, encoding);
       // A little templating to insert the application ID.
       data = self.thywill.templateEngine.render(data, {
         applicationId: self.id,
-        uiTemplateId: "echo-template-ui",
-        messageTemplateId: "echo-template-message"
+        uiTemplateId: "calculations-template-ui"
       });
       // Create and store the resource.
       var resource = self.thywill.resourceManager.createResource(data, {
-        clientPath: "/echo/js/echoClient.js",
+        clientPath: "/calculations/js/calculationsClient.js",
         encoding: encoding,
         isGenerated: true,
         minified: false,
@@ -72,6 +73,18 @@ p._defineBootstrapResources = function (callback) {
     }
   ];
   async.series(fns, callback);
+};
+
+/**
+ * Set up functions in contexts that are accessible for client remote
+ * procedure calls, and with appropriate permissions.
+ */
+p._setupRpcFunctions = function () {
+  // Set up functions for the RPC calls to use.
+  this.multiplicative = rpcFunctions.multiplicative;
+  this.additive = rpcFunctions.additive;
+
+  // TODO: permissions
 };
 
 /**
@@ -90,14 +103,8 @@ p._prepareForShutdown = function (callback) {
  * @see Application#receive
  */
 p.receive = function (message) {
-  this.thywill.log.debug("Echo.receive(): Message for echoing: " + message);
-  // If the message came from a client connection, react by sending the same
-  // data right back to where it came from.
-  var messageManager = this.thywill.messageManager;
-  if (message.getOrigin() === messageManager.origins.CLIENT) {
-    var echoMessage = this.thywill.messageManager.createReplyMessage(message.getData(), message);
-    this.send(echoMessage);
-  }
+  // Nothing doing here - all of the functionality of this example works via
+  // the RPC framework provided by the RpcCapableApplication class.
 };
 
 /**
@@ -108,7 +115,7 @@ p.receive = function (message) {
  */
 p.connection = function (connectionId, sessionId, session) {
   // Do nothing except log it.
-  this.thywill.log.debug("Echo: Client connected: " + connectionId);
+  this.thywill.log.debug("Calculations: Client connected: " + connectionId);
 };
 
 /**
@@ -119,11 +126,11 @@ p.connection = function (connectionId, sessionId, session) {
  */
 p.disconnection = function (connectionId, sessionId) {
   // Do nothing except log it.
-  this.thywill.log.debug("Echo: Client disconnected: " + connectionId);
+  this.thywill.log.debug("Calculations: Client disconnected: " + connectionId);
 };
 
 //-----------------------------------------------------------
 // Exports - Class Constructor
 //-----------------------------------------------------------
 
-module.exports = Echo;
+module.exports = Calculations;

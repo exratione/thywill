@@ -38,7 +38,7 @@ function Shapes(id, app) {
   // TODO: initialize the emberstore with some data.
 
 }
-util.inherits(Shapes, Thywill.getBaseClass("Application"));
+util.inherits(Shapes, Thywill.getBaseClass("RpcCapableApplication"));
 var p = Shapes.prototype;
 
 //-----------------------------------------------------------

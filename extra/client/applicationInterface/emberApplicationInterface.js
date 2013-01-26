@@ -131,7 +131,7 @@
    * @see Thywill.ApplicationInterface
    */
   Thywill.EmberApplicationInterface = function EmberApplicationInterface (applicationId) {
-    Thywill.ApplicationInterface.call(this, applicationId);
+    Thywill.RpcCapableApplicationInterface.call(this, applicationId);
 
     // Set up the Ember application and store.
     this.emberApp = Ember.Application.create();
@@ -143,21 +143,8 @@
       adapter: this.emberApp.adapter
     });
 
-    // Divert the received() function so as to siphon off messages intended
-    // for the data store adapter.
-    this._received = this.received;
-    /**
-     * @see Thywill.ApplicationInterface#received
-     */
-    this.received = function (message) {
-      if (message.dsRequestId) {
-        this.emberApp.adapter.received(message);
-      } else {
-        this._received(message);
-      }
-    };
   };
-  Thywill.inherits(Thywill.EmberApplicationInterface, Thywill.ApplicationInterface);
+  Thywill.inherits(Thywill.EmberApplicationInterface, Thywill.RpcCapableApplicationInterface);
   var p = Thywill.EmberApplicationInterface.prototype;
 
   // ------------------------------------------

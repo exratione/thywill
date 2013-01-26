@@ -73,7 +73,7 @@ p.createMessage = function (data, metadata) {
 /**
  * @see MessageManager#createReplyMessage
  */
-p.createReplyMessage = function (data, message, overrideMetadata) {
+p.createReplyMessage = function (data, message) {
   var reply = new Message();
   reply.setData(data);
 
@@ -89,10 +89,6 @@ p.createReplyMessage = function (data, message, overrideMetadata) {
   metadata[Message.METADATA.DESTINATION] = origin;
   reply.setMetadata(metadata);
 
-  // Set any overrides to the metadata.
-  for (var property in overrideMetadata) {
-    reply.setMetadata(property, overrideMetadata[property]);
-  }
   return reply;
 };
 
