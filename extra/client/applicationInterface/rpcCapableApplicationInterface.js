@@ -26,7 +26,9 @@
     // Replace the received() function so as to siphon off RPC messages.
     var prototype = this.constructor.prototype;
     if (!prototype._received) {
-      prototype._received = prototype.received;
+      // this.received should be the right overridden function for this
+      // instance.
+      prototype._received = this.received;
 
       /**
        * @see Thywill.ApplicationInterface#received
@@ -74,24 +76,31 @@
 
   /**
    * Invoke a server function as a remote procedure call. A client must have
-   * permission to invoke a function or a permissions error will be returned.
+   * permission to invoke the function or a permissions error will be returned.
    *
-   * @param {string} name
-   *   The name of the function to invoke. This can be a dotted path, and is
-   *   checked in the scope of "this" in the server Application instance. e.g.
-   *   "my.function" would be called server-side as this.my.function() in
-   *   the Application instance.
-   * @param {boolean} hasCallback
-   *   True if the server function has a callback.
-   * @param {array} args
-   *   Parameters to pass to the function.
-   * @param {function} callback
+   * Data has the format:
+   *
+   * {
+   *   // The name of the function to invoke. This can be a dotted path, and is
+   *   // checked in the scope of "this" in the server Application instance.
+   *   // e.g. "my.function" would be called server-side as this.my.function()
+   *   // in the Application instance.
+   *   name: string
+   *   // True if the servr function has a callback.
+   *   hasCallback: boolean
+   *   // Arguments to pass to the server function.
+   *   args: object
+   * }
+   *
+   * @param {object} data
+   *   The data describing the function call and its arguments.
+   * @param {function} [callback]
    *   Of the form function (error, ...) for server functions with a callback,
    *   where the returned values will be the same as those provided to the
    *   server-side callback function. For server functions without callbacks,
    *   this is of the form function (error, returnValue).
    */
-  p.rpc = function (name, hasCallback, args, callback) {
+  p.rpc = function (data, callback) {
     // If not connected, then immediately respond with a suitable error.
     if (!Thywill.serverInterface.isConnected) {
       callback(this.rpcErrors.DISCONNECTED);
@@ -108,7 +117,7 @@
     if (typeof callback === "function") {
       this.rpcInProgress[rpcKey] = {
         callback: callback,
-        name: name
+        name: data.name
       };
 
       // Are we timing out the callback?
@@ -118,37 +127,13 @@
     }
 
     // Assemble the data and send to the server.
-    var data = {
+    var sendData = {
       id: rpcId,
-      name: name,
-      cb: hasCallback,
-      args: args
+      name: data.name,
+      cb: data.hasCallback,
+      args: data.args
     };
-    this.send(data, Thywill.Message.TYPES.RPC);
-  };
-
-  /**
-   * Invoke a server function as a remote procedure call. A client must have
-   * permission to invoke a function or a permissions error will be returned.
-   *
-   * The server function has a callback.
-   *
-   * @see RpcCapableApplicationInterface#rpc
-   */
-  p.rpcWithCallback = function (name, args, callback) {
-    this.rpc(name, true, args, callback);
-  };
-
-  /**
-   * Invoke a server function as a remote procedure call. A client must have
-   * permission to invoke a function or a permissions error will be returned.
-   *
-   * The server function has no callback.
-   *
-   * @see RpcCapableApplicationInterface#rpc
-   */
-  p.rpcWithoutCallback = function (name, args, callback) {
-    this.rpc(name, false, args, callback);
+    this.send(sendData, Thywill.Message.TYPES.RPC);
   };
 
   /**

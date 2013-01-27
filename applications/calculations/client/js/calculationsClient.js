@@ -26,11 +26,32 @@
     this.templates = {};
     // Data for the various operations shown on the page.
     this.operations = {
-      square: {
-        operationsText: "^ 2",
+      multiplyByTwo: {
+        operationText: "* 2",
         rpc: {
-          name: "multiplicative.square",
+          name: "multiplicative.multiplyByTwo",
           hasCallback: false
+        }
+      },
+      divideByTwo: {
+        operationText: "/ 2",
+        rpc: {
+          name: "multiplicative.divideByTwo",
+          hasCallback: true
+        }
+      },
+      square: {
+        operationText: "^ 2",
+        rpc: {
+          name: "powers.square",
+          hasCallback: false
+        }
+      },
+      squareRoot: {
+        operationText: "^ 0.5",
+        rpc: {
+          name: "powers.squareRoot",
+          hasCallback: true
         }
       }
     };
@@ -60,6 +81,11 @@
       title: "Thywill: Calculations Application",
       operations: operations
     }));
+    // Add references to elements to the operations definitions.
+    for (var key in this.operations) {
+      this.operations[key].inputElement = jQuery("#" + key + " input");
+      this.operations[key].resultElement = jQuery("#" + key + " .result");
+    }
   };
 
   /**
@@ -76,17 +102,60 @@
     var self = this;
     // Enable the operations on data changing in the inputs.
     jQuery("input").removeAttr("disabled").addClass("enabled").on("keyup", function (e) {
-      var parent = jQuery(this).parent();
-      var id = parent.attr("id");
-      var rpc = self.operations[id].rpc;
-      var args = [parseInt(jQuery(this).val(), 10)];
-      self.rpc(rpc.name, rpc.hasCallback, args, function (error, result) {
-        if (error) {
+      var elem = jQuery(this);
+      self.inputValueChanged(elem.attr("operation"), elem.val());
+    });
+  };
 
-        } else {
-          parent.find(".result").html(result);
-        }
-      });
+  /**
+   * Display an error associated with an operation.
+   */
+  p.uiError = function (id, error) {
+    var operation = this.operations[id];
+    var speed = 100;
+
+    switch (error) {
+      case this.rpcErrors.DISCONNECTED:
+        error = "Not connected.";
+        break;
+      case this.rpcErrors.NO_FUNCTION:
+        error = "Missing server function.";
+        break;
+      case this.rpcErrors.NO_PERMISSION:
+        error = "Access forbidden.";
+        break;
+      case this.rpcErrors.TIMED_OUT:
+        error = "Timed out.";
+        break;
+      default:
+    }
+
+    operation.resultElement.fadeOut(speed, function () {
+      operation.resultElement.addClass("result-error").html(error).fadeIn(speed);
+    });
+  };
+
+  /**
+   * Update the display of an operation result.
+   *
+   * @param {string} id
+   *   Operation ID.
+   * @param {string|number} result
+   *   The result to display.
+   */
+  p.uiUpdateResult = function (id, result) {
+    // NaN and Infinity come through the JSON as null. If this was a more
+    // complete example, it might deal with complex numbers and so forth.
+    // But it doesn't.
+    if (result === null) {
+      this.uiError(id, "Invalid calculation.");
+      return;
+    }
+
+    var operation = this.operations[id];
+    var speed = 100;
+    operation.resultElement.fadeOut(speed, function () {
+      operation.resultElement.removeClass("result-error").html(result).fadeIn(speed);
     });
   };
 
@@ -97,7 +166,7 @@
     var status = jQuery("#status");
     var speed = 100;
     status.fadeOut(speed, function () {
-      status.html(text)
+      status.html("[ " + text + " ]")
         .removeClass("connecting connected disconnected")
         .addClass(className)
         .fadeIn(speed);
@@ -107,6 +176,56 @@
   // ------------------------------------------
   // Other Methods
   // ------------------------------------------
+
+  /**
+   * An input value changed. Delay, then send an RPC to the server.
+   *
+   * @param {string} id
+   *   The ID of the operation.
+   * @param {string} value
+   *   The current input value.
+   */
+  p.inputValueChanged = function (id, value) {
+    var self = this;
+    var operation = this.operations[id];
+    // Using interval to set up a delay that we keep extending with each new
+    // value change that happens before the delay completes.
+    if (operation.intervalId) {
+      clearInterval(operation.intervalId);
+    }
+    operation.intervalId = setInterval(function () {
+      // Clear the interval - we only want the one function call.
+      clearInterval(operation.intervalId);
+      delete operation.intervalId;
+
+      // Stash the value in an array of values. Do this to avoid oddball timing
+      // issues relating to responses returning out of order.
+      operation.pending = operation.pending || [];
+      operation.pending.push(value);
+
+      // Send the RPC.
+      var data = {
+        name: operation.rpc.name,
+        hasCallback: operation.rpc.hasCallback,
+        args: [parseInt(value, 10)]
+      };
+      self.rpc(data, function (error, result) {
+        if (error) {
+          self.uiError(id, error);
+        } else {
+          // Only display this result if the value parameter is still the last submitted value parameter.
+          var display = (operation.pending.length && operation.pending[operation.pending.length - 1] === value);
+          // Remove from the pending list.
+          operation.pending = operation.pending.filter(function (element, index, array) {
+            return value !== element;
+          });
+          if (display) {
+            self.uiUpdateResult(id, result);
+          }
+        }
+      });
+    }, 200);
+  };
 
   /**
    * Rudimentary logging.

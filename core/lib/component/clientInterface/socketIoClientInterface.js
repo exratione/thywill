@@ -161,6 +161,13 @@ SocketIoClientInterface.CONFIG_TEMPLATE = {
       types: "string",
       required: true
     }
+  },
+  usePubSubForSending: {
+    _configInfo: {
+      description: "If true each connection is signed up for its own pub/sub channel and messages are sent that way. This and configuring Socket.IO to use a RedisStore is usually necessary for applications with multiple backend Node.js processes.",
+      types: "boolean",
+      required: true
+    }
   }
 };
 
@@ -199,6 +206,9 @@ SocketIoClientInterface.CONFIG_TEMPLATE = {
  *    socketConfig: {
  *      global: {
  *        "resource": "/echo/socket.io",
+ *        // Use the RedisStore if usePubSubForSending is set true and there
+ *        // are multiple Node.js processes in the backend.
+ *        "store": (a RedisStore, or not set for the default MemoryStore)
  *        ... global Socket.IO configuration ...
  *      },
  *      production: {
@@ -207,6 +217,9 @@ SocketIoClientInterface.CONFIG_TEMPLATE = {
  *      ...
  *    }
  *    textEncoding: "utf8"
+ *    // Set true if using a RedisStore and there are multiple Node.js
+ *    // processes in the backend.
+ *    usePubSubForSending: false
  *  }
  *
  * For Socket.IO configuration, see:
@@ -707,6 +720,11 @@ p.initializeNewSocketConnection = function (socket) {
   var self = this;
   var messageManager = self.thywill.messageManager;
 
+  // If we're sending via pub/sub, then sign this socket up for its own channel.
+  if (this.config.usePubSubForSending) {
+    socket.join(socket.id);
+  }
+
   /**
    * A message arrives and the raw data object from Socket.IO code is passed in.
    */
@@ -721,10 +739,13 @@ p.initializeNewSocketConnection = function (socket) {
     if (message.isValid()) {
       self.receive(message);
     } else {
-      self.thywill.log.debug("Empty or broken message received from session: " + socket.id + " with contents: " + JSON.stringify(rawMessage));
+      self.thywill.log.debug("Empty or broken message received from connection: " + socket.id + " with contents: " + JSON.stringify(rawMessage));
     }
   });
 
+  /**
+   * The socket disconnects.
+   */
   socket.on("disconnect", function() {
     var data = self.connectionDataFromSocket(socket);
     self.disconnection(data.connectionId, data.sessionId);
@@ -856,36 +877,38 @@ p.handleResourceRequest = function (req, res, next, error, resource) {
  * @see ClientInterface#send
  */
 p.send = function (message) {
-  if (message.isValid()) {
-    var messageManager = this.thywill.messageManager;
-    var socketId = message.getConnectionId();
-    var destination = message.getDestination();
+  if (!message.isValid()) {
+    this.thywill.log.debug(new Error("Invalid Message: " + message));
+    return;
+  }
 
-    // Is this a message for the server rather than the client? It's always
-    // possible we'll have server applications talking to each other this
-    // way.
-    if (destination === messageManager.destinations.SERVER) {
-      this.receive(message);
-    }
-    // Otherwise it's for a client connection, so send it out through the
-    // pertinent socket instance.
-    else {
+  var messageManager = this.thywill.messageManager;
+  var socketId = message.getConnectionId();
+  var destination = message.getDestination();
 
-      // TODO: this won't work in clustering with a Redis backend for sockets.
-      // Not all the sockets will be available in this process.
-      // When we get that set as an option here, we have to either:
-      // a) do this: http://stackoverflow.com/a/9818600
-      // b) give each socket a unique uuid channel allowing broadcast to it.
-
+  // Is this a message for the server rather than the client? It's always
+  // possible we'll have server applications talking to each other this
+  // way.
+  if (destination === messageManager.destinations.SERVER) {
+    this.receive(message);
+  }
+  // Otherwise it's for a client connection, so send it out through the
+  // pertinent socket instance.
+  else {
+    // If there are multiple Node processes in the backend and the
+    // application is structured such that process A may want to send a
+    // message to a socket connected to process B, then usePubSubForSending
+    // must be set true.
+    if (this.config.usePubSubForSending) {
+      this.socketFactory.of(this.config.namespace).to(socketId).emit("toClient", message);
+    } else {
       var destinationSocket = this.socketFactory.of(this.config.namespace).socket(socketId);
       if (destinationSocket) {
         destinationSocket.emit("toClient", message);
       } else {
-        this.thywill.log.debug(new Error("Invalid socketId: " + socketId));
+        this.thywill.log.error(new Error("No socket connected to this process with id: " + socketId));
       }
     }
-  } else {
-    this.thywill.log.debug(new Error("Invalid Message: " + message));
   }
 };
 

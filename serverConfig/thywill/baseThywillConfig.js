@@ -6,6 +6,8 @@
  * provide a single place where the configuration is fairly well documented.
  */
 
+var MemoryStore = require("socket.io/lib/stores/redis");
+
 //-----------------------------------------------------------
 // Exports - Configuration
 //-----------------------------------------------------------
@@ -93,14 +95,11 @@ module.exports = {
     // the client interface - which should be at a minimum twice the number of
     // bootstrap and other resources defined by applications.
     resourceCacheLength: 100,
-    // The server (required) and Express application (optional) are set here.
-    // This happens in the start.js script.
+    // The http.Server (required) and Express application (optional) are set
+    // here. These values are set in the start.js script. See these examples:
     //
-    // See these for examples:
     // /applications/echo/service/start.js
     // /applications/shapes/service/start.js
-    //
-    //
     server: {
       // An Express instance. Optional unless Express sessions are being used.
       // If an Express server is provided, it will be used to serve content.
@@ -163,6 +162,10 @@ module.exports = {
         // This MUST match the value of the socketClientConfig.resource value,
         // but with the addition of a leading /.
         "resource": "/application/socket.io",
+        // If using multiple Node.js processes and process A will need to send
+        // messages to connections on process B, then this must be a RedisStore
+        // and usePubSubForSending must be true.
+        "store": new MemoryStore(),
         // The transports to use. We're trying to be modern here and stick with
         // websockets only.
         "transports": ["websocket"]
@@ -175,7 +178,14 @@ module.exports = {
     },
     // Other text file encodings, such as when loading resources from the file
     // system.
-    textEncoding: "utf-8"
+    textEncoding: "utf-8",
+    // If you have set up an application with multiple Node.js processes in the
+    // backend, then each individual connection socket will only exist in one
+    // of the processes. Your application may be structured in a way that
+    // requires process A to send a message to a socket connected to process B.
+    // If this is the case, you must set usePubSubForSending to true, and
+    // provide a RedisStore to the socketConfig.store configuration parameter.
+    usePubSubForSending: false
   },
 
   // The resource manager is, as you might expect, the factory for creating and
@@ -199,6 +209,8 @@ module.exports = {
       type: "core",
       name: "consoleLog"
     },
+    // The date format used in the log output.
+    dateFormat: "ddd mmm dS yyyy HH:MM:ss Z",
     // The minimum log level to be logged by this implementation. Lesser log
     // levels are ignored. The log levels are, in order, [debug, warn, error].
     level: "debug"

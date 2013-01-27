@@ -25,10 +25,16 @@ function RpcCapableApplication (id) {
   // Convenience reference.
   this.rpcErrors = RpcCapableApplication.RPC_ERRORS;
 
+  // Only references added to this object can be accessed by the client
+  // when making remote procedure calls.
+  this.rpcContext = {};
+
   // Hijack the RPC messages to process them here.
   var prototype = this.constructor.prototype;
   if (!prototype._receive) {
-    prototype._receive = prototype.receive;
+    // this.received should be the right overridden function for this
+    // instance.
+    prototype._receive = this.receive;
 
     /**
      * @see Application#receive
@@ -126,6 +132,7 @@ p.rpc = function (message) {
  * @return {[type]}
  */
 p.rpcPermissionCheck = function (name, connectionId) {
+
   // TODO
 
   return true;
@@ -146,7 +153,7 @@ p.rpcPermissionCheck = function (name, connectionId) {
  */
 p.getRpcFunctionAndContext = function (name) {
   var functionData = {
-    context: this,
+    context: this.rpcContext,
     fn: undefined
   };
   if (typeof name !== "string") {

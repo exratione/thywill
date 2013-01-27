@@ -1,24 +1,25 @@
 /**
  * @fileOverview
- * A set of functions used to demonstrate RPC in Thywill.
+ * A set of simple functions used to demonstrate RPC. Some have callbacks,
+ * some do not.
  */
 
 exports.multiplicative = {
+  multiplyByTwo: function (a) {
+    return a * 2;
+  },
+
+  divideByTwo: function (a, callback) {
+    callback (null, a / 2);
+  }
+};
+
+exports.powers = {
   square: function (a) {
     return a * a;
   },
 
-  squareRootWithCallback: function (a, callback) {
+  squareRoot: function (a, callback) {
     callback (null, Math.sqrt(a));
-  }
-};
-
-exports.additive = {
-  add: function (a, b) {
-    return a + b;
-  },
-
-  subtractWithCallback: function (a, b, callback) {
-    callback(null, a - b);
   }
 };

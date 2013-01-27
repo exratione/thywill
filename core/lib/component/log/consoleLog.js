@@ -5,6 +5,7 @@
 
 var util = require("util");
 var Thywill = require("thywill");
+var dateFormat = require("dateformat");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -26,6 +27,13 @@ var p = ConsoleLog.prototype;
 //-----------------------------------------------------------
 
 ConsoleLog.CONFIG_TEMPLATE = {
+  dateFormat: {
+    _configInfo: {
+      description: "The date format used in log output.",
+      types: "string",
+      required: true
+    }
+  },
   level: {
     _configInfo: {
       description: "The mimimum level of message that will be logged.",
@@ -51,7 +59,6 @@ ConsoleLog.CONFIG_TEMPLATE = {
  * @see Component#_configure
  */
 p._configure = function (thywill, config, callback) {
-  // Minimal configuration - all we"re doing here is storing it for posterity.
   this.thywill = thywill;
   this.config = config;
   this.readyCallback = callback;
@@ -123,10 +130,11 @@ p.error = function (message) {
  * @see Log#log
  */
 p.log = function (level, message) {
+  var date = dateFormat(new Date(), this.config.dateFormat);
   if (message instanceof Error) {
-    console.log("[" + new Date() + "] " + level + " " + message.stack);
+    console.log("[" + date + "] " + level + " " + message.stack);
   } else {
-    console.log("[" + new Date() + "] " + level + " " + message);
+    console.log("[" + date + "] " + level + " " + message);
   }
 };
 

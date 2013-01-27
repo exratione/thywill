@@ -80,11 +80,12 @@ p._defineBootstrapResources = function (callback) {
  * procedure calls, and with appropriate permissions.
  */
 p._setupRpcFunctions = function () {
-  // Set up functions for the RPC calls to use.
-  this.multiplicative = rpcFunctions.multiplicative;
-  this.additive = rpcFunctions.additive;
+  // Set up functions for the remote procedure calls to access.
+  this.rpcContext.multiplicative = rpcFunctions.multiplicative;
+  this.rpcContext.powers = rpcFunctions.powers;
 
   // TODO: permissions
+
 };
 
 /**
