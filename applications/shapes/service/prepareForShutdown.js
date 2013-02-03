@@ -14,4 +14,5 @@ Thywill.prepareForShutdown(thywillConfig, function (error) {
   //
   // The callback exists to ensure that we wait for completion before returning
   // from this script.
+  process.exit(0);
 });

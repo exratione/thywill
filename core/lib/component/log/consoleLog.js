@@ -78,14 +78,6 @@ p._configure = function (thywill, config, callback) {
   this._announceReady(this.NO_ERRORS);
 };
 
-/**
- * @see Component#prepareForShutdown
- */
-p._prepareForShutdown = function (callback) {
-  // Nothing needed here.
-  callback.call(this);
-};
-
 //-----------------------------------------------------------
 // Methods
 //-----------------------------------------------------------
@@ -122,19 +114,23 @@ p.warn = function (message) {
  */
 p.error = function (message) {
   if (this.levels.indexOf("error") >= this.level) {
-    this.log("ERROR", message);
+    this.log("ERROR", message, true);
   }
 };
 
 /**
  * @see Log#log
  */
-p.log = function (level, message) {
+p.log = function (level, message, toError) {
   var date = dateFormat(new Date(), this.config.dateFormat);
   if (message instanceof Error) {
-    console.log("[" + date + "] " + level + " " + message.stack);
+    message = message.stack;
+  }
+  var str = "[" + date + "] " + level + " " + message;
+  if (toError) {
+    console.error(str);
   } else {
-    console.log("[" + date + "] " + level + " " + message);
+    console.log(str);
   }
 };
 

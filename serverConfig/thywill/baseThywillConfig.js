@@ -188,16 +188,15 @@ module.exports = {
     usePubSubForSending: false
   },
 
-  // The resource manager is, as you might expect, the factory for creating and
-  // keeping track of resources - the CSS, Javascript, HTML, and so forth, that
-  // is delivered to the client.
-  resourceManager: {
-    // Here we specify a very trivial resource manager implementation that
-    // does little more than keep track of resources in memory.
+  // Interface for communicating between clustered Thywill server processes.
+  cluster: {
+    // This is the stub cluster communication interface for a single process
+    // setup - i.e. there is no cluster.
     implementation: {
       type: "core",
-      name: "inMemoryResourceManager"
-    }
+      name: "noCluster"
+    },
+    localClusterMemberId: "noCluster"
   },
 
   // This core component provides an interface for logging.
@@ -241,6 +240,18 @@ module.exports = {
     cssBaseClientPath: "/application/css",
     // The base path to use when defining a new resource for merged Javascript.
     jsBaseClientPath: "/application/js"
+  },
+
+  // The resource manager is, as you might expect, the factory for creating and
+  // keeping track of resources - the CSS, Javascript, HTML, and so forth, that
+  // is delivered to the client.
+  resourceManager: {
+    // Here we specify a very trivial resource manager implementation that
+    // does little more than keep track of resources in memory.
+    implementation: {
+      type: "core",
+      name: "inMemoryResourceManager"
+    }
   },
 
   // The template component provides an interface to a templating engine,

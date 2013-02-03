@@ -190,7 +190,7 @@ p._defineBootstrapResources = function (callback) {
  * @param {Message} message
  *   Instance of the Message class.
  */
-p.receive = function (message) {
+p.received = function (message) {
   throw new Error("Not implemented.");
 };
 

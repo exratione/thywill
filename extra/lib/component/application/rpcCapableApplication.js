@@ -31,10 +31,10 @@ function RpcCapableApplication (id) {
 
   // Hijack the RPC messages to process them here.
   var prototype = this.constructor.prototype;
-  if (!prototype._receive) {
+  if (!prototype._received) {
     // this.received should be the right overridden function for this
     // instance.
-    prototype._receive = this.receive;
+    prototype._received = this.received;
 
     /**
      * @see Application#receive
@@ -43,7 +43,7 @@ function RpcCapableApplication (id) {
       if (message.getType() === this.thywill.messageManager.types.RPC) {
         this.rpc(message);
       } else {
-        this._receive(message);
+        this._received(message);
       }
     };
   }

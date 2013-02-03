@@ -31,26 +31,28 @@ var p = Message.prototype;
 //-----------------------------------------------------------
 
 Message.ORIGINS = {
-  SERVER: "server",
-  CLIENT: "client"
+  SERVER: "s",
+  CLIENT: "c"
 };
 
 Message.DESTINATIONS = Message.ORIGINS;
 
 Message.METADATA = {
-  // The ID of the specific client connection, either as sender or recipient.
+  // The name of a channel, indicating that a messages is to be published
+  // rather than sent to a single client.
+  CHANNEL_ID: "chid",
+  // The ID of a specific client connection, either as sender or recipient.
   CONNECTION_ID: "cid",
   // Whether the message is delivered to server or client.
   DESTINATION: "dest",
   // The ID of the originating application.
   FROM_APPLICATION: "faid",
-  // Used to identify messages with replies or otherwise distinguish
+  // Used to identify messages with their replies or otherwise distinguish
   // between messages where important. Not particularly unique.
   IDENTIFIER: "id",
   // Whether the message originated from server or client.
   ORIGIN: "orig",
-  // The ID of the destination application. If not set, the message is for
-  // delivery to all applications.
+  // The ID of the destination application.
   TO_APPLICATION: "taid",
   // The type of the message.
   TYPE: "type"
@@ -114,6 +116,13 @@ p.setMetadata = function () {
 //-----------------------------------------------------------
 // Methods: metadata convenience getters and setters.
 //-----------------------------------------------------------
+
+p.getChannelId = function () {
+  return this.getMetadata(Message.METADATA.CHANNEL_ID);
+};
+p.setChannelId = function (channelId) {
+  this.setMetadata(Message.METADATA.CHANNEL_ID, channelId);
+};
 
 p.getConnectionId = function () {
   return this.getMetadata(Message.METADATA.CONNECTION_ID);
@@ -182,9 +191,6 @@ p.toString = function () {
  * Determine whether this message is valid: it has data and the required
  * metadata is populated.
  *
- * Messages created on the client for sending to the server lack a
- * connectionId, origin, and destination metadata.
- *
  * @return {boolean}
  *   True if this instance is a valid message.
  */
@@ -222,9 +228,15 @@ p.isValid = function () {
 
   // Server-side only
   if (!window) {
-    // A message to or from the client has to have a connection ID.
-    if (origin === Message.ORIGINS.CLIENT || destination === Message.DESTINATIONS.CLIENT) {
+    // A message from the client has to have a connection ID.
+    if (origin === Message.ORIGINS.CLIENT) {
       if(!this.getConnectionId()) {
+        return false;
+      }
+    }
+    // A message to the client has to have either a connection ID or a channel ID.
+    if (destination === Message.DESTINATIONS.CLIENT) {
+      if(!this.getConnectionId() && !this.getChannelId()) {
         return false;
       }
     }

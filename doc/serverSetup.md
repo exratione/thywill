@@ -81,7 +81,10 @@ following line:
     node        ALL=(ALL)       NOPASSWD: ALL
 
 For a production server, you would probably want to constrain the node user's
-options a little more than the blanket sudo access above.
+options a little more than the blanket sudo access above, or not allow sudo
+access at all. It isn't even needed for the most common service setups using
+init.d or upstart scripts, or when running behind a proxy server such that the
+Node.js process won't be binding to a privileged port.
 
 Install Thywill
 ---------------

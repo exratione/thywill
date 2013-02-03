@@ -221,7 +221,7 @@ p._throwConfigurationError = function (propertyChain, error) {
 };
 
 //-----------------------------------------------------------
-// Methods to be implemented by subclasses.
+// Methods to be overridden by subclasses.
 //-----------------------------------------------------------
 
 /**
@@ -235,7 +235,15 @@ p._throwConfigurationError = function (propertyChain, error) {
  *   Of the form function (error) where error === null on success.
  */
 p._configure = function (thywill, config, callback) {
-  throw new Error("Not implemented.");
+  // Minimal configuration - all we're doing here is storing it for posterity.
+  this.thywill = thywill;
+  this.config = config;
+  this.readyCallback = callback;
+
+  // There are no asynchronous initialization functions here or in the
+  // superclasses. So we can just call them and forge ahead without having
+  // to wait around or check for completion.
+  this._announceReady(this.NO_ERRORS);
 };
 
 /**
@@ -246,7 +254,8 @@ p._configure = function (thywill, config, callback) {
  * @param {Function} callback
  */
 p._prepareForShutdown = function (callback) {
-  throw new Error("Not implemented.");
+  // Nothing needed here.
+  callback();
 };
 
 

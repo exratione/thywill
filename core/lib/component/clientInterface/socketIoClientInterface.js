@@ -20,12 +20,14 @@ var Message = require("../messageManager/message");
 // -----------------------------------------------------------
 
 /**
- * @class A web browser client interface built on top of Socket.IO: see
+ * @class
+ * A web browser client interface built on top of Socket.IO: see
  * http://socket.io/ for details.
  *
- * This manages passing messages back and forth between a web browser and
- * Thywill. This involves setting up resources for the initial page load, and
- * then interfacing with the client Javascript after the page has loaded.
+ * This manages the server side of a single page web application:
+ *
+ * - setting up the resources delivered to the client on the initial page load.
+ * - passing messages back and forth via Socket.IO.
  */
 function SocketIoClientInterface () {
   SocketIoClientInterface.super_.call(this);
@@ -241,6 +243,18 @@ p._configure = function (thywill, config, callback) {
 
   // Create a cache for resources served through this interface.
   this.resourceCache = this.thywill.cacheManager.createCache("socketIo", this.config.resourceCacheLength);
+
+  // For sending cluster tasks.
+  this.subscribeTaskName = "thywill:clientInterface:subscribeClient";
+  this.unsubscribeTaskName = "thywill:clientInterface:unsubscribeClient";
+
+  // Deal with expected cluster tasks: subscribe and unsubscribe.
+  this.thywill.cluster.on(this.subscribeTaskName, function (data) {
+    this._subscribeLocalSocket(data.connectionId, data.channelId);
+  });
+  this.thywill.cluster.on(this.unsubscribeTaskName, function (data) {
+    this._unsubscribeLocalSocket(data.connectionId, data.channelId);
+  });
 
   this.readyCallback = callback;
   this._announceReady(this.NO_ERRORS);
@@ -477,15 +491,6 @@ p._startup = function (callback) {
   // Call the above functions in series. Any errors will abort part-way through
   // and be passed back in the callback.
   async.series(fns, callback);
-};
-
-/**
- * @see Component#_prepareForShutdown
- */
-p._prepareForShutdown = function (callback) {
-  // Leave everything running to allow other components to do things as a part
-  // of their graceful shutdown processes.
-  callback();
 };
 
 /**
@@ -737,7 +742,7 @@ p.initializeNewSocketConnection = function (socket) {
     message.setDestination(messageManager.destinations.SERVER);
     // If valid now, send it onward.
     if (message.isValid()) {
-      self.receive(message);
+      self.received(message);
     } else {
       self.thywill.log.debug("Empty or broken message received from connection: " + socket.id + " with contents: " + JSON.stringify(rawMessage));
     }
@@ -878,37 +883,105 @@ p.handleResourceRequest = function (req, res, next, error, resource) {
  */
 p.send = function (message) {
   if (!message.isValid()) {
-    this.thywill.log.debug(new Error("Invalid Message: " + message));
+    this.thywill.log.warn(new Error("Invalid Message: " + message));
     return;
   }
-
-  var messageManager = this.thywill.messageManager;
-  var socketId = message.getConnectionId();
-  var destination = message.getDestination();
 
   // Is this a message for the server rather than the client? It's always
   // possible we'll have server applications talking to each other this
   // way.
+  var messageManager = this.thywill.messageManager;
+  var destination = message.getDestination();
   if (destination === messageManager.destinations.SERVER) {
-    this.receive(message);
+    this.received(message);
+    return;
   }
-  // Otherwise it's for a client connection, so send it out through the
-  // pertinent socket instance.
+
+  // If there is a channel ID set, then publish this message to the channel.
+  var channelId = message.getChannelId();
+  if (channelId) {
+    this.socketFactory.of(this.config.namespace).to(channelId).emit("toClient", message);
+  }
+  // Otherwise the message is destined for a single client connection, so send
+  // it out through the pertinent socket instance.
   else {
-    // If there are multiple Node processes in the backend and the
-    // application is structured such that process A may want to send a
-    // message to a socket connected to process B, then usePubSubForSending
-    // must be set true.
-    if (this.config.usePubSubForSending) {
+    var socketId = message.getConnectionId();
+    // If there are multiple Node processes in the backend and the application
+    // is structured such that process A may want to send a message to a socket
+    // connected to process B, then usePubSubForSending must be set true so
+    // that messages can be published to the individual connection's channel.
+    var destinationSocket = this.socketFactory.of(this.config.namespace).socket(socketId);
+    if (destinationSocket) {
+      destinationSocket.emit("toClient", message);
+    } else if (this.config.usePubSubForSending) {
       this.socketFactory.of(this.config.namespace).to(socketId).emit("toClient", message);
     } else {
-      var destinationSocket = this.socketFactory.of(this.config.namespace).socket(socketId);
-      if (destinationSocket) {
-        destinationSocket.emit("toClient", message);
-      } else {
-        this.thywill.log.error(new Error("No socket connected to this process with id: " + socketId));
-      }
+      this.thywill.log.error(new Error("No socket connected to this process with id: " + socketId));
     }
+  }
+};
+
+/**
+ * @see ClientInterface#subscribe
+ */
+p.subscribe = function (connectionId, channelId) {
+  var socketPresent = this._subscribeLocalSocket(connectionId, channelId);
+  // If the socket isn't connected to this process, then tell the other cluster
+  // members to find the socket and subscribe it.
+  if (!socketPresent) {
+    this.thywill.cluster.sendToOthers(this.subscribeTaskName, {
+      connectionId: connectionId,
+      channelId: channelId
+    });
+  }
+};
+
+/**
+ * @see ClientInterface#subscribe
+ *
+ * @return {boolean}
+ *   True if there was a local socket with this connectionId.
+ */
+p._subscribeLocalSocket = function (connectionId, channelId) {
+  var socket = this.socketFactory.of(this.config.namespace).socket(connectionId);
+  // Is this connection connected to this process?
+  if (socket) {
+    socket.join(channelId);
+    return true;
+  } else {
+    return false;
+  }
+};
+
+/**
+ * @see ClientInterface#unsubscribe
+ */
+p.unsubscribe = function (connectionId, channelId) {
+  var socketPresent = this._unsubscribeLocalSocket(connectionId, channelId);
+  // If the socket isn't connected to this process, then tell the other cluster
+  // members to find the socket and unsubscribe it.
+  if (!socketPresent) {
+    this.thywill.cluster.sendToOthers(this.unsubscribeTaskName, {
+      connectionId: connectionId,
+      channelId: channelId
+    });
+  }
+};
+
+/**
+ * @see ClientInterface#unsubscribe
+ *
+ * @return {boolean}
+ *   True if there was a local socket with this connectionId.
+ */
+p._unsubscribeLocalSocket = function (connectionId, channelId) {
+  var socket = this.socketFactory.of(this.config.namespace).socket(connectionId);
+  // Is this connection connected to this process?
+  if (socket) {
+    socket.leave(channelId);
+    return true;
+  } else {
+    return false;
   }
 };
 

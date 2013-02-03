@@ -37,6 +37,7 @@ function Thywill() {
   this.applications = {};
   this.cacheManager = null;
   this.clientInterface = null;
+  this.cluster = null;
   this.log = null;
   this.messageManager = null;
   this.minifier = null;
@@ -184,7 +185,7 @@ Thywill.prepareForShutdown = function (config, callback) {
     callback(thywill.NO_ERRORS);
   });
   request.on("error", function (error) {
-    console.log(error);
+    console.error(error);
     callback(error);
   });
   request.end();
@@ -220,6 +221,7 @@ Thywill.getBaseClass = (function () {
         case "Application":
         case "CacheManager":
         case "ClientInterface":
+        case "Cluster":
         case "Log":
         case "MessageManager":
         case "Minifier":
@@ -416,6 +418,10 @@ p._managePreparationForShutdown = function (callback) {
       self.clientInterface._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
+      self.log.info("Preparing cluster for shutdown.");
+      self.cluster._prepareForShutdown(asyncCallback);
+    },
+    function (asyncCallback) {
       self.log.info("Preparing minifier for shutdown.");
       self.minifier._prepareForShutdown(asyncCallback);
     },
@@ -482,6 +488,9 @@ p._initializeComponents = function (passedApplications, callback) {
     },
     function (asyncCallback) {
       self._initializeComponent("minifier", asyncCallback);
+    },
+    function (asyncCallback) {
+      self._initializeComponent("cluster", asyncCallback);
     },
     function (asyncCallback) {
       self._initializeComponent("clientInterface", asyncCallback);

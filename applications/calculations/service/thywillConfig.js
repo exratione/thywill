@@ -19,8 +19,8 @@ config.clientInterface.namespace = "/calculations";
 config.clientInterface.socketClientConfig.resource = "calculations/socket.io";
 config.clientInterface.socketConfig.global.resource = "/calculations/socket.io";
 // Resource minification settings.
-config.clientInterface.minifyCss = false;
-config.clientInterface.minifyJavascript = false;
+config.clientInterface.minifyCss = true;
+config.clientInterface.minifyJavascript = true;
 
 // Set the http.Server instance in start.js
 config.clientInterface.server.server = null;

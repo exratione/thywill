@@ -103,7 +103,7 @@ p._prepareForShutdown = function (callback) {
 /**
  * @see Application#receive
  */
-p.receive = function (message) {
+p.received = function (message) {
   // Nothing doing here - all of the functionality of this example works via
   // the RPC framework provided by the RpcCapableApplication class.
 };

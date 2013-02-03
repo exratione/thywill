@@ -1,3 +1,7 @@
+/**
+ * @fileOverview
+ * Log class definition.
+ */
 
 var util = require("util");
 var Thywill = require("thywill");

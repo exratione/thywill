@@ -35,26 +35,7 @@ var p = MessageManager.prototype;
 //-----------------------------------------------------------
 
 /**
- * Obtain a new Message object. The metadata can consist of
- *
- * {
- *   // Used to identify messages with replies or otherwise distinguish
- *   // between messages where important. Not particularly unique.
- *   id: string|number
- *   // The type of the message.
- *   type: string
- *   // The ID of the specific client connecton, whether sender or recipient.
- *   connectionId: string
- *   // Whether the message originated from server or client.
- *   origin: Message.ORIGINS.CLIENT || Message.ORIGINS.SERVER
- *   // Whether the message is delivered to server or client.
- *   destination: Message.DESTINATIONS.CLIENT || Message.DESTINATIONS.SERVER
- *   // The ID of the originating application.
- *   fromApplicationId: string
- *   // If not null, the message is flagged for delivery to this application
- *   // only.
- *   toApplicationId: string
- * }
+ * Obtain a new Message object.
  *
  * @param {mixed} data
  *   The message data.

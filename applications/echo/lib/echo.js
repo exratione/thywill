@@ -89,7 +89,7 @@ p._prepareForShutdown = function (callback) {
 /**
  * @see Application#receive
  */
-p.receive = function (message) {
+p.received = function (message) {
   this.thywill.log.debug("Echo.receive(): Message for echoing: " + message);
   // If the message came from a client connection, react by sending the same
   // data right back to where it came from.

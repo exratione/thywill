@@ -32,17 +32,11 @@ var p = ClientInterface.prototype;
  * @param {Message} message
  *   A Message instance.
  */
-p.receive = function (message) {
+p.received = function (message) {
   var self = this;
-  // Send to all applications if no toApplicationId specified.
-  if (!message.toApplicationId) {
-    for (var id in this.thywill.applications) {
-      process.nextTick(function () {
-        self.thywill.applications[id].receive(message);
-      });
-    }
-  } else if (this.thywill.applications[message.toApplicationId]) {
-    this.thywill.applications[message.toApplicationId].receive(message);
+  var toApplicationId = message.getToApplication();
+  if (this.thywill.applications[toApplicationId]) {
+    this.thywill.applications[toApplicationId].received(message);
   }
 };
 
@@ -153,12 +147,36 @@ p.getResource = function (clientPath, callback) {
 };
 
 /**
- * Send a message out to a particular client.
+ * Send a message out to a client or channel.
  *
  * @param {Message} message
  *   A Message instance.
  */
 p.send = function (message) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * Subscribe this connection to a channel.
+ *
+ * @param {string} connectionId
+ *   The connection ID.
+ * @param {string} channelId
+ *   The channel identifier.
+ */
+p.subscribe = function (connectionId, channelId) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * Unsubscribe this connection from a channel.
+ *
+ * @param {string} connectionId
+ *   The connection ID.
+ * @param {string} channelId
+ *   The channel identifier.
+ */
+p.unsubscribe = function (connectionId, channelId) {
   throw new Error("Not implemented.");
 };
 
