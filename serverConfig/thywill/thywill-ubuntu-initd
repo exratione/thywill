@@ -1,0 +1,138 @@
+#!/bin/bash
+#
+# An example init.d script for running a Thywill application as a service
+# using Forever as the process monitor. For more configuration options
+# associated with Forever, see: https://github.com/nodejitsu/forever
+#
+# This is suitable for Debian distributions such as Ubuntu. It will not work on
+# RedHat, Fedora, or other RPM-based distributions.
+#
+# You will need to alter the following items:
+#
+# 1) Set the environment variables noted below to conform to your use case.
+#
+# 2) Change the init info section descriptions.
+#
+### BEGIN INIT INFO
+# Provides:             thywill
+# Required-Start:       $syslog $remote_fs
+# Required-Stop:        $syslog $remote_fs
+# Should-Start:         $local_fs
+# Should-Stop:          $local_fs
+# Default-Start:        2 3 4 5
+# Default-Stop:         0 1 6
+# Short-Description:    Thywill
+# Description:          Thywill
+### END INIT INFO
+#
+# Based on:
+# https://gist.github.com/3748766
+# https://github.com/hectorcorrea/hectorcorrea.com/blob/master/etc/forever-initd-hectorcorrea.sh
+# http://www.exratione.com/2011/07/running-a-nodejs-server-as-a-service-using-forever/
+
+# Source function library.
+. /lib/lsb/init-functions
+
+# The following are example settings for the Echo application, if Node.js was
+# installed from source into /home/node/local/node as described in
+# /doc/serverSetup.md.
+#
+# Your settings will depend on where Node.js, Thywill, and the application
+# start and shutdown preparation scripts are located.
+#
+# An application name to display in echo text.
+# NAME=Echo
+# The full path to the directory containing the node and forever binaries.
+# NODE_BIN_DIR=/home/node/local/node/bin
+# Set the NODE_PATH to the Node.js main node_modules directory.
+# NODE_PATH=/home/node/local/node/lib/node_modules
+# The directory containing the application start Javascript file.
+# APPLICATION_DIRECTORY=/home/node/thywill/applications/echo/service
+# The application start Javascript filename.
+# APPLICATION_START=startEcho.js
+# The application shutdown preparation Javascript filename.
+# APPLICATION_PREPARE_STOP=prepareEchoForShutdown.js
+# Log file path.
+# LOGFILE=/var/log/thywill-echo.log
+#
+NAME=
+NODE_BIN_DIR=
+NODE_PATH=
+APPLICATION_DIRECTORY=
+APPLICATION_START=
+APPLICATION_PREPARE_STOP=
+# Change these filenames to reflect your application and match those in the
+# chkconfig comment lines. e.g. thywill-my-app.pid.
+PIDFILE=/var/run/thywill.pid
+LOGFILE=/var/log/thywill.log
+
+# Add node to the path for situations in which the environment is passed.
+PATH=$NODE_BIN_DIR:$PATH
+# Exporting this is necessary, as forever forks a child process.
+export NODE_PATH=$NODE_PATH
+
+start() {
+    echo "Starting $NAME"
+    # The minUptime and spinSleepTime settings stop forever from thrashing if
+    # the application fails immediately on launch.
+    #
+    # The pidfile contains the child process pid, not the forever process pid.
+    forever --pidFile $PIDFILE --sourceDir $APPLICATION_DIRECTORY -a -l $LOGFILE --minUptime 5000 --spinSleepTime 2000 start $APPLICATION_START &
+    RETVAL=$?
+}
+
+stop() {
+    if [ -f $PIDFILE ]; then
+        echo "Shutting down $NAME"
+        # Run the shutdown preparation script, which blocks until done.
+        echo "[`date -u +%Y-%m-%dT%T.%3NZ`] Preparing to stop" >> $LOGFILE
+        node $APPLICATION_DIRECTORY/$APPLICATION_PREPARE_STOP >> $LOGFILE
+        # Then tell Forever to stop the process.
+        forever stop $APPLICATION_START
+        # And get rid of the pidfile, since Forever won't.
+        rm -f $PIDFILE
+        RETVAL=$?
+    else
+        echo "$NAME is not running."
+        RETVAL=0
+    fi
+}
+
+restart() {
+    echo "Restarting $NAME"
+    stop
+    start
+}
+
+status() {
+    echo "Status for $NAME:"
+    # This is taking the lazy way out on status, as it will return a list of
+    # all running Forever processes. You get to figure out what you want to
+    # know from that information.
+    #
+    # On Ubuntu, this isn't even necessary. To find out whether the service is
+    # running, use "service my-thywill-application status" which bypasses
+    # this script entirely.
+    forever list
+    RETVAL=$?
+}
+
+case "$1" in
+    start)
+        start
+        ;;
+    stop)
+        stop
+        ;;
+    status)
+        status
+        ;;
+    restart)
+        restart
+        ;;
+    *)
+        echo "Usage:  {start|stop|status|restart}"
+        exit 1
+        ;;
+esac
+exit $RETVAL

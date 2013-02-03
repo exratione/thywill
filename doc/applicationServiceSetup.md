@@ -43,7 +43,7 @@ Running as a service on Fedora, Red Hat, and similar RPM-based Linux
 distributions is easy enough. Take the following steps:
 
   * Install the Thywill package if you haven't done so already
-  * Copy /serverConfig/thywill/thywill-fedora-initd to /etc/init.d
+  * Copy /serverConfig/thywill/thywill-fedora-initd into /etc/init.d
   * Rename the script to something appropriate for your application
   * Make sure the script has suitable exec permissions
   * Edit the script to set the paths and other environment variables
@@ -60,6 +60,16 @@ Option 2: init.d on Debian-based Linux
 This works in exactly the same way as Option 1 above, but use the script
 /serverConfig/thywill/thywill-ubuntu-initd as a basis for your init.d script.
 
+After the script is in place in /etc/init.d/my-thywill-application, then run
+the following command to let the service configuration see it:
+
+    update-rc.d thywill-echo defaults
+
+You can then start and stop the application service as follows:
+
+    service my-thywill-application start
+    service my-thywill-application stop
+
 Option 3: Upstart on Debian-based Linux
 ---------------------------------------
 
@@ -68,7 +78,7 @@ service. Ubuntu has Upstart installed by default. After building your server
 as described in /doc/server-setup.md, take the following steps:
 
   * Install the Thywill package if you haven't done so already
-  * Copy /serverConfig/thywill/thywill-upstart.conf to /etc/init
+  * Copy /serverConfig/thywill/thywill-upstart.conf into /etc/init
   * Rename the script to something appropriate for your application
   * Make sure the script has permissions of 0644
   * Edit the script to set the paths and other environment variables
