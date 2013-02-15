@@ -22,7 +22,7 @@ config.clientInterface.socketConfig.global.resource = "/calculations/socket.io";
 config.clientInterface.minifyCss = true;
 config.clientInterface.minifyJavascript = true;
 
-// Set the http.Server instance in start.js
+// Set the http.Server instance in the start script, not here.
 config.clientInterface.server.server = null;
 
 // Set an appropriate log level for an example application.

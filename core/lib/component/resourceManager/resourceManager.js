@@ -58,10 +58,6 @@ p.createResourceFromFile = function (path, attributes, callback) {
   });
 };
 
-//-----------------------------------------------------------
-// Methods to be implemented by subclasses.
-//-----------------------------------------------------------
-
 /**
  * Obtain a new Resource object. The object returned is not stored.
  *
@@ -77,8 +73,17 @@ p.createResourceFromFile = function (path, attributes, callback) {
  * @see Resource
  */
 p.createResource = function (data, attributes) {
-  throw new Error("Not implemented.");
+  // If we have a string rather than null or a Buffer, then convert it into a
+  // Buffer.
+  if (typeof data === "string") {
+    data = new Buffer(data, attributes.encoding);
+  }
+  return new Resource(data, attributes);
 };
+
+//-----------------------------------------------------------
+// Methods to be implemented by subclasses.
+//-----------------------------------------------------------
 
 /**
  * Store a Resource object.

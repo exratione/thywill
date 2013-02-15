@@ -51,7 +51,7 @@ p.set = function (key, value) {
  * @param {string} [key]
  *   The key by which the cached item can be retrieved.
  */
-p.clear = function(key) {
+p.clear = function (key) {
   throw new Error("Not implemented.");
 };
 

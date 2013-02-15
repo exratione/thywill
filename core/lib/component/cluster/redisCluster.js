@@ -81,7 +81,7 @@ p._configure = function (thywill, config, callback) {
   // Define channel names.
   this.channels = {};
   this.config.clusterMemberIds.forEach(function (clusterMemberId, index, array) {
-    this.channels[clusterMemberId] = this.config.prefix + clusterMemberId;
+    self.channels[clusterMemberId] = self.config.prefix + clusterMemberId;
   });
   this.allChannel = this.config.prefix + "all";
 

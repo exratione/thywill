@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /**
  * @fileOverview
  * Tell a Thywill server to gracefully prepare for shutdown.

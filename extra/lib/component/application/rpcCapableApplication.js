@@ -39,7 +39,7 @@ function RpcCapableApplication (id) {
     /**
      * @see Application#receive
      */
-    prototype.receive = function (message) {
+    prototype.received = function (message) {
       if (message.getType() === this.thywill.messageManager.types.RPC) {
         this.rpc(message);
       } else {

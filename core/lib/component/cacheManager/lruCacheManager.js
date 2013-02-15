@@ -13,12 +13,15 @@ var LRUCache = require("./lruCache");
 
 /**
  * @class
- * The superclass for cache managers, used to define caches.
+ * A CacheManager implementation that generates in-memory LRU caches.
+ *
+ * It is cluster aware to the extent that clearing or setting a cached key on
+ * one cluster member will clear the key on all cluster members.
  */
 function LRUCacheManager() {
   LRUCacheManager.super_.call(this);
   this.caches = {};
-};
+}
 util.inherits(LRUCacheManager, Thywill.getBaseClass("CacheManager"));
 var p = LRUCacheManager.prototype;
 
@@ -41,18 +44,20 @@ p._configure = function (thywill, config, callback) {
   this.config = config;
   this.readyCallback = callback;
 
+  this.clearClusterTask = "thywill.cacheManager.clear";
+
+  // Listen on the cluster instance for cache clearing messages.
+  var self = this;
+  this.thywill.cluster.on(this.clearClusterTask, function (taskData) {
+    if (self.caches[taskData.id]) {
+      self.caches[taskData.id].clearLocal(taskData.key);
+    }
+  });
+
   // There are no asynchronous initialization functions here or in the
   // superclasses. So we can just call them and forge ahead without having
   // to wait around or check for completion.
   this._announceReady(this.NO_ERRORS);
-};
-
-/**
-* @see Component#_prepareForShutdown
-*/
-p._prepareForShutdown = function (callback) {
-  // Nothing needed here.
-  callback();
 };
 
 //-----------------------------------------------------------
@@ -60,10 +65,25 @@ p._prepareForShutdown = function (callback) {
 //-----------------------------------------------------------
 
 /**
+ * Notify other members of the cluster and tell them to clear a key.
+ *
+ * @param {string} id
+ *   An identifier for the specific cache to clear on.
+ * @param {string} [key]
+ *   The key by which the cached item can be retrieved.
+ */
+p.clearCacheKeyInOtherClusterMembers = function(id, key) {
+  this.thywill.cluster.sendToOthers(this.clearClusterTask, {
+    id: id,
+    key: key
+  });
+};
+
+/**
  * @see CacheManager#createCache
  */
-p.createCache = function(id, size, timeout) {
-  this.caches[id] = new LRUCache(size, timeout);
+p.createCache = function(id, size) {
+  this.caches[id] = new LRUCache(this, id, size);
   return this.caches[id];
 };
 

@@ -1,8 +1,6 @@
-#!/usr/bin/env node
-
 /**
  * @fileOverview
- * A script to launches a Thywill server process running the Shapes example
+ * A script to launch a Thywill server process running the Shapes example
  * application.
  */
 

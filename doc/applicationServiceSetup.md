@@ -1,5 +1,5 @@
 Setting Up a Thywill Application as a Service
----------------------------------------------
+=============================================
 
 Any of the example applications in /applications can be set up to run as a
 service by adapting one of the example upstart or init.d scripts found in

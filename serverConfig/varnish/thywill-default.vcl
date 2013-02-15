@@ -11,7 +11,7 @@
 #
 # For more comprehensive Varnish configurations that handle additional
 # functionality unrelated to Node.js and websockets, but which is
-# nonetheless absolutely vital for any serious use of Varnish in a 
+# nonetheless absolutely vital for any serious use of Varnish in a
 # production environment, you might look at:
 #
 # https://github.com/mattiasgeniar/varnish-3.0-configuration-templates/
@@ -48,6 +48,15 @@ backend thywill_shapes {
   .between_bytes_timeout = 15s;
   .max_connections = 400;
 }
+# Node.js: Thywill Calculations application.
+backend thywill_calculations {
+  .host = "127.0.0.1";
+  .port = "10082";
+  .connect_timeout = 1s;
+  .first_byte_timeout = 2s;
+  .between_bytes_timeout = 15s;
+  .max_connections = 400;
+}
 
 # -----------------------------------
 # Varnish Functions
@@ -64,11 +73,11 @@ sub vcl_recv {
   #
   # This works because we are using Stunnel to terminate HTTPS connections and
   # pass them as HTTP to Varnish. These will arrive with client.ip = localhost
-  # and with an X-Forward-For header - you will only see both of those 
-  # conditions for traffic passed through Stunnel. 
+  # and with an X-Forward-For header - you will only see both of those
+  # conditions for traffic passed through Stunnel.
   #
-  # We want to allow local traffic to access port 80 directly, however - so 
-  # check client.ip against the local ACL and the existence of 
+  # We want to allow local traffic to access port 80 directly, however - so
+  # check client.ip against the local ACL and the existence of
   # req.http.X-Forward-For.
   #
   # See vcl_error() for the actual redirecting.
@@ -76,10 +85,10 @@ sub vcl_recv {
     set req.http.x-Redir-Url = "https://" + req.http.host + req.url;
     error 750 req.http.x-Redir-Url;
   }
-  
+
   set req.backend = default;
   set req.grace = 30s;
-  
+
   # Pass the correct originating IP address for the backends
   if (req.restarts == 0) {
     if (req.http.x-forwarded-for) {
@@ -88,10 +97,10 @@ sub vcl_recv {
       set req.http.X-Forwarded-For = client.ip;
     }
   }
-  
+
   # Remove any port that might be stuck in the hostname.
   set req.http.Host = regsub(req.http.Host, ":[0-9]+", "");
-  
+
   # Only deal with "normal" request types.
   if (req.request != "GET" &&
     req.request != "HEAD" &&
@@ -107,13 +116,15 @@ sub vcl_recv {
   if (req.request != "GET" && req.request != "HEAD") {
     return (pass);
   }
-  
+
   # Pipe websocket connections directly to the relevant Node.js backend.
   if (req.http.Upgrade ~ "(?i)websocket") {
     if (req.url ~ "^/echo/") {
       set req.backend = thywill_echo;
     } elseif (req.url ~ "^/shapes/") {
       set req.backend = thywill_shapes;
+    } elseif (req.url ~ "^/calculations/") {
+      set req.backend = thywill_calculations;
     }
     return (pipe);
   }
@@ -125,17 +136,22 @@ sub vcl_recv {
   } elseif (req.url ~ "^/shapes/socket.io/") {
     set req.backend = thywill_shapes;
     return (pipe);
+  } elseif (req.url ~ "^/calculations/socket.io/") {
+    set req.backend = thywill_calculations;
+    return (pipe);
   }
-  
+
   # Send everything else known to be served by Thywill to the relevant Node.js
   # backend.
   if (req.url ~ "^/echo/") {
     set req.backend = thywill_echo;
   } elseif (req.url ~ "^/shapes/") {
     set req.backend = thywill_shapes;
+  } elseif (req.url ~ "^/calculations/") {
+    set req.backend = thywill_calculations;
   }
 
-  # Normalize Accept-Encoding header. This is straight from the manual: 
+  # Normalize Accept-Encoding header. This is straight from the manual:
   # https://www.varnish-cache.org/docs/3.0/tutorial/vary.html
   if (req.http.Accept-Encoding) {
     if (req.url ~ "\.(jpg|png|gif|gz|tgz|bz2|tbz|mp3|ogg)$") {
@@ -150,12 +166,12 @@ sub vcl_recv {
       remove req.http.Accept-Encoding;
     }
   }
-  
+
   if (req.http.Authorization || req.http.Cookie) {
     # Not cacheable by default.
     return (pass);
   }
-  
+
   # If we were caching at all, then this next line would return lookup rather
   # than pass. Return pass disables all caching for all backends.
   # return (lookup);

@@ -418,10 +418,6 @@ p._managePreparationForShutdown = function (callback) {
       self.clientInterface._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
-      self.log.info("Preparing cluster for shutdown.");
-      self.cluster._prepareForShutdown(asyncCallback);
-    },
-    function (asyncCallback) {
       self.log.info("Preparing minifier for shutdown.");
       self.minifier._prepareForShutdown(asyncCallback);
     },
@@ -440,6 +436,10 @@ p._managePreparationForShutdown = function (callback) {
     function (asyncCallback) {
       self.log.info("Preparing cacheManager for shutdown.");
       self.cacheManager._prepareForShutdown(asyncCallback);
+    },
+    function (asyncCallback) {
+      self.log.info("Preparing cluster for shutdown.");
+      self.cluster._prepareForShutdown(asyncCallback);
     },
     function (asyncCallback) {
       self.log.info("Preparing log for shutdown.");
@@ -475,6 +475,9 @@ p._initializeComponents = function (passedApplications, callback) {
       self._initializeComponent("log", asyncCallback);
     },
     function (asyncCallback) {
+      self._initializeComponent("cluster", asyncCallback);
+    },
+    function (asyncCallback) {
       self._initializeComponent("cacheManager", asyncCallback);
     },
     function (asyncCallback) {
@@ -488,9 +491,6 @@ p._initializeComponents = function (passedApplications, callback) {
     },
     function (asyncCallback) {
       self._initializeComponent("minifier", asyncCallback);
-    },
-    function (asyncCallback) {
-      self._initializeComponent("cluster", asyncCallback);
     },
     function (asyncCallback) {
       self._initializeComponent("clientInterface", asyncCallback);

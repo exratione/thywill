@@ -16,7 +16,8 @@ config.thywill.adminInterface.port = 20081;
 config.clientInterface.baseClientPath = "/shapes";
 config.clientInterface.namespace = "/shapes";
 
-// Set the Express application and the http.Server instance in start.js
+// Set the Express application and the http.Server instance in the start
+// script.
 config.clientInterface.server = {
   app: null,
   server: null
@@ -25,8 +26,8 @@ config.clientInterface.server = {
 // Using Express sessions.
 config.clientInterface.sessions = {
   type: "express",
-  // The rest of the sessions configuration is set in start.js, as that is
-  // where Express is set up and configured.
+  // The rest of the sessions configuration is set in the start script,
+  // as that is where Express is set up and configured.
   store: null,
   cookieKey: null,
   cookieSecret: null

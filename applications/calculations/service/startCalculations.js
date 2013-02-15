@@ -1,8 +1,6 @@
-#!/usr/bin/env node
-
 /**
  * @fileOverview
- * A script to launches a Thywill server process running the Calculations
+ * A script to launch a Thywill server process running the Calculations
  * example application.
  */
 

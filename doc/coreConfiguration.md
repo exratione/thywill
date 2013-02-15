@@ -1,5 +1,5 @@
 Thywill Core Configuration
---------------------------
+==========================
 
 At launch, Thywill requires an object representation of its configuration
 parameters. This specifies which component implementations to use and the

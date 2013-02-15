@@ -152,6 +152,14 @@
       return;
     }
 
+    if (typeof result === "number") {
+      if (result % 1 === 0) {
+        result = result.toFixed(0);
+      } else {
+        result = result.toFixed(4).replace(/0+$/, "");
+      }
+    }
+
     var operation = this.operations[id];
     var speed = 100;
     operation.resultElement.fadeOut(speed, function () {
@@ -207,7 +215,7 @@
       var data = {
         name: operation.rpc.name,
         hasCallback: operation.rpc.hasCallback,
-        args: [parseInt(value, 10)]
+        args: [parseFloat(value, 10)]
       };
       self.rpc(data, function (error, result) {
         if (error) {

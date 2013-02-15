@@ -33,12 +33,10 @@ var p = CacheManager.prototype;
  * @param {Object} size
  *   Maximum number of items to be held by the cache before it starts dropping
  *   old items.
- * @param {integer} [timeout]
- *   Timeout in seconds for cached items, no timeout if not provided.
  * @return {Cache}
  *   A Cache instance.
  */
-p.createCache = function(id, size, timeout) {
+p.createCache = function (id, size) {
   throw new Error("Not implemented.");
 };
 
@@ -48,7 +46,7 @@ p.createCache = function(id, size, timeout) {
  * @param {string} id
  *   An identifier for this cache.
  */
-p.destroyCache = function(id) {
+p.destroyCache = function (id) {
   throw new Error("Not implemented.");
 };
 
@@ -60,7 +58,7 @@ p.destroyCache = function(id) {
  * @return {Cache}
  *   A Cache instance.
  */
-p.getCache = function(id) {
+p.getCache = function (id) {
   throw new Error("Not implemented.");
 };
 

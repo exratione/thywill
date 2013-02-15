@@ -34,18 +34,6 @@ InMemoryResourceManager.CONFIG_TEMPLATE = null;
 //-----------------------------------------------------------
 
 /**
- * @see ResourceManager#createResource
- */
-p.createResource = function (data, attributes) {
-  // If we have a string rather than null or a Buffer, then convert it into a
-  // Buffer.
-  if (typeof data === "string") {
-    data = new Buffer(data, attributes.encoding);
-  }
-  return new Resource(data, attributes);
-};
-
-/**
  * @see ResourceManager#store
  */
 p.store = function (key, resource, callback) {
