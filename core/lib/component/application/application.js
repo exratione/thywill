@@ -36,8 +36,8 @@ var p = Application.prototype;
 /**
  * Send a message, usually to one specific client.
  *
- * @param {Message} message
- *   Instance of the Message class.
+ * @param {ServerMessage} message
+ *   Instance of the ServerMessage class.
  */
 p.send = function (message) {
   this.thywill.clientInterface.send(message);

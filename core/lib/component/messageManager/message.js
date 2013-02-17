@@ -30,28 +30,11 @@ var p = Message.prototype;
 // "Static" parameters
 //-----------------------------------------------------------
 
-Message.ORIGINS = {
-  SERVER: "s",
-  CLIENT: "c"
-};
-
-Message.DESTINATIONS = Message.ORIGINS;
-
 Message.METADATA = {
-  // The name of a channel, indicating that a messages is to be published
-  // rather than sent to a single client.
-  CHANNEL_ID: "chid",
-  // The ID of a specific client connection, either as sender or recipient.
-  CONNECTION_ID: "cid",
-  // Whether the message is delivered to server or client.
-  DESTINATION: "dest",
-  // The ID of the originating application.
   FROM_APPLICATION: "faid",
   // Used to identify messages with their replies or otherwise distinguish
   // between messages where important. Not particularly unique.
   IDENTIFIER: "id",
-  // Whether the message originated from server or client.
-  ORIGIN: "orig",
   // The ID of the destination application.
   TO_APPLICATION: "taid",
   // The type of the message.
@@ -113,30 +96,19 @@ p.setMetadata = function () {
   }
 };
 
+/**
+ * Clear a particular metadata value.
+ *
+ * @param {string} key
+ *   A metadata key.
+ */
+p.clearMetadata = function (key) {
+  delete this._[key];
+};
+
 //-----------------------------------------------------------
 // Methods: metadata convenience getters and setters.
 //-----------------------------------------------------------
-
-p.getChannelId = function () {
-  return this.getMetadata(Message.METADATA.CHANNEL_ID);
-};
-p.setChannelId = function (channelId) {
-  this.setMetadata(Message.METADATA.CHANNEL_ID, channelId);
-};
-
-p.getConnectionId = function () {
-  return this.getMetadata(Message.METADATA.CONNECTION_ID);
-};
-p.setConnectionId = function (connectionId) {
-  this.setMetadata(Message.METADATA.CONNECTION_ID, connectionId);
-};
-
-p.getDestination = function () {
-  return this.getMetadata(Message.METADATA.DESTINATION);
-};
-p.setDestination = function (destination) {
-  this.setMetadata(Message.METADATA.DESTINATION, destination);
-};
 
 p.getFromApplication = function () {
   return this.getMetadata(Message.METADATA.FROM_APPLICATION);
@@ -150,13 +122,6 @@ p.getId = function () {
 };
 p.setId = function (id) {
   this.setMetadata(Message.METADATA.IDENTIFIER, id);
-};
-
-p.getOrigin = function () {
-  return this.getMetadata(Message.METADATA.ORIGIN);
-};
-p.setOrigin = function (origin) {
-  this.setMetadata(Message.METADATA.ORIGIN, origin);
 };
 
 p.getToApplication = function () {
@@ -195,51 +160,16 @@ p.toString = function () {
  *   True if this instance is a valid message.
  */
 p.isValid = function () {
+  // Is it addressed to and from a specific application?
   if (!this.getToApplication()) {
     return false;
   }
   if (!this.getFromApplication()) {
     return false;
   }
+  // Does it have data?
   if (!this.getData()) {
     return false;
-  }
-
-  var origin = this.getOrigin();
-  if (!origin) {
-    return false;
-  }
-  var validOrigin = Object.keys(Message.ORIGINS).some(function (key, index, array) {
-    return (Message.ORIGINS[key] === origin);
-  });
-  if (!validOrigin) {
-    return false;
-  }
-  var destination = this.getDestination();
-  if (!destination) {
-    return false;
-  }
-  var validDestination = Object.keys(Message.DESTINATIONS).some(function (key, index, array) {
-    return (Message.DESTINATIONS[key] === destination);
-  });
-  if (!validDestination) {
-    return false;
-  }
-
-  // Server-side only
-  if (!window) {
-    // A message from the client has to have a connection ID.
-    if (origin === Message.ORIGINS.CLIENT) {
-      if(!this.getConnectionId()) {
-        return false;
-      }
-    }
-    // A message to the client has to have either a connection ID or a channel ID.
-    if (destination === Message.DESTINATIONS.CLIENT) {
-      if(!this.getConnectionId() && !this.getChannelId()) {
-        return false;
-      }
-    }
   }
 
   return true;

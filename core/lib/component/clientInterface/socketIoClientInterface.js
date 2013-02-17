@@ -164,6 +164,13 @@ SocketIoClientInterface.CONFIG_TEMPLATE = {
       required: true
     }
   },
+  upCheckClientPath: {
+    _configInfo: {
+      description: "The client path for a page that declares the process running - for use with proxy and monitoring checks.",
+      types: "string",
+      required: true
+    }
+  },
   usePubSubForSending: {
     _configInfo: {
       description: "If true each connection is signed up for its own pub/sub channel and messages are sent that way. This and configuring Socket.IO to use a RedisStore is usually necessary for applications with multiple backend Node.js processes.",
@@ -486,6 +493,16 @@ p._startup = function (callback) {
         type: resourceManager.types.HTML
       });
       self.storeResource(resource, asyncCallback);
+    },
+    // Create a trivial resource to be used for up-checks by a proxy server.
+    createUpCheckResource: function (asyncCallback) {
+      var resource = resourceManager.createResource(new Buffer ("{ alive: true }", self.config.textEncoding), {
+        clientPath: self.config.baseClientPath + self.config.upCheckClientPath,
+        encoding: self.config.textEncoding,
+        isGenerated: false,
+        type: resourceManager.types.JSON
+      });
+      self.storeResource(resource, asyncCallback);
     }
   };
   // Call the above functions in series. Any errors will abort part-way through
@@ -734,12 +751,13 @@ p.initializeNewSocketConnection = function (socket) {
    * A message arrives and the raw data object from Socket.IO code is passed in.
    */
   socket.on("fromClient", function (rawMessage) {
-    var message = messageManager.createMessage(rawMessage.data, rawMessage._);
+    var message = messageManager.clientMessageToServerMessage(rawMessage);
     // Set the connectionId.
     message.setConnectionId(socket.id);
     // Sort out origin and destination - always from client, to server.
     message.setOrigin(messageManager.origins.CLIENT);
     message.setDestination(messageManager.destinations.SERVER);
+
     // If valid now, send it onward.
     if (message.isValid()) {
       self.received(message);
@@ -897,24 +915,43 @@ p.send = function (message) {
     return;
   }
 
-  // If there is a channel ID set, then publish this message to the channel.
   var channelId = message.getChannelId();
+  var socketId = message.getConnectionId();
+  // Strip the message down to what's to be sent to the client.
+  var clientMessage = messageManager.serverMessageToClientMessage(message);
+
+  // If there is a channel ID set, then publish message to the specified
+  // channel.
   if (channelId) {
-    this.socketFactory.of(this.config.namespace).to(channelId).emit("toClient", message);
+    // If there is a connection ID, then this channel message originates from
+    // a connection, and that connection should not get a copy.
+    if (socketId) {
+      // Using except() is the same as setting the broadcast flag on a socket
+      // instance when emitting - for this use case, where we want to avoid
+      // sending to the message originator. But it will work even for clustered
+      // processes using a Redis store: the socket instance for socketId might
+      // not be available in this instance, as the client might be connected to
+      // another of the clustered Node.js processes.
+      this.socketFactory.of(this.config.namespace).to(channelId).except(socketId).emit("toClient", clientMessage);
+    }
+    // This channel message doesn't originate from a client connection, so
+    // send it to all channel subscribers.
+    else {
+      this.socketFactory.of(this.config.namespace).to(channelId).emit("toClient", clientMessage);
+    }
   }
   // Otherwise the message is destined for a single client connection, so send
   // it out through the pertinent socket instance.
   else {
-    var socketId = message.getConnectionId();
     // If there are multiple Node processes in the backend and the application
     // is structured such that process A may want to send a message to a socket
     // connected to process B, then usePubSubForSending must be set true so
     // that messages can be published to the individual connection's channel.
     var destinationSocket = this.socketFactory.of(this.config.namespace).socket(socketId);
     if (destinationSocket) {
-      destinationSocket.emit("toClient", message);
+      destinationSocket.emit("toClient", clientMessage);
     } else if (this.config.usePubSubForSending) {
-      this.socketFactory.of(this.config.namespace).to(socketId).emit("toClient", message);
+      this.socketFactory.of(this.config.namespace).to(socketId).emit("toClient", clientMessage);
     } else {
       this.thywill.log.error(new Error("No socket connected to this process with id: " + socketId));
     }

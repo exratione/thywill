@@ -2,6 +2,8 @@
   document: false,
   Handlebars: false,
   paper: false,
+  Path: false,
+  Tool: false,
   Thywill: false
 */
 /**
@@ -26,6 +28,9 @@
     Thywill.ApplicationInterface.call(this, applicationId);
     // For storing Handlebars.js templates.
     this.templates = {};
+    // For storing paths displayed on the canvas.
+    this.paths = {};
+    this.lastPathId = 0;
   }
   Thywill.inherits(DrawApplication, Thywill.ApplicationInterface);
   var p = DrawApplication.prototype;
@@ -38,6 +43,8 @@
    * Create the application user interface and its event listeners.
    */
   p.uiSetup = function () {
+    var self = this;
+
     // Populate the DOM from the template.
     this.templates.uiTemplate = Handlebars.compile(jQuery("#{{{uiTemplateId}}}").html());
     jQuery("body").append(this.templates.uiTemplate({
@@ -45,16 +52,24 @@
     }));
 
     // Add the Paper.js canvas.
-    var canvas = document.getElementById("canvas");
+    var canvas = jQuery("#canvas")[0];
     paper.setup(canvas);
 
+    // A line drawing listener.
+    this.lineTool = new paper.Tool();
   };
 
   /**
    * Make the UI disabled - no sending.
    */
   p.uiDisable = function () {
+    // Remove handlers.
+    delete this.lineTool.onMouseDown;
+    delete this.lineTool.onMouseDrag;
+    delete this.lineTool.onMouseUp;
 
+    // Close off any current path.
+    delete this.currentPath;
   };
 
   /**
@@ -63,6 +78,33 @@
   p.uiEnable = function () {
     var self = this;
 
+    // Define handlers for creating paths.
+    this.lineTool.onMouseDown = function (e) {
+      self.currentPath = new paper.Path();
+      self.currentPath.strokeColor = "black";
+      self.currentPath.add(e.point);
+      self.paths[self.lastPathId++] = self.currentPath;
+
+      // TODO: set timer for removing path.
+
+    };
+    this.lineTool.onMouseDrag = function (e) {
+      if (!self.currentPath) {
+        return;
+      }
+      self.currentPath.add(e.point);
+    };
+    this.lineTool.onMouseUp = function (e) {
+      if (!self.currentPath) {
+        return;
+      }
+      var path = self.currentPath;
+      delete self.currentPath;
+      // Get rid of the excess points in the path.
+      path.simplify();
+
+      // TODO: send path data to server.
+    };
   };
 
   /**

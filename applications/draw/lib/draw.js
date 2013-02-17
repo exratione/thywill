@@ -24,6 +24,9 @@ var bootstrapManifest = require("./bootstrapManifest");
  */
 function Draw (id) {
   Draw.super_.call(this, id);
+
+  // The channel used to broadcast draw data.
+  this.channelId = "draw";
 }
 util.inherits(Draw, Thywill.getBaseClass("Application"));
 var p = Draw.prototype;
@@ -90,8 +93,21 @@ p._prepareForShutdown = function (callback) {
  */
 p.received = function (message) {
 
+  // A created path.
+  var data = message.getData();
 
-
+  // Create a broadcast message.
+  var messageManager = this.thywill.messageManager;
+  var broadcastMessage = messageManager.createMessage(data);
+  broadcastMessage.setChannelId(this.channelId);
+  // The message will go to everyone in the channel except this connection,
+  // i.e. not to the one that sent it, effectively.
+  broadcastMessage.setConnectionId(message.connectionId);
+  broadcastMessage.setFromApplicationId(this.id);
+  broadcastMessage.setToApplicationId(this.id);
+  broadcastMessage.setOrigin(messageManager.origins.SERVER);
+  broadcastMessage.setDestination(messageManager.destinations.CLIENT);
+  this.send(broadcastMessage);
 };
 
 /**
@@ -101,8 +117,9 @@ p.received = function (message) {
  * session === null and sessionId === connectionId.
  */
 p.connection = function (connectionId, sessionId, session) {
-  // Do nothing except log it.
   this.thywill.log.debug("Draw: Client connected: " + connectionId);
+  // Every client is subscribed to the same channel, used to broadcast updates.
+  this.thywill.clientInterface.subscribe(connectionId, this.channelId);
 };
 
 /**

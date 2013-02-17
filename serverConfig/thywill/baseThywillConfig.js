@@ -179,6 +179,8 @@ module.exports = {
     // Other text file encodings, such as when loading resources from the file
     // system.
     textEncoding: "utf-8",
+    // The path for a page to be called by proxy and monitoring up checks.
+    upCheckClientPath: "/alive",
     // If you have set up an application with multiple Node.js processes in the
     // backend, then each individual connection socket will only exist in one
     // of the processes. Your application may be structured in a way that
@@ -218,12 +220,12 @@ module.exports = {
   // The messageManager is a factory for creating messages, objects to
   // represent data passed back and forth between client and server.
   messageManager: {
-    // We specify use of the simple implementation, which does absolutely
+    // We specify use of the base implementation, which does absolutely
     // nothing beyond creating fairly plain Javascript objects for use as
     // messages.
     implementation: {
       type: "core",
-      name: "simpleMessageManager"
+      name: "messageManager"
     }
   },
 

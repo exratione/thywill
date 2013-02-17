@@ -62,10 +62,6 @@ var Thywill = (function() {
     // message gets to the server.
     message.setFromApplication(this.applicationId);
     message.setToApplication(this.applicationId);
-    // Technically these two aren't necessary either, but may as well put them
-    // there to indicate intent.
-    message.setDestination(Thywill.Message.DESTINATIONS.SERVER);
-    message.setOrigin(Thywill.Message.ORIGINS.CLIENT);
     // If a message type is provided, set it.
     if (type) {
       message.setType(type);

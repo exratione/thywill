@@ -87,6 +87,7 @@ Resource.TYPES = {
   CSS: "text/css",
   HTML: "text/html",
   JAVASCRIPT: "application/javascript",
+  JSON: "application/json",
   TEXT: "text/plain",
   // For templates used by Underscore.js, Handlebars.js, etc.
   TEMPLATE: "text/template"

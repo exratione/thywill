@@ -13,6 +13,7 @@ web application:
   * Based on asynchronous messaging
   * All traffic is sent encrypted over SSL
   * Uses Socket.IO as a communication layer
+  * Functionality can be exposed to clients progressively
 
 In Thywill, messages are passed asynchronously between connected web clients
 and the server, and can be initiated at any time by either the client or the
@@ -39,14 +40,14 @@ You can manually run the simplest example Thywill application, Echo, as
 follows:
 
     cd path/to/thywill
-    node ./applications/echo/service/start
+    node applications/echo/service/startEcho
 
 Navigate to the following URL on your server to see it in action.
 
     http://example.com:10080/echo/
 
 Then read /doc/applicationServiceSetup.md for instructions on how to set up a
-Thywill application as a service.
+Thywill application Node.js process as a service.
 
 Go on to read /doc/serverSetup.md for instructions on how to set up a server
 with an SSL-capable proxy so as to run a Thywill application securely via HTTPS

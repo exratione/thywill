@@ -29,8 +29,8 @@ var p = ClientInterface.prototype;
 /**
  * Called when a message is received from a client.
  *
- * @param {Message} message
- *   A Message instance.
+ * @param {ServerMessage} message
+ *   A ServerMessage instance.
  */
 p.received = function (message) {
   var self = this;
@@ -149,8 +149,8 @@ p.getResource = function (clientPath, callback) {
 /**
  * Send a message out to a client or channel.
  *
- * @param {Message} message
- *   A Message instance.
+ * @param {ServerMessage} message
+ *   A ServerMessage instance.
  */
 p.send = function (message) {
   throw new Error("Not implemented.");
