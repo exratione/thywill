@@ -95,7 +95,6 @@ exports.start = function (clusterMemberId) {
 
   // Set the remaining configuration items that either depend on the cluster
   // member or are datastore connections, etc.
-  config.thywill.adminInterface.port = cluster[clusterMemberId].adminPort;
   config.cluster.localClusterMemberId = clusterMemberId;
   config.cluster.publishRedisClient = createRedisClient();
   config.cluster.subscribeRedisClient = createRedisClient();

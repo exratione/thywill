@@ -87,16 +87,22 @@ p.received = function (message) {
   // Data for a created path from paper.js.
   var data = message.getData();
 
-  // TODO: validate the data at all?
+  // Validate the data a little, just enough to make sure that the receiving
+  // clients won't error. Since this is an example only, no need to check
+  // everything.
+  if (!data || !Array.isArray(data.segments)) {
+    this.thywill.log.warn("Draw: invalid data received from client." + message);
+    return;
+  }
 
   // Create a broadcast message to send the data for this path to all connected
   // clients except the one that sent this message.
   var messageManager = this.thywill.messageManager;
   var broadcastMessage = messageManager.createMessage(data);
   broadcastMessage.setChannelId(this.channelId);
-  broadcastMessage.setConnectionId(message.connectionId);
-  broadcastMessage.setFromApplicationId(this.id);
-  broadcastMessage.setToApplicationId(this.id);
+  broadcastMessage.setConnectionId(message.getConnectionId());
+  broadcastMessage.setFromApplication(this.id);
+  broadcastMessage.setToApplication(this.id);
   broadcastMessage.setOrigin(messageManager.origins.SERVER);
   broadcastMessage.setDestination(messageManager.destinations.CLIENT);
   this.send(broadcastMessage);

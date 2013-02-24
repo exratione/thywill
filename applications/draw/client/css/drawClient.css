@@ -18,11 +18,19 @@ body {
   text-shadow: 2px 2px #dddddd;
 }
 #canvas {
+  background-color: #eeeeee;
   border: 1px solid #aaaaaa;
   box-shadow: 5px 5px 10px 0 #cccccc;
-  cursor: pointer;
   height: 300px;
   margin-bottom: 15px;
+  -webkit-transition: all 0.2s ease-in-out;
+  -moz-transition: all 0.2s ease-in-out;
+  -o-transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
+}
+#canvas.enabled {
+  background-color: #eeffee;
+  cursor: pointer;
 }
 #instructions {
 	text-align: justify;

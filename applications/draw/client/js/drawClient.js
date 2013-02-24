@@ -28,9 +28,6 @@
     Thywill.ApplicationInterface.call(this, applicationId);
     // For storing Handlebars.js templates.
     this.templates = {};
-    // For storing paths displayed on the canvas.
-    this.paths = {};
-    this.lastPathId = 0;
   }
   Thywill.inherits(DrawApplication, Thywill.ApplicationInterface);
   var p = DrawApplication.prototype;
@@ -63,13 +60,15 @@
    * Make the UI disabled - no sending.
    */
   p.uiDisable = function () {
+    jQuery("#canvas").removeClass("enabled");
+
     // Remove handlers.
     delete this.lineTool.onMouseDown;
     delete this.lineTool.onMouseDrag;
     delete this.lineTool.onMouseUp;
 
     // Close off any current path.
-    delete this.currentPath;
+    this.finishCurrentPath();
   };
 
   /**
@@ -80,33 +79,20 @@
 
     // Define handlers for creating paths.
     this.lineTool.onMouseDown = function (e) {
-      self.currentPath = new paper.Path();
-      self.currentPath.strokeColor = "black";
+      self.startNewCurrentPath();
       self.currentPath.add(e.point);
-      self.paths[self.lastPathId++] = self.currentPath;
-
-      // TODO: set timer for removing path.
-
     };
     this.lineTool.onMouseDrag = function (e) {
       if (!self.currentPath) {
         return;
       }
       self.currentPath.add(e.point);
-
-      // TODO: curtail the thing if it gets too big, start a new one.
     };
     this.lineTool.onMouseUp = function (e) {
-      if (!self.currentPath) {
-        return;
-      }
-      var path = self.currentPath;
-      delete self.currentPath;
-      // Get rid of the excess points in the path.
-      path.simplify();
-
-      // TODO: send path data to server.
+      self.finishCurrentPath();
     };
+
+    jQuery("#canvas").addClass("enabled");
   };
 
   /**
@@ -141,7 +127,101 @@
    * @see Thywill.ApplicationInterface#received
    */
   p.received = function (message) {
+    // Draw a new path from the data.
+    var path = this.createPath();
+    var segments = message.data.segments.map(function (segmentData, index, array) {
+      // The segment encodes information about curves as well as location.
+      var segment = new paper.Segment();
+      segment.setPoint(segmentData.point);
+      segment.setHandleIn(segmentData.handleIn);
+      segment.setHandleOut(segmentData.handleOut);
+      return segment;
+    });
+    path.addSegments(segments);
+    this.setPathForRemoval(path);
+    paper.view.draw();
+  };
 
+  /**
+   * Create a new Path instance.
+   *
+   * @return {Path}
+   *   The newly created Path instance.
+   */
+  p.createPath = function () {
+    var path = new paper.Path();
+    path.strokeColor = "black";
+    return path;
+  };
+
+  /**
+   * Set a path to be removed after an interval.
+   *
+   * @param {Path} path
+   *   A path instance.
+   */
+  p.setPathForRemoval = function (path) {
+    setTimeout(function () {
+      path.remove();
+      paper.view.draw();
+    }, 30000);
+  };
+
+  /**
+   * Start a new current path that the user is drawing.
+   */
+  p.startNewCurrentPath = function () {
+    // There should be no old path, but just in case there is, finish it.
+    this.finishCurrentPath();
+    this.currentPath = this.createPath();
+  };
+
+  /**
+   * Finish the path currently being drawn.
+   */
+  p.finishCurrentPath = function () {
+    if (!this.currentPath) {
+      return;
+    }
+    var path = this.currentPath;
+    delete this.currentPath;
+    // Get rid of the excess points in the path, cut down what's going to
+    // the server.
+    path.simplify();
+    this.setPathForRemoval(path);
+    this.sendPath(path);
+  };
+
+  /**
+   * Send data describing a paper.js path object to the server.
+   *
+   * @param {Paper.Path} path
+   *   A Path instance.
+   */
+  p.sendPath = function (path) {
+    var segments = path.getSegments();
+    var data = {};
+    data.segments = segments.map(function (segment, index, array) {
+      // The segment encodes information about curves as well as location.
+      var point = segment.getPoint();
+      var handleIn = segment.getHandleIn();
+      var handleOut = segment.getHandleOut();
+      return {
+        point: {
+          x: point.x,
+          y: point.y
+        },
+        handleIn: {
+          x: handleIn.x,
+          y: handleIn.y
+        },
+        handleOut: {
+          x: handleOut.x,
+          y: handleOut.y
+        }
+      };
+    });
+    this.send(data);
   };
 
   /**

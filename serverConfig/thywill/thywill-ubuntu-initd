@@ -50,8 +50,6 @@
 # APPLICATION_DIRECTORY=/home/node/thywill/applications/echo/service
 # The application start Javascript filename.
 # APPLICATION_START=startEcho.js
-# The application shutdown preparation Javascript filename.
-# APPLICATION_PREPARE_STOP=prepareEchoForShutdown.js
 # Log file path.
 # LOGFILE=/var/log/thywill-echo.log
 #
@@ -60,7 +58,6 @@ NODE_BIN_DIR=
 NODE_PATH=
 APPLICATION_DIRECTORY=
 APPLICATION_START=
-APPLICATION_PREPARE_STOP=
 # Change these filenames to reflect your application and match those in the
 # chkconfig comment lines. e.g. thywill-my-app.pid.
 PIDFILE=/var/run/thywill.pid
