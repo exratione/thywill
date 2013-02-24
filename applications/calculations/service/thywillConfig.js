@@ -7,10 +7,6 @@
 
 var config = require("../../../serverConfig/thywill/baseThywillConfig");
 
-// Every example application process admin interface should run on a
-// different port.
-config.thywill.adminInterface.port = 20082;
-
 // An example application should have its own base path and Socket.IO
 // namespace.
 config.clientInterface.baseClientPath = "/calculations";

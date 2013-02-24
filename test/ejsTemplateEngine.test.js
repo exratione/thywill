@@ -29,7 +29,6 @@ suite.addBatch({
     }
   }
 });
-tools.finalizeVowsSuite(suite);
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

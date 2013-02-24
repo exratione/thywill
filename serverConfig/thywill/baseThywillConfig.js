@@ -39,19 +39,6 @@ module.exports = {
       // number not a numeric string - 312, not "312".
       groupId: "node",
       userId: "node"
-    },
-    // The administrative interface is a separate HTTPServer instance that runs
-    // to offer a few limited functions, such as those needed to properly
-    // manage a Thywill process as a service.
-    adminInterface: {
-      // An array of IP addresses permitted to access the interface.
-      ipAddresses: ["127.0.0.1"],
-      // Configurable paths for various services.
-      paths: {
-        prepareForShutdown: "/prepareForShutdown"
-      },
-      // The port which the administrative interface will listen on.
-      port: 20080
     }
   },
 

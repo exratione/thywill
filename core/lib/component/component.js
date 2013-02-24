@@ -246,19 +246,6 @@ p._configure = function (thywill, config, callback) {
   this._announceReady(this.NO_ERRORS);
 };
 
-/**
- * Called when the application will be shutdown: do everything that needs to be
- * done, and call the callback function ONLY WHEN EVERYTHING YOU NEED TO DO
- * IS COMPLETE.
- *
- * @param {Function} callback
- */
-p._prepareForShutdown = function (callback) {
-  // Nothing needed here.
-  callback();
-};
-
-
 //-----------------------------------------------------------
 // Exports - Class Constructor
 //-----------------------------------------------------------

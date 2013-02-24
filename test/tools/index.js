@@ -52,41 +52,6 @@ var tools = {
       }
     });
     return suite;
-  },
-
-  /**
-   * Add batches to a Thywill test suite that shut down the servers, so as to
-   * free up the port for the next test.
-   *
-   * @param {Object} suite
-   *   A Vows suite originally obtained via tools.vowsSuite().
-   */
-  finalizeVowsSuite: function(suite) {
-    var self = this;
-    suite.addBatch({
-      "shutdown preparation": {
-        topic: function () {
-          Thywill.prepareForShutdown(self.thywill.config, this.callback);
-        },
-        "successful preparation for shutdown": function (error) {
-          assert.isNull(error);
-        }
-      }
-    });
-    // self.thywill.server will have been closed during preparation for shutdown,
-    // since we didn't provide a server. But we still have to close the admin
-    // interface.
-    suite.addBatch({
-      "close admin interface server": {
-        topic: function () {
-          self.thywill.adminInterfaceServer.on("close", this.callback);
-          self.thywill.adminInterfaceServer.close();
-        },
-        "server closed without error": function (error) {
-          assert.isUndefined(error);
-        }
-      }
-    });
   }
 };
 

@@ -117,20 +117,3 @@ exports.start = function (clusterMemberId) {
     }
   });
 };
-
-/**
- * Prepare this cluster member for shutdown.
- *
- * @param {string} clusterMemberName
- *   The name of the cluster member to start.
- */
-exports.prepareForShutdown = function (clusterMemberId) {
-  config.thywill.adminInterface.port = cluster[clusterMemberId].adminPort;
-  Thywill.prepareForShutdown(config, function (error) {
-    // Do nothing; errors will already be logged.
-    //
-    // The callback exists to ensure that we wait for completion before returning
-    // from this script.
-    process.exit(0);
-  });
-};

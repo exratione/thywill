@@ -80,20 +80,6 @@ p._configure = function (thywill, config, callback) {
   });
 };
 
-/**
- * @see Component#_prepareForShutdown
- */
-p._prepareForShutdown = function (callback) {
-
-
-
-  // TODO: clean up resources? What about controlled restarts?
-
-
-
-  callback();
-};
-
 //-----------------------------------------------------------
 // Other Overridden Methods
 //-----------------------------------------------------------

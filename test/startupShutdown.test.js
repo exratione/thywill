@@ -9,8 +9,6 @@ var tools = require("./tools");
 
 // Obtain a test suit that launches Thywill.
 var suite = tools.createVowsSuite("Startup and shutdown", tools.config);
-// Add the final shutdown batches.
-tools.finalizeVowsSuite(suite);
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

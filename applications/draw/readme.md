@@ -16,8 +16,9 @@ Start the four Node.js application processes manually as follows:
     node /applications/draw/service/startDrawDelta.js
 
 Read /docs/applicationServiceSetup.md for instructions on how to set up these
-application processes to run as a service. Each will require its own service
-script.
+application processes to run as a service. There are two possible approaches:
+either one service script starts and stops all four processes, or each process
+has its own service script.
 
 This application requires a Redis server to be running on the same local
 machine as the Node.js processes.

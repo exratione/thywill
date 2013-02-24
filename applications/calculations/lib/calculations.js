@@ -88,14 +88,6 @@ p._setupRpcFunctions = function () {
 
 };
 
-/**
- * @see Application#_prepareForShutdown
- */
-p._prepareForShutdown = function (callback) {
-  // Nothing needs doing here.
-  callback();
-};
-
 //-----------------------------------------------------------
 // Methods
 //-----------------------------------------------------------

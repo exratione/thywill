@@ -5,6 +5,7 @@
 
 var crypto = require("crypto");
 var util = require("util");
+var path = require("path");
 var async = require("async");
 var cleanCss = require("clean-css");
 var uglify = require("uglify-js");
@@ -83,7 +84,7 @@ p.minifyResource = function (resource, callback) {
       weight: resource.weight
     });
   } catch (e) {
-    self.thywill.log.error(e);
+    this.thywill.log.error(e);
   }
 
   callback.call(this, error, newResource);
@@ -255,7 +256,26 @@ p._minifyCss = function(resource) {
   } else {
     this.thywill.log.error(new Error("Trying to minify Javascript resource that is missing either its buffer or encoding: " + resource.clientPath));
   }
+  css = this._updateCssUrls(css, resource.clientPath);
   return cleanCss.process(css);
+};
+
+/**
+ * When aggregating minified CSS into a new resource with a new client path,
+ * any relative url() entries must be turned into absolute url() entries.
+ *
+ * @param {string} css
+ *   The CSS to be altered.
+ * @param {string} clientPath
+ *   The client path of the CSS resource pre-minification.
+ * @return {string}
+ *   CSS with altered url() paths.
+ */
+p._updateCssUrls = function (css, clientPath) {
+  return css.replace(/url\("?'?([^\/)"'][^)"']+)'?"?\)/g, function (match, url) {
+    url = path.join(path.dirname(clientPath), url);
+    return "url(" + url + ")";
+  });
 };
 
 /**

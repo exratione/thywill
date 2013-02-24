@@ -26,7 +26,6 @@ function Thywill() {
   Thywill.super_.call(this);
   this.componentType = "thywill";
   this.server = null;
-  this.adminInterfaceServer = null;
 
   // Was this Thywill instance provided with an http.Server (true) or did it
   // create a default http.Server as a part of launch and configuration
@@ -68,31 +67,6 @@ Thywill.CONFIG_TEMPLATE = {
         description: "The user name or ID to own the Node process after startup.",
         types: "string",
         required: false
-      }
-    }
-  },
-  adminInterface: {
-    ipAddresses: {
-      _configInfo: {
-        description: "IP addresses permitted to connect to the administrative interface.",
-        types: "array",
-        required: true
-      }
-    },
-    paths: {
-      prepareForShutdown: {
-        _configInfo: {
-          description: "The full path that an HTTP shutdown request must hit. e.g. '/thywill/prepareForShutdown'",
-          types: "string",
-          required: true
-        }
-      }
-    },
-    port: {
-      _configInfo: {
-        description: "The port to listen on.",
-        types: "integer",
-        required: true
       }
     }
   }
@@ -148,47 +122,6 @@ Thywill.launch = function (config, applications, callback) {
       callback(error, thywill);
     }
   });
-};
-
-/**
- * Tell a Thywill server to gracefully prepare for shutdown, but do not end
- * the process.
- *
- * This is intended to be called from a shutdown script. See the Thywill
- * documentation for more information on how to set up Thywill as a service.
- *
- * @param {Object} config
- *   An object representation of configuration.
- * @param {Function) callback
- *   Of the form
- */
-Thywill.prepareForShutdown = function (config, callback) {
-  // Check the configuration with a dummy Thywill instance.
-  var thywill = new Thywill();
-  if (!config || !config.thywill) {
-    throw new Error("Null, undefined, or incomplete configuration object.");
-  }
-  thywill._checkConfiguration(config.thywill);
-
-  // Now go on to send a request to what is hopefully a running Thywill
-  // instance and tell it to prepare for impending shutdown.
-  console.log("Instructing Thywill to prepare for shutdown.");
-
-  var options = {
-    host: "localhost",
-    port: config.thywill.adminInterface.port,
-    path: config.thywill.adminInterface.paths.prepareForShutdown,
-    method: "GET"
-  };
-  var request = http.request(options, function (response) {
-    console.log("Thywill has completed preparations for shutdown.");
-    callback(thywill.NO_ERRORS);
-  });
-  request.on("error", function (error) {
-    console.error(error);
-    callback(error);
-  });
-  request.end();
 };
 
 /**
@@ -308,7 +241,6 @@ p.startup = function (applications, callback) {
 
   var self = this;
   this.readyCallback = callback;
-  this._setupAdminInterfaceListener();
   var fns = [
     // Convert uid and gid names in configuration to numeric ids.
     function (asyncCallback) {
@@ -360,92 +292,6 @@ p._convertUserIdAndGroupId = function (callback) {
     }
   }
 
-  async.series(fns, callback);
-};
-
-/**
- * Set up a new server to listen for shutdown preparation messages
- * from localhost.
- */
-p._setupAdminInterfaceListener = function () {
-  var self = this;
-  var config = this.config.thywill.adminInterface;
-  this.adminInterfaceServer = http.createServer();
-  this.adminInterfaceServer.listen(config.port);
-
-  // TODO: better admin responses, actual HTML.
-
-  this.adminInterfaceServer.on("request", function (req, res) {
-    if (config.ipAddresses.indexOf(req.connection.remoteAddress) === -1) {
-      res.statusCode = 500;
-      res.end("No access permitted from: " + req.connection.remoteAddress);
-      return;
-    }
-    if (req.url === config.paths.prepareForShutdown) {
-      self._managePreparationForShutdown(function () {
-        // Don't complete the connection until the preparation is done.
-        res.statusCode = 200;
-        res.end("Prepared for shutdown.");
-      });
-    } else {
-      res.statusCode = 500;
-      res.end("Unknown admin function.");
-    }
-  });
-};
-
-/**
- * Perform all the cleanup and other operations needed prior to shutdown,
- * but do not actually shutdown. Call the callback function only when
- * these operations are actually complete.
- *
- * @param {Function} callback
- *   Called when preparations are complete.
- */
-p._managePreparationForShutdown = function (callback) {
-  // Don't try to prepare for shutdown more than once.
-  if (this.preparedForShutdown) {
-    callback(new Error("Already prepared for shutdown."));
-    return;
-  }
-  this.preparedForShutdown = true;
-
-  // Things are shut down in reverse order to the startup process.
-  var self = this;
-  var fns = [
-    function (asyncCallback) {
-      self.log.info("Preparing clientInterface for shutdown.");
-      self.clientInterface._prepareForShutdown(asyncCallback);
-    },
-    function (asyncCallback) {
-      self.log.info("Preparing minifier for shutdown.");
-      self.minifier._prepareForShutdown(asyncCallback);
-    },
-    function (asyncCallback) {
-      self.log.info("Preparing templateEngine for shutdown.");
-      self.templateEngine._prepareForShutdown(asyncCallback);
-    },
-    function (asyncCallback) {
-      self.log.info("Preparing messageManager for shutdown.");
-      self.messageManager._prepareForShutdown(asyncCallback);
-    },
-    function (asyncCallback) {
-      self.log.info("Preparing resourceManager for shutdown.");
-      self.resourceManager._prepareForShutdown(asyncCallback);
-    },
-    function (asyncCallback) {
-      self.log.info("Preparing cacheManager for shutdown.");
-      self.cacheManager._prepareForShutdown(asyncCallback);
-    },
-    function (asyncCallback) {
-      self.log.info("Preparing cluster for shutdown.");
-      self.cluster._prepareForShutdown(asyncCallback);
-    },
-    function (asyncCallback) {
-      self.log.info("Preparing log for shutdown.");
-      self.log._prepareForShutdown(asyncCallback);
-    }
-  ];
   async.series(fns, callback);
 };
 

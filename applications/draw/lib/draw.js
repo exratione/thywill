@@ -76,14 +76,6 @@ p._defineBootstrapResources = function (callback) {
   async.series(fns, callback);
 };
 
-/**
- * @see Application#_prepareForShutdown
- */
-p._prepareForShutdown = function (callback) {
-  // Nothing needs doing here.
-  callback();
-};
-
 //-----------------------------------------------------------
 // Methods
 //-----------------------------------------------------------
@@ -92,16 +84,16 @@ p._prepareForShutdown = function (callback) {
  * @see Application#receive
  */
 p.received = function (message) {
-
-  // A created path.
+  // Data for a created path from paper.js.
   var data = message.getData();
 
-  // Create a broadcast message.
+  // TODO: validate the data at all?
+
+  // Create a broadcast message to send the data for this path to all connected
+  // clients except the one that sent this message.
   var messageManager = this.thywill.messageManager;
   var broadcastMessage = messageManager.createMessage(data);
   broadcastMessage.setChannelId(this.channelId);
-  // The message will go to everyone in the channel except this connection,
-  // i.e. not to the one that sent it, effectively.
   broadcastMessage.setConnectionId(message.connectionId);
   broadcastMessage.setFromApplicationId(this.id);
   broadcastMessage.setToApplicationId(this.id);
@@ -112,9 +104,6 @@ p.received = function (message) {
 
 /**
  * @see Application#connection
- *
- * Note that since this application is configured to use no sessions,
- * session === null and sessionId === connectionId.
  */
 p.connection = function (connectionId, sessionId, session) {
   this.thywill.log.debug("Draw: Client connected: " + connectionId);
@@ -124,9 +113,6 @@ p.connection = function (connectionId, sessionId, session) {
 
 /**
  * @see Application#disconnection
- *
- * Note that since this application is configured to use no sessions,
- * session === null and sessionId === connectionId.
  */
 p.disconnection = function (connectionId, sessionId) {
   // Do nothing except log it.

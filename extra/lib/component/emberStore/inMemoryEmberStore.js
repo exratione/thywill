@@ -45,14 +45,6 @@ p._configure = function (thywill, config, callback) {
   this._announceReady(this.NO_ERRORS);
 };
 
-/**
- * @see Component#_prepareForShutdown
- */
-p._prepareForShutdown = function (callback) {
-  // Nothing needed.
-  callback();
-};
-
 //-----------------------------------------------------------
 // Methods
 //-----------------------------------------------------------

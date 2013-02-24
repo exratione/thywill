@@ -93,6 +93,8 @@
         return;
       }
       self.currentPath.add(e.point);
+
+      // TODO: curtail the thing if it gets too big, start a new one.
     };
     this.lineTool.onMouseUp = function (e) {
       if (!self.currentPath) {

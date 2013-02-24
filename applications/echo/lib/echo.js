@@ -74,14 +74,6 @@ p._defineBootstrapResources = function (callback) {
   async.series(fns, callback);
 };
 
-/**
- * @see Application#_prepareForShutdown
- */
-p._prepareForShutdown = function (callback) {
-  // Nothing needs doing here.
-  callback();
-};
-
 //-----------------------------------------------------------
 // Methods
 //-----------------------------------------------------------
