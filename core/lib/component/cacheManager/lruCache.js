@@ -58,7 +58,7 @@ p.set = function (key, value) {
   // If we are overwriting an existing key, then invalidate that key on other
   // cluster members.
   if (this.cache.has(key)) {
-    this.cacheManager.notifyClusterToClearKey(this.id, key);
+    this.cacheManager.clearCacheKeyInOtherClusterMembers(this.id, key);
   }
   this.cache.set(key, value);
 };
@@ -68,7 +68,7 @@ p.set = function (key, value) {
  */
 p.clear = function (key) {
   this.clearLocal(key);
-  this.cacheManager.notifyClusterToClearKey(this.id, key);
+  this.cacheManager.clearCacheKeyInOtherClusterMembers(this.id, key);
 };
 
 /**

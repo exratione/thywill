@@ -39,7 +39,10 @@ var tools = {
         topic: function () {
           // Launch Thywill with no applications and using only http.Server
           // rather than Express.
-          var server = http.createServer().listen(10080);
+          //
+          // Use a port that won't conflict with any of the example
+          // applications.
+          var server = http.createServer().listen(10079);
           config.clientInterface.server.server = server;
 
           Thywill.launch(self.config, applications, this.callback);

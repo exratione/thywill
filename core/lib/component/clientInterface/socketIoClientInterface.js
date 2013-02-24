@@ -188,52 +188,6 @@ SocketIoClientInterface.CONFIG_TEMPLATE = {
  * The clientInterface component is the last to be configured, so it has access
  * to fully configured instances of all the other components and their data.
  *
- * The config object should be of the following form:
- *
- *  {
- *    component: "socketIO",
- *    baseClientPath: "/echo",
- *    minifyCss: false,
- *    minifyJavascript: false,
- *    namespace: "/echoNamespace",
- *    pageEncoding: "utf-8",
- *    resourceCacheLength: 100,
- *    server {
- *      app: (express application instance)
- *      server: (http.Server instance)
- *    },
- *    sessions: {
- *      type: "none" | "express",
- *      store: (express store if using Express sessions)
- *      cookieKey: (string if using Express sessions)
- *      cookieSecret: (string if using Express sessions)
- *    },
- *    socketClientConfig: {
- *      "resource": "echo/socket.io",
- *       ... Socket.IO client configuration ...
- *    },
- *    socketConfig: {
- *      global: {
- *        "resource": "/echo/socket.io",
- *        // Use the RedisStore if usePubSubForSending is set true and there
- *        // are multiple Node.js processes in the backend.
- *        "store": (a RedisStore, or not set for the default MemoryStore)
- *        ... global Socket.IO configuration ...
- *      },
- *      production: {
- *        ... environment-specific Socket.IO configuration ...
- *      },
- *      ...
- *    }
- *    textEncoding: "utf8"
- *    // Set true if using a RedisStore and there are multiple Node.js
- *    // processes in the backend.
- *    usePubSubForSending: false
- *  }
- *
- * For Socket.IO configuration, see:
- * https://github.com/LearnBoost/Socket.IO/wiki/Configuring-Socket.IO
- *
  * @param {Thywill} thywill
  *   A Thywill instance.
  * @param {Object} config
