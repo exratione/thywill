@@ -177,10 +177,6 @@ Thywill.getBaseClass = (function () {
           pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
           baseClasses[className] = require("../../extra/lib/component/application/" + pathElement);
           break;
-        case "EmberStore":
-          pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
-          baseClasses[className] = require("../../extra/lib/component/" + pathElement + "/" + pathElement);
-          break;
         // Out of luck, found nothing.
         default:
           throw new Error("No such base class: " + className);
