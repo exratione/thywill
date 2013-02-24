@@ -36,6 +36,8 @@ config.clientInterface.minifyJavascript = false;
 
 // Set the http.Server instance in the start script, not here.
 config.clientInterface.server.server = null;
+// Set the Socket.IO store instance in the start script as well.
+config.clientInterface.socketConfig.global.store = null;
 
 // Set an appropriate log level for an example application.
 config.log.level = "debug";

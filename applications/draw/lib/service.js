@@ -37,6 +37,7 @@ var cluster = {
 exports.start = function (clusterMemberId) {
   var express = require("express");
   var RedisSessionStore = require("connect-redis")(express);
+  var RedisStore = require("socket.io/lib/stores/redis");
   var http = require("http");
   var redis = require("redis");
   var Thywill = require("thywill");
@@ -55,6 +56,8 @@ exports.start = function (clusterMemberId) {
   // Create an Express application.
   var app = express();
 
+  // We're using sessions, managed via Express.
+  config.clientInterface.sessions.type = "express";
   // Create a session store, and set it in the Thywill config so that Express
   // sessions can be assigned to websocket connections. Since this is a
   // clustered example, we're using a Redis-backed store here.
@@ -64,6 +67,13 @@ exports.start = function (clusterMemberId) {
   // Thywill also needs access to the session cookie secret and key.
   config.clientInterface.sessions.cookieSecret = "some long random string";
   config.clientInterface.sessions.cookieKey = "sid";
+
+  // Create a RedisStore for Socket.IO.
+  config.clientInterface.socketConfig.global.store = new RedisStore({
+    redisPub: createRedisClient(),
+    redisSub: createRedisClient(),
+    redisClient: createRedisClient()
+  });
 
   // Add minimal configuration to the Express application: just the cookie and
   // session middleware.

@@ -6,8 +6,6 @@
  * provide a single place where the configuration is fairly well documented.
  */
 
-var MemoryStore = require("socket.io/lib/stores/redis");
-
 //-----------------------------------------------------------
 // Exports - Configuration
 //-----------------------------------------------------------
@@ -20,16 +18,16 @@ var MemoryStore = require("socket.io/lib/stores/redis");
  *
  * Note that Thywill applications are not configured this way, but are
  * expected to use their own configuration methodology.
+ *
+ * Note that everything in this base configuration object should be clonable -
+ * so no class instances, etc. Those should be created and set in the start
+ * script, and are left null here.
  */
 module.exports = {
   // Parameters for the main Thywill wrapper, such as port to listen on,
   // and configuration for the administrative interface.
   thywill: {
-    launch: {
-      // Port is only required if Thywill is required to start its own
-      // server. i.e. if server = null in:
-      // Thywill.launch(thywillConfig, application, server, callback);
-      port: 10080,
+    process: {
       // Group ID and User ID for the Thywill process to downgrade to
       // once launched - this allows for such things as launching as
       // root to bind to privileged ports, then running later as a lesser
@@ -151,8 +149,10 @@ module.exports = {
         "resource": "/application/socket.io",
         // If using multiple Node.js processes and process A will need to send
         // messages to connections on process B, then this must be a RedisStore
-        // and usePubSubForSending must be true.
-        "store": new MemoryStore(),
+        // and usePubSubForSending must be true. Otherwise, use a MemoryStore.
+        //
+        // This should be set in the start script.
+        "store": null,
         // The transports to use. We're trying to be modern here and stick with
         // websockets only.
         "transports": ["websocket"]

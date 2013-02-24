@@ -4,11 +4,16 @@
  * applications.
  */
 
-var assert = require("assert");
 var tools = require("./tools");
+var baseConfig = require("./tools/baseTestThywillConfig");
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuite("Startup and shutdown", tools.config);
+var suite = tools.createVowsSuite("Startup Thywill", {
+  config: baseConfig,
+  applications: null,
+  useExpress: false,
+  useRedis: false
+});
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

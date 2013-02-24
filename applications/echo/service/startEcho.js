@@ -6,6 +6,7 @@
 
 var Thywill = require("thywill");
 var Echo = require("../lib/echo");
+var MemoryStore = require("socket.io/lib/stores/memory");
 
 // Load the Thywill core configuration.
 var config = require("./thywillConfig");
@@ -16,6 +17,9 @@ var echo = new Echo("echo");
 // Create a server and add it to the clientInterface configuration.
 var http = require("http");
 config.clientInterface.server.server = http.createServer().listen(10080);
+
+// Create a MemoryStore for Socket.IO.
+config.clientInterface.socketConfig.global.store = new MemoryStore();
 
 // Add a trivial catch-all listener. Only really necessary because this is an
 // example and there is no other functionality or framework associated with

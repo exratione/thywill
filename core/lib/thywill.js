@@ -110,11 +110,13 @@ Thywill.launch = function (config, applications, callback) {
     // Drop the permissions of the process now that all ports are bound by
     // switching ownership to another user who still has sufficient permissions
     // to access the needed scripts.
-    if (thywill.config.thywill.process && thywill.config.thywill.process.groupId) {
-      process.setgid(thywill.config.thywill.process.groupId);
-    }
-    if (thywill.config.thywill.process && thywill.config.thywill.process.userId) {
-      process.setuid(thywill.config.thywill.process.userId);
+    if (process.platform !== "win32") {
+      if (thywill.config.thywill.process && thywill.config.thywill.process.groupId) {
+        process.setgid(thywill.config.thywill.process.groupId);
+      }
+      if (thywill.config.thywill.process && thywill.config.thywill.process.userId) {
+        process.setuid(thywill.config.thywill.process.userId);
+      }
     }
 
     // Pass the Thywill instance and any error message in the callback.
@@ -195,7 +197,11 @@ Thywill.getBaseClass = (function () {
  * For example, it might be the case that Thywill is launched as root to bind
  * to privileged ports and then downgraded on completion of setup.
  */
-p.getFinalUid = function() {
+p.getFinalUid = function () {
+  if (process.platform === "win32") {
+    return undefined;
+  }
+
   if (this.config.thywill.process && this.config.thywill.process.userId) {
     return this.config.thywill.process.numericUserId;
   } else {
@@ -208,7 +214,11 @@ p.getFinalUid = function() {
  * For example, it might be the case that Thywill is launched as root to bind
  * to privileged ports and then downgraded on completion of setup.
  */
-p.getFinalGid = function() {
+p.getFinalGid = function () {
+  if (process.platform === "win32") {
+    return undefined;
+  }
+
   if (this.config.thywill.process && this.config.thywill.process.groupId) {
     return this.config.thywill.process.numericGroupId;
   } else {
@@ -258,11 +268,17 @@ p.startup = function (applications, callback) {
  * them to numeric user IDs.
  */
 p._convertUserIdAndGroupId = function (callback) {
+  // Don't try this on windows, as it's specific to *nix systems.
+  if (process.platform === "win32") {
+    callback();
+    return;
+  }
+
   var self = this;
   var fns = [];
 
   if (this.config.thywill.process && this.config.thywill.process.userId) {
-    if (typeof this.config.thywill.launch.userId === "string") {
+    if (typeof this.config.thywill.process.userId === "string") {
       fns.push(function (asyncCallback) {
         var childProcess = exec("id -u " + self.config.thywill.process.userId, function (error, stdoutBuffer, stderrBuffer) {
           var response = stdoutBuffer.toString().trim();
@@ -275,7 +291,7 @@ p._convertUserIdAndGroupId = function (callback) {
     }
   }
   if (this.config.thywill.process && this.config.thywill.process.groupId) {
-    if (typeof this.config.thywill.launch.groupId === "string") {
+    if (typeof this.config.thywill.process.groupId === "string") {
       fns.push(function (asyncCallback) {
         var childProcess = exec("id -u " + self.config.thywill.process.groupId, function (error, stdoutBuffer, stderrBuffer) {
           var response = stdoutBuffer.toString().trim();
@@ -297,12 +313,15 @@ p._convertUserIdAndGroupId = function (callback) {
  * initialization. The order is:
  *
  * log
+ * cluster
+ * cacheManager
  * resourceManager
  * messageManager
- * template
- * minify
- * applications     - which set various resources
+ * templateEngine
+ * minifier
  * clientInterface  - which needs to know about all the resources
+ * /extra components
+ * applications     - which set various resources
  *
  * @param {Application[]} passedApplications
  *   Array of object instances of classes derived from Application.
