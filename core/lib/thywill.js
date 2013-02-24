@@ -344,7 +344,7 @@ p._initializeComponents = function (passedApplications, callback) {
   ];
 
   // Are any extra components defined in the configuration?
-  var extraComponents = ["emberStore"];
+  var extraComponents = [];
   extraComponents.forEach(function (extraComponent, index, array) {
     if (self.config[extraComponent]) {
       fns.push(function (asyncCallback) {
