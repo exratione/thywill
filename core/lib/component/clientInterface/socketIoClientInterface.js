@@ -544,7 +544,9 @@ p._setExpressToServeResources = function () {
    * middleware may also later be added.
    */
   function positionMiddleware () {
-    var desiredIndex = self.config.server.app.stack.length;
+    // The stack wil be at least length 1, as the Thywill middleware has been put there
+    // before this function is called.
+    var desiredIndex = self.config.server.app.stack.length - 1;
     // Get the index of the router. Should be last, but if we can add
     // middleware out of sequence, so can other people.
     for (var index = 0; index < self.config.server.app.stack.length; index++) {
@@ -557,6 +559,7 @@ p._setExpressToServeResources = function () {
         break;
       }
     }
+
     // If it is already in the right place, then we're good.
     if(self.config.server.app.stack[desiredIndex].handle.isThywill) {
       return;

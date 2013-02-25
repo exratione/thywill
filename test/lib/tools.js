@@ -7,9 +7,11 @@ var vows = require("vows");
 var assert = require("assert");
 var clone = require("clone");
 var http = require("http");
+var express = require("express");
 var redis = require("redis");
 var MemoryStore = require("socket.io/lib/stores/memory");
 var RedisStore = require("socket.io/lib/stores/redis");
+var RedisSessionStore = require("connect-redis")(express);
 var Thywill = require("thywill");
 
 /**
@@ -40,11 +42,34 @@ exports.setupConfig = function (baseConfig, options) {
   // Set up server.
   // ------------------------------------------------------------
 
+  var port = config.thywill.ports[options.localClusterMemberId];
+
   // Are we using Express or not?
   if (options.useExpress) {
+    // Create servers.
+    var app = express();
+    config.clientInterface.server.app = app;
+    var server = http.createServer(app).listen(port);
+    config.clientInterface.server.server = server;
 
-  } else {
-    config.clientInterface.server.server = http.createServer().listen(config.thywill.port);
+    // We're using sessions, managed via Express.
+    config.clientInterface.sessions.type = "express";
+    // Thywill needs access to the session cookie secret and key.
+    config.clientInterface.sessions.cookieSecret = "some long random string";
+    config.clientInterface.sessions.cookieKey = "sid";
+    // Create a session store.
+    if (options.useRedis) {
+      config.clientInterface.sessions.store = new RedisSessionStore({
+        client: createRedisClient()
+      });
+    } else {
+      config.clientInterface.sessions.store = new MemoryStore();
+    }
+  }
+  // Not using Express, so a vanilla http.Server with no session management is
+  // set up.
+  else {
+    config.clientInterface.server.server = http.createServer().listen(port);
   }
 
   // ------------------------------------------------------------
@@ -62,6 +87,24 @@ exports.setupConfig = function (baseConfig, options) {
   } else {
     // Create a MemoryStore for Socket.IO.
     config.clientInterface.socketConfig.global.store = new MemoryStore();
+  }
+
+  // ------------------------------------------------------------
+  // Set up cluster.
+  // ------------------------------------------------------------
+
+  config.cluster.localClusterMemberId = options.localClusterMemberId;
+  if (config.cluster.implementation.name === "redisCluster") {
+    config.cluster.publishRedisClient = createRedisClient();
+    config.cluster.subscribeRedisClient = createRedisClient();
+  }
+
+  // ------------------------------------------------------------
+  // Set up resourceManager.
+  // ------------------------------------------------------------
+
+  if (config.resourceManager.implementation.name === "redisResourceManager") {
+    config.resourceManager.redisClient = createRedisClient();
   }
 
   return config;
@@ -86,9 +129,9 @@ exports.addThywillLaunchBatch = function (suite, options) {
 
   var batchName;
   if (options.useExpress) {
-    batchName = "launch Thywill with Express";
+    batchName = "launch Thywill with Express and sessions";
   } else {
-    batchName = "launch Thywill with http.Server";
+    batchName = "launch Thywill with http.Server and no sessions";
   }
 
   // Config should have only clonable things in it - no class instances, etc.
@@ -119,9 +162,11 @@ exports.addThywillLaunchBatch = function (suite, options) {
  *   config: object
  *   // Optional applications.
  *   applications: Application|Application[]
+ *   // Optionally name the local cluster member.
+ *   localClusterMemberId: string
  *   // If true use Express rather than a plain http.Server instance.
  *   useExpress: boolean
- *   // If using Redis where possible for Socket.IO and Express.
+ *   // If true then Redis implementations are used.
  *   useRedis: boolean
  * }
  *
@@ -135,6 +180,29 @@ exports.addThywillLaunchBatch = function (suite, options) {
 exports.createVowsSuite = function (name, options) {
   // Set up the test suite and return it.
   var suite = vows.describe(name);
+  options.localClusterMemberId = "alpha";
+  exports.addThywillLaunchBatch(suite, options);
+  return suite;
+};
+
+/**
+ * Create a partially formed Vows suite that launches multiple Thywill
+ * instances as the first batches. The options object the same as for
+ * createVowsSuite().
+ *
+ * @param {string} name
+ *   The test suite name.
+ * @param {Object} options
+ *   The various options.
+ * @return {Object}
+ *   A Vows suite with a batch added to launch a Thywill server.
+ */
+exports.createVowsSuiteForCluster = function (name, options) {
+  // Set up the test suite and return it.
+  var suite = vows.describe(name);
+  options.localClusterMemberId = "alpha";
+  exports.addThywillLaunchBatch(suite, options);
+  options.localClusterMemberId = "beta";
   exports.addThywillLaunchBatch(suite, options);
   return suite;
 };

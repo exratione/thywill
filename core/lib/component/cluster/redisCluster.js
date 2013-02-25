@@ -155,10 +155,11 @@ p.sendToAll = function (taskName, data) {
  * @param {mixed} data
  */
 p.sendToOthers = function (taskName, data) {
+  var self = this;
   data.taskName = taskName;
   this.config.clusterMemberIds.forEach(function (clusterMemberId, index, array) {
-    if (clusterMemberId !== this.config.localClusterMemberId) {
-      this.config.publishRedisClient.publish(this.channels[clusterMemberId], data);
+    if (clusterMemberId !== self.config.localClusterMemberId) {
+      self.config.publishRedisClient.publish(self.channels[clusterMemberId], data);
     }
   });
 };

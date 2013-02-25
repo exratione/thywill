@@ -1,9 +1,9 @@
 #!/bin/bash
- 
+
 # Set the environment by loading the file "environment" in the same directory.
 DIR="$( cd "$( dirname "$0" )" && pwd)"
 source $DIR/environment
- 
+
 if [ "$DEPLOY_KEY" == "" ]; then
    # Access by tediously typing a password over and again.
    rsync --chmod=u=rwx,go=r --perms -e ssh -axv --delete --filter="merge $DIR/rsync-filter" \

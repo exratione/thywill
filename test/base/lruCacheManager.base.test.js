@@ -1,29 +1,30 @@
 /**
  * @fileOverview
- * Vows tests for the HandlebarsTemplateEngine component.
+ * Vows tests for the LRUCacheManager component.
+ *
+ * These are base tests without Express, Redis, or other frills.
  */
 
 var clone = require("clone");
-var tools = require("./tools");
-var baseConfig = require("./tools/baseTestThywillConfig");
+var tools = require("../lib/tools");
+var baseConfig = require("./baseTestThywillConfig");
 
 var config = clone(baseConfig);
-config.templateEngine = {
+config.cacheManager = {
   implementation: {
     type: "core",
-    name: "handlebarsTemplateEngine"
-  },
-  templateCacheLength: 100
+    name: "lruCacheManager"
+  }
 };
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuite("templateEngine/handlebarsTemplateEngine", {
+var suite = tools.createVowsSuite("cacheManager/lruCacheManager", {
   config: config,
   applications: null,
   useExpress: false,
   useRedis: false
 });
-tools.addBatches(suite, "handlebarsTemplateEngine", "general");
+tools.addBatches(suite, "lruCacheManager", "general");
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

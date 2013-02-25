@@ -13,13 +13,15 @@ deploy script, create a file /deploy/environment. Put the following lines into
 that file, replacing the paths and servers as necessary:
 
     #!/bin/bash
-    export DEPLOY_SOURCE_DIR=/cygdrive/c/code/thywill.js
+    # Don't forget the trailing slash on the source directory - if you miss it
+    # than the directory rather than its contents will be copied.
+    export DEPLOY_SOURCE_DIR=/cygdrive/c/code/thywill.js/
     export DEPLOY_DEST_DIR=/home/node/thywill.js
     export DEPLOY_SERVER=my.server.com
     export DEPLOY_ACCOUNT=reason
     export DEPLOY_KEY=/path/to/ssh/key
-    
+
 DEPLOY_KEY is optional. If not present, login will be via entering a password.
-    
+
 To deploy, run the /deploy/deploy script: it will read in the environment
 file and execute rsync to copy files to the specified server.

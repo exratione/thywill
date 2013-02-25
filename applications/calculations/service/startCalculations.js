@@ -4,22 +4,43 @@
  * example application.
  */
 
-var Thywill = require("thywill");
-var Calculations = require("../lib/calculations");
-var MemoryStore = require("socket.io/lib/stores/memory");
-
-// Load the Thywill core configuration.
-var config = require("./thywillConfig");
-
-// Instantiate an application object.
-var calculations = new Calculations("calculations");
-
-// Create a server and add it to the clientInterface configuration.
 var http = require("http");
+var MemoryStore = require("socket.io/lib/stores/memory");
+var config = require("../../../serverConfig/thywill/baseThywillConfig");
+var Calculations = require("../lib/calculations");
+var Thywill = require("thywill");
+
+// ------------------------------------------------------
+// Adapt the base configuration for this example.
+// ------------------------------------------------------
+
+// An example application should have its own base path and Socket.IO
+// namespace.
+config.clientInterface.baseClientPath = "/calculations";
+config.clientInterface.namespace = "/calculations";
+// Create a server and add it to the clientInterface configuration.
 config.clientInterface.server.server = http.createServer().listen(10082);
 
+// Note that the client resource has no leading /. These must otherwise match.
+config.clientInterface.socketClientConfig.resource = "calculations/socket.io";
+config.clientInterface.socketConfig.global.resource = "/calculations/socket.io";
 // Create a MemoryStore for Socket.IO.
 config.clientInterface.socketConfig.global.store = new MemoryStore();
+
+// Resource minification settings.
+config.clientInterface.minifyCss = true;
+config.clientInterface.minifyJavascript = true;
+
+// Set an appropriate log level for an example application.
+config.log.level = "debug";
+
+// Base paths to use when defining new resources for merged CSS and Javascript.
+config.minifier.cssBaseClientPath = "/calculations/css";
+config.minifier.jsBaseClientPath = "/calculations/js";
+
+// ------------------------------------------------------
+// Other odds and ends.
+// ------------------------------------------------------
 
 // Add a trivial catch-all listener. Only really necessary because this is an
 // example and there is no other functionality or framework associated with
@@ -28,6 +49,13 @@ config.clientInterface.server.server.on("request", function (req, res) {
   res.statusCode = 404;
   res.end("No such resource.");
 });
+
+// Instantiate an application object.
+var calculations = new Calculations("calculations");
+
+// ------------------------------------------------------
+// Launch Thywill.
+// ------------------------------------------------------
 
 // And off we go: launch a Thywill instance to run the the application.
 Thywill.launch(config, calculations, function (error, thywill) {

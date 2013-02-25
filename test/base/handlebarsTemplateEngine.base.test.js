@@ -1,28 +1,31 @@
 /**
  * @fileOverview
- * Vows tests for the EJSTemplateEngine component.
+ * Vows tests for the HandlebarsTemplateEngine component.
+ *
+ * These are base tests without Express, Redis, or other frills.
  */
 
 var clone = require("clone");
-var tools = require("./tools");
-var baseConfig = require("./tools/baseTestThywillConfig");
+var tools = require("../lib/tools");
+var baseConfig = require("./baseTestThywillConfig");
 
 var config = clone(baseConfig);
 config.templateEngine = {
   implementation: {
     type: "core",
-    name: "ejsTemplateEngine"
-  }
+    name: "handlebarsTemplateEngine"
+  },
+  templateCacheLength: 100
 };
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuite("templateEngine/ejsTemplateEngine", {
+var suite = tools.createVowsSuite("templateEngine/handlebarsTemplateEngine", {
   config: config,
   applications: null,
   useExpress: false,
   useRedis: false
 });
-tools.addBatches(suite, "ejsTemplateEngine", "general");
+tools.addBatches(suite, "handlebarsTemplateEngine", "general");
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

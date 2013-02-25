@@ -2,10 +2,12 @@
  * @fileOverview
  * Vows tests for starting up and shutting down a Thywill process with no
  * applications.
+ *
+ * These are base tests without Express, Redis, or other frills.
  */
 
-var tools = require("./tools");
-var baseConfig = require("./tools/baseTestThywillConfig");
+var tools = require("../lib/tools");
+var baseConfig = require("./baseTestThywillConfig");
 
 // Obtain a test suit that launches Thywill.
 var suite = tools.createVowsSuite("Startup Thywill", {
