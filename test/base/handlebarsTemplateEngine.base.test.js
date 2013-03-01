@@ -19,7 +19,7 @@ config.templateEngine = {
 };
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuite("templateEngine/handlebarsTemplateEngine", {
+var suite = tools.createVowsSuite("Base: templateEngine/handlebarsTemplateEngine", {
   config: config,
   applications: null,
   useExpress: false,

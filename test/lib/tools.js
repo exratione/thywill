@@ -200,10 +200,15 @@ exports.createVowsSuite = function (name, options) {
 exports.createVowsSuiteForCluster = function (name, options) {
   // Set up the test suite and return it.
   var suite = vows.describe(name);
-  options.localClusterMemberId = "alpha";
-  exports.addThywillLaunchBatch(suite, options);
-  options.localClusterMemberId = "beta";
-  exports.addThywillLaunchBatch(suite, options);
+
+  var optionsAlpha = clone(options);
+  optionsAlpha.localClusterMemberId = "alpha";
+  exports.addThywillLaunchBatch(suite, optionsAlpha);
+
+  var optionsBeta = clone(options);
+  optionsBeta.localClusterMemberId = "beta";
+  exports.addThywillLaunchBatch(suite, optionsBeta);
+
   return suite;
 };
 

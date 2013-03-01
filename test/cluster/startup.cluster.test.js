@@ -4,12 +4,15 @@
  * processes that use Redis, Express, and sessions.
  */
 
+var clone = require("clone");
 var tools = require("../lib/tools");
 var clusterConfig = require("./clusterTestThywillConfig");
 
+var config = clone(clusterConfig);
+
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuiteForCluster("Startup Thywill", {
-  config: clusterConfig,
+var suite = tools.createVowsSuiteForCluster("Cluster: Startup Thywill", {
+  config: config,
   applications: null,
   useExpress: true,
   useRedis: true

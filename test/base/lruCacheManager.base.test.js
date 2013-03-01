@@ -18,7 +18,7 @@ config.cacheManager = {
 };
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuite("cacheManager/lruCacheManager", {
+var suite = tools.createVowsSuite("Base: cacheManager/lruCacheManager", {
   config: config,
   applications: null,
   useExpress: false,

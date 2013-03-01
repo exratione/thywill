@@ -4,6 +4,7 @@
  */
 
 var util = require("util");
+var async = require("async");
 var Thywill = require("thywill");
 
 //-----------------------------------------------------------
@@ -81,13 +82,9 @@ p._configure = function (thywill, config, callback) {
   // Define channel names.
   this.channels = {};
   this.config.clusterMemberIds.forEach(function (clusterMemberId, index, array) {
-    self.channels[clusterMemberId] = self.config.prefix + clusterMemberId;
+    self.channels[clusterMemberId] = self.config.redisPrefix + clusterMemberId;
   });
-  this.allChannel = this.config.prefix + "all";
-
-  // Subscribe to channels for all cluster members and this one.
-  this.config.subscribeRedisClient.subscribe(this.channels[this.config.localClusterMemberId]);
-  this.config.subscribeRedisClient.subscribe(this.allChannel);
+  this.allChannel = this.config.redisPrefix + "all";
 
   // If the channel emits, then emit from this instance.
   this.config.subscribeRedisClient.on("message", function (channel, json) {
@@ -95,14 +92,25 @@ p._configure = function (thywill, config, callback) {
     try {
       data = JSON.parse(json);
     } catch (e) {
-      self.thywill.log(e);
+      self.thywill.log.error(e);
     }
     if (data) {
       self.emit(data.taskName, data);
     }
   });
 
-  this._announceReady();
+  // Subscribe to channels for all cluster members and this one.
+  var fns = [
+    function (asyncCallback) {
+      self.config.subscribeRedisClient.subscribe(self.channels[self.config.localClusterMemberId], asyncCallback);
+    },
+    function (asyncCallback) {
+      self.config.subscribeRedisClient.subscribe(self.allChannel, asyncCallback);
+    }
+  ];
+  async.series(fns, function (error) {
+    self._announceReady(error);
+  });
 };
 
 //-----------------------------------------------------------
@@ -127,11 +135,11 @@ p.getClusterMemberIds = function () {
  * @param {mixed} data
  */
 p.sendTo = function (clusterMemberId, taskName, data) {
+  data.taskName = taskName;
   if (clusterMemberId === this.config.localClusterMemberId) {
     this.emit(taskName, data);
   } else if (this.channels[clusterMemberId]) {
-    data.taskName = taskName;
-    this.config.publishRedisClient.publish(this.channels[clusterMemberId], data);
+    this.config.publishRedisClient.publish(this.channels[clusterMemberId], JSON.stringify(data));
   }
 };
 
@@ -144,7 +152,7 @@ p.sendTo = function (clusterMemberId, taskName, data) {
  */
 p.sendToAll = function (taskName, data) {
   data.taskName = taskName;
-  this.config.publishRedisClient.publish(this.allChannel, data);
+  this.config.publishRedisClient.publish(this.allChannel, JSON.stringify(data));
 };
 
 /**
@@ -159,7 +167,7 @@ p.sendToOthers = function (taskName, data) {
   data.taskName = taskName;
   this.config.clusterMemberIds.forEach(function (clusterMemberId, index, array) {
     if (clusterMemberId !== self.config.localClusterMemberId) {
-      self.config.publishRedisClient.publish(self.channels[clusterMemberId], data);
+      self.config.publishRedisClient.publish(self.channels[clusterMemberId], JSON.stringify(data));
     }
   });
 };
