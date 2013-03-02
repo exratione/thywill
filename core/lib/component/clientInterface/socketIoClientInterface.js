@@ -33,7 +33,6 @@ function SocketIoClientInterface () {
   SocketIoClientInterface.super_.call(this);
   this.socketFactory = null;
   this.bootstrapResourceClientPaths = [];
-  this.resourceCache = null;
 
   // Convenience reference.
   this.SESSION_TYPE = SocketIoClientInterface.SESSION_TYPE;
@@ -83,13 +82,6 @@ SocketIoClientInterface.CONFIG_TEMPLATE = {
     _configInfo: {
       description: "The content encoding for the web page provided by the client interface.",
       types: "string",
-      required: true
-    }
-  },
-  resourceCacheLength: {
-    _configInfo: {
-      description: "Maximum number of items held by the cache for resources served by the client interface. This should be at least twice the count of bootstrap resources defined in applications.",
-      types: "integer",
       required: true
     }
   },
@@ -201,9 +193,6 @@ p._configure = function (thywill, config, callback) {
   this.config = config;
 
   this.config.baseClientPathRegExp = new RegExp("^" + this.config.baseClientPath + "\\/?");
-
-  // Create a cache for resources served through this interface.
-  this.resourceCache = this.thywill.cacheManager.createCache("socketIo", this.config.resourceCacheLength);
 
   // For sending cluster tasks.
   this.subscribeTaskName = "thywill:clientInterface:subscribeClient";
@@ -1029,20 +1018,7 @@ p.storeResource = function (resource, callback) {
  * @see ClientInterface#getResource
  */
 p.getResource = function (clientPath, callback) {
-  var self = this;
-  // Is this resource cached? If so, return it.
-  var resource = this.resourceCache.get(clientPath);
-  if (resource) {
-    callback(null, resource);
-    return;
-  }
-  // Otherwise, load the resource, cache it, and return it.
-  this.thywill.resourceManager.load(clientPath, function(error, resource) {
-    if (!error && resource) {
-      self.resourceCache.set(clientPath, resource);
-    }
-    callback(error, resource);
-  });
+  this.thywill.resourceManager.load(clientPath, callback);
 };
 
 // -----------------------------------------------------------

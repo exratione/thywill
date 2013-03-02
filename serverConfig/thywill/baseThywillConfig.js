@@ -76,10 +76,6 @@ module.exports = {
     namespace: "/applicationNamespace",
     // The HTML page encoding to use.
     pageEncoding: "utf-8",
-    // The number of items that can be held in the cache of resources served by
-    // the client interface - which should be at a minimum twice the number of
-    // bootstrap and other resources defined by applications.
-    resourceCacheLength: 100,
     // The http.Server (required) and Express application (optional) are set
     // here. These values are set in the start.js script. See these examples:
     //
