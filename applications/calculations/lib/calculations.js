@@ -25,7 +25,6 @@ var rpcFunctions = require("./rpcFunctions");
  */
 function Calculations (id) {
   Calculations.super_.call(this, id);
-  this._setupRpcFunctions();
 }
 util.inherits(Calculations, Thywill.getBaseClass("RpcCapableApplication"));
 var p = Calculations.prototype;
@@ -75,16 +74,17 @@ p._defineBootstrapResources = function (callback) {
 };
 
 /**
- * Set up functions in contexts that are accessible for client remote
- * procedure calls, and with appropriate permissions.
+ * @see Application#_setup
  */
-p._setupRpcFunctions = function () {
-  // Set up functions for the remote procedure calls to access.
+p._setup = function (callback) {
+  // Set up functions in contexts that are accessible for client remote
+  // procedure calls, and with appropriate permissions.
   this.rpcContext.multiplicative = rpcFunctions.multiplicative;
   this.rpcContext.powers = rpcFunctions.powers;
 
-  // TODO: permissions
+  // TODO: permissions.
 
+  callback();
 };
 
 //-----------------------------------------------------------

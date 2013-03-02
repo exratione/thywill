@@ -538,7 +538,7 @@ p._setExpressToServeResources = function () {
       if (self.config.server.app.stack[index].handle === self.config.server.app._router.middleware) {
         // If the router middleware is added, then routes have been
         // added, and thus no more middleware will be added.
-        clearInterval(positionIntervalMiddlewareId);
+        clearInterval(positionMiddlewareIntervalId);
         desiredIndex = index;
         break;
       }
@@ -563,7 +563,7 @@ p._setExpressToServeResources = function () {
   }
   // This will run until the Router middleware is added, which happens
   // when the first route is set.
-  var positionIntervalMiddlewareId = setInterval(positionMiddleware, 100);
+  var positionMiddlewareIntervalId = setInterval(positionMiddleware, 100);
 };
 
 /**

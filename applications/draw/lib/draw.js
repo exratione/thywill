@@ -75,6 +75,14 @@ p._defineBootstrapResources = function (callback) {
   async.series(fns, callback);
 };
 
+/**
+ * @see Application#_setup
+ */
+p._setup = function (callback) {
+  // No setup is needed here, since this is a very simple example application.
+  callback();
+};
+
 //-----------------------------------------------------------
 // Methods
 //-----------------------------------------------------------

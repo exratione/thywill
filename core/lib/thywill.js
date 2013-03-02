@@ -331,7 +331,7 @@ p._convertUserIdAndGroupId = function (callback) {
 p._initializeComponents = function (passedApplications, callback) {
   var self = this;
   var fns = [
-    // Core components, have to be in order.
+    // Core components, which have to be in this order.
     function (asyncCallback) {
       self._initializeComponent("log", asyncCallback);
     },
@@ -391,6 +391,17 @@ p._initializeComponents = function (passedApplications, callback) {
           passedApplications,
           function (application, innerAsyncCallback) {
             application._defineBootstrapResources(innerAsyncCallback);
+          },
+          asyncCallback
+        );
+      }
+    );
+    fns.push(
+      function (asyncCallback) {
+        async.forEach(
+          passedApplications,
+          function (application, innerAsyncCallback) {
+            application._setup(innerAsyncCallback);
           },
           asyncCallback
         );

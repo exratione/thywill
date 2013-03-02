@@ -29,6 +29,7 @@ Noteworthy Features
   * Minification of Javascript and CSS resources
   * EJS and Handlebars template engines are supported, others can be added
   * The client can issue remote procedure calls to server functions
+  * Easy to set up clustered server processes
   * Component architecture for easy extension or replacement of core functionality
   * Example server configurations for running Thywill applications as a service
   * Example applications to demonstrate setup and usage
@@ -117,6 +118,63 @@ Then to make a remote procedure call from the client:
     });
 
 See the Calculations example application for a simple demonstration.
+
+Clustering
+----------
+
+If you want to scale to serve large numbers of concurrent client connections,
+then at some point you have to start adding extra servers. Multiple Thywill
+processes can run as a cluster and communicate with one another when set up
+with a core cluster component implementation such as RedisCluster.
+
+If using RedisCluster, the configuration object for each cluster process needs
+to inform that process of (a) the list of cluster member IDs and (b) its own
+cluster member ID. You might look at /applications/draw/lib/service.js for an
+example:
+
+    // The cluster implementation is backed by Redis.
+    config.cluster = {
+      implementation: {
+        type: "core",
+        name: "redisCluster"
+      },
+      // The cluster has four member processes.
+      clusterMemberIds: ["alpha", "beta", "gamma", "delta"],
+      // This is the alpha process.
+      localClusterMemberId: "alpha",
+      redisPrefix: "thywill:draw:cluster:",
+      publishRedisClient: redis.createClient(6379, "127.0.0.1"),
+      subscribeRedisClient: redis.createClient(6379, "127.0.0.1")
+    };
+
+It is easy to pass data between cluster members in your application. For
+example, on application setup:
+
+    /**
+     * @see Application#_setup
+     */
+    MyApp.prototype._setup = function (callback) {
+      // Listen for cluster task requests of this specific sort.
+      this.thywill.cluster.on("myTaskType", function (taskData) {
+        // Do something here.
+      });
+      callback();
+    };
+
+Then anywhere in your application code, you can send to other cluster processes:
+
+    // Send to the beta process.
+    this.thywill.cluster.sendTo("beta", "myTaskType", {
+      // Task data goes here.
+    });
+    // Send to all of the other processes.
+    this.thywill.cluster.sendToOthers(myTaskType", {
+      // Task data goes here.
+    });
+    // Send to all processes, including this one.
+    this.thywill.cluster.sendToAll(myTaskType", {
+      // Task data goes here.
+    });
 
 A Work in Progress
 ------------------

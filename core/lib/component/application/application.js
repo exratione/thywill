@@ -182,6 +182,18 @@ p._defineBootstrapResources = function (callback) {
 };
 
 /**
+ * This method is invoked when the application is first registered on Thywill
+ * server startup. It should be used to perform any setup that relies on the
+ * Thywill components being in place and ready.
+ *
+ * @param {function} callback
+ *   Of the form function (error) {}, where error === null on success.
+ */
+p._setup = function (callback) {
+  throw new Error("Not implemented.");
+};
+
+/**
  * Called when a message is received from a client.
  *
  * @param {Message} message
