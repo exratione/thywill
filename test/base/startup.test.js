@@ -8,7 +8,7 @@
 
 var clone = require("clone");
 var tools = require("../lib/tools");
-var baseConfig = require("./baseTestThywillConfig");
+var baseConfig = require("../config/baseTestThywillConfig");
 
 var config = clone(baseConfig);
 

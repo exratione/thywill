@@ -120,12 +120,12 @@ p.load = function (key, callback) {
   // Check the cache.
   var resource = this.cache.get(key);
   if (resource) {
-    callback(null, resource);
+    callback(this.NO_ERRORS, resource);
   }
   // Not in the cache, worse luck, so load from Redis.
   else {
     this.config.redisClient.get(this.config.redisPrefix + key, function (error, json) {
-      var resource;
+      var resource = null;
       if (!error && json) {
         resource = self.redisJsonToResource(json);
       }
@@ -177,6 +177,7 @@ p.redisJsonToResource = function (json) {
     // If data was encoded, put it back into a buffer.
     if (attributes.base64) {
       buffer = new Buffer(attributes.base64, "base64");
+      delete attributes.base64;
     }
     resource = this.createResource(buffer, attributes);
   } catch (e) {

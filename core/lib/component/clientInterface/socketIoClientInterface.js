@@ -281,7 +281,6 @@ p._startup = function (callback) {
   function createBootstrapResourceFromFile (relativePath, attributes, callback) {
     // Add some attributes.
     attributes.originFilePath = pathHelpers.resolve(__dirname, relativePath);
-    attributes.isGenerated = false;
     // Create the resource and pass it back out in the callback.
     resourceManager.createResourceFromFile(attributes.originFilePath, attributes, function (error, resource) {
       if (error) {
@@ -308,7 +307,6 @@ p._startup = function (callback) {
       var resource = resourceManager.createResource(thywillTemplate(params), {
         clientPath: self.config.baseClientPath + "/js/thywill.js",
         encoding: self.config.textEncoding,
-        isGenerated: true,
         minified: false,
         originFilePath: originFilePath,
         type: resourceManager.types.JAVASCRIPT,
@@ -337,7 +335,6 @@ p._startup = function (callback) {
       var resource = resourceManager.createResource(serverInterfaceTemplate(params), {
         clientPath: self.config.baseClientPath + "/js/serverInterface.js",
         encoding: self.config.textEncoding,
-        isGenerated: true,
         minified: false,
         originFilePath: originFilePath,
         type: resourceManager.types.JAVASCRIPT,
@@ -442,7 +439,6 @@ p._startup = function (callback) {
       var resource = resourceManager.createResource(new Buffer (mainPage, self.config.textEncoding), {
         clientPath: self.config.baseClientPath + "/",
         encoding: self.config.textEncoding,
-        isGenerated: true,
         originFilePath: originFilePath,
         type: resourceManager.types.HTML
       });
@@ -453,7 +449,6 @@ p._startup = function (callback) {
       var resource = resourceManager.createResource(new Buffer ("{ alive: true }", self.config.textEncoding), {
         clientPath: self.config.baseClientPath + self.config.upCheckClientPath,
         encoding: self.config.textEncoding,
-        isGenerated: false,
         type: resourceManager.types.JSON
       });
       self.storeResource(resource, asyncCallback);

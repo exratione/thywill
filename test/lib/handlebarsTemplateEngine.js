@@ -4,7 +4,6 @@
  */
 
 var assert = require("assert");
-var Thywill = require("thywill");
 
 /**
  * Add general tests for the HandlebarsTemplateEngine to the suite.

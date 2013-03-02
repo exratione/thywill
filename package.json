@@ -28,7 +28,7 @@
     "vows": "*"
   },
   "scripts": {
-    "test": "vows test/base/*.test.js --isolate --spec"
+    "test": "vows test/base/* --isolate --spec"
   },
   "main" : "./index",
   "repository" : {

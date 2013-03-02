@@ -6,7 +6,7 @@
 
 var clone = require("clone");
 var tools = require("../lib/tools");
-var clusterConfig = require("./clusterTestThywillConfig");
+var clusterConfig = require("../config/clusterTestThywillConfig");
 
 var config = clone(clusterConfig);
 

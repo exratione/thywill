@@ -23,10 +23,6 @@
  *   // piped resources or writing out generated resources that are not going
  *   // to be cached in memory.
  *   filePath: undefined,
- *   // Set to true if this has no origin file, or the buffer contents do not
- *   // match the origin file contents - e.g. a template in the file, and the
- *   // rendered template in the resource buffer.
- *   isGenerated: false,
  *   // True if the resource has been minified.
  *   minified: false,
  *   // The absolute path of the file that the resource is based on. This might
@@ -41,12 +37,12 @@
  * }
  *
  * Other arbitrary attribute names can be used, but the following names are
- * reserved: buffer, stored.
+ * reserved: buffer.
  *
  * @param {Buffer} buffer
  *   A Buffer instance containing resource data, or null for resources that
  *   are not loaded into memory.
- * @param {Object} attributes
+ * @param {Object} [attributes]
  *   Attributes for this resource.
  *
  */
@@ -54,7 +50,6 @@ function Resource (buffer, attributes) {
   this.clientPath = undefined;
   this.encoding = "utf8";
   this.filePath = undefined;
-  this.isGenerated = false;
   this.minified = false;
   this.originFilePath = undefined;
   this.type = Resource.TYPES.TEXT;
@@ -66,12 +61,10 @@ function Resource (buffer, attributes) {
     this[property] = attributes[property];
   }
 
-  // TODO: some validation. e.g. clientPath can't be null
+  // TODO: some validation. e.g. clientPath can't be null.
 
   // The data buffer.
   this.buffer = buffer;
-  // Is this stored by a resource manager or not?
-  this.stored = false;
 }
 var p = Resource.prototype;
 
@@ -106,8 +99,8 @@ Resource.TYPES = {
  */
 p.isPiped = function () {
   // This should be piped to a client if there is an origin file but no buffer
-  // of in-memory data, and not marked as generated content.
-  return !this.buffer && !this.filePath;
+  // of in-memory data.
+  return !this.buffer && this.filePath;
 };
 
 /**

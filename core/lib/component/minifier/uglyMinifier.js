@@ -77,7 +77,6 @@ p.minifyResource = function (resource, callback) {
     newResource = resourceManager.createResource(minifiedData, {
       clientPath: this._generateMinifiedClientPath(resource.clientPath),
       encoding: resource.encoding,
-      isGenerated: true,
       minified: true,
       originFilePath: resource.originFilePath,
       type: resource.type,
@@ -122,7 +121,6 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
           jsResource = resourceManager.createResource(null, {
             clientPath: null,
             encoding: resource.encoding,
-            isGenerated: true,
             minified: true,
             originFilePath: null,
             type: resourceManager.types.JAVASCRIPT,
@@ -153,7 +151,6 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
           cssResource = resourceManager.createResource(null, {
             clientPath: null,
             encoding: resource.encoding,
-            isGenerated: true,
             minified: true,
             originFilePath: null,
             type: resourceManager.types.CSS,

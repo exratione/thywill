@@ -1,30 +1,30 @@
 /**
  * @fileOverview
- * Vows tests for the EJSTemplateEngine component.
+ * Vows tests for the LRUCacheManager component.
  *
  * These are base tests without Express, Redis, or other frills.
  */
 
 var clone = require("clone");
 var tools = require("../lib/tools");
-var baseConfig = require("./baseTestThywillConfig");
+var baseConfig = require("../config/baseTestThywillConfig");
 
 var config = clone(baseConfig);
-config.templateEngine = {
+config.cacheManager = {
   implementation: {
     type: "core",
-    name: "ejsTemplateEngine"
+    name: "lruCacheManager"
   }
 };
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuite("Base: templateEngine/ejsTemplateEngine", {
+var suite = tools.createVowsSuite("Base: cacheManager/lruCacheManager", {
   config: config,
   applications: null,
   useExpress: false,
   useRedis: false
 });
-tools.addBatches(suite, "ejsTemplateEngine", "general");
+tools.addBatches(suite, "cacheManager", "general");
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

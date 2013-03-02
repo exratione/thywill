@@ -63,7 +63,6 @@ p._defineBootstrapResources = function (callback) {
       var resource = self.thywill.resourceManager.createResource(data, {
         clientPath: "/calculations/js/calculationsClient.js",
         encoding: encoding,
-        isGenerated: true,
         minified: false,
         originFilePath: originFilePath,
         type: self.thywill.resourceManager.types.JAVASCRIPT,

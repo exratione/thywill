@@ -38,8 +38,7 @@ InMemoryResourceManager.CONFIG_TEMPLATE = null;
  */
 p.store = function (key, resource, callback) {
   this.data[key] = resource;
-  resource.stored = true;
-  callback(this.NO_ERRORS, resource);
+  callback(this.NO_ERRORS);
 };
 
 /**

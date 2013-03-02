@@ -66,7 +66,7 @@ p.createResourceFromFile = function (path, attributes, callback) {
  *   be used to create a Buffer with the encoding provided in the attributes
  *   object. This can be null for resources that don't need to have data in
  *   memory.
- * @param {Object} attributes
+ * @param {Object} [attributes]
  *   Other attributes of this resource - see the Resource class
  *   for more information.
  *
@@ -76,7 +76,13 @@ p.createResource = function (data, attributes) {
   // If we have a string rather than null or a Buffer, then convert it into a
   // Buffer.
   if (typeof data === "string") {
-    data = new Buffer(data, attributes.encoding);
+    var encoding;
+    if (attributes && attributes.encoding) {
+      encoding = attributes.encoding;
+    } else {
+      encoding = "utf8";
+    }
+    data = new Buffer(data, encoding);
   }
   return new Resource(data, attributes);
 };

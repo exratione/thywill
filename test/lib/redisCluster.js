@@ -4,7 +4,6 @@
  */
 
 var assert = require("assert");
-var Thywill = require("thywill");
 
 /**
  * Add RedisCluster cluster-specific tests to the suite.
@@ -28,7 +27,9 @@ exports.cluster = function (suite) {
       "task data received": function (taskData) {
         assert.strictEqual(taskData.data, "test");
       }
-    },
+    }
+  });
+  suite.addBatch({
     "redisCluster#sendToOthers": {
       topic: function () {
         var self = this;
@@ -44,7 +45,9 @@ exports.cluster = function (suite) {
       "task data received": function (taskData) {
         assert.strictEqual(taskData.data, "test");
       }
-    },
+    }
+  });
+  suite.addBatch({
     "redisCluster#sendToAll": {
       topic: function () {
         var self = this;

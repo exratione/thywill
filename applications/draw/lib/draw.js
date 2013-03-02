@@ -64,7 +64,6 @@ p._defineBootstrapResources = function (callback) {
       var resource = self.thywill.resourceManager.createResource(data, {
         clientPath: "/draw/js/drawClient.js",
         encoding: encoding,
-        isGenerated: true,
         minified: false,
         originFilePath: originFilePath,
         type: self.thywill.resourceManager.types.JAVASCRIPT,

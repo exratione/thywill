@@ -95,8 +95,7 @@ p.storeBootstrapResource = function (resource, callback) {
  * @param {Object} attributes
  *   An attributes object for creating a resource - see the Resource class for
  *   more information. This method automatically sets the originFilePath
- *   attribute to the passed filePath and the isGenerated  attribute to false
- *   (as the attribute data isn't altered).
+ *   attribute to the passed filePath.
  * @param {function} callback
  *   Of the form function (error, resource) where error === null on success.
  */
@@ -104,7 +103,6 @@ p.storeBootstrapResourceFromFile = function (filePath, attributes, callback) {
   var self = this;
   // Add some attributes.
   attributes.originFilePath = filePath;
-  attributes.isGenerated = false;
   // Create the resource and pass it back out in the callback.
   this.thywill.resourceManager.createResourceFromFile(
     attributes.originFilePath,
@@ -147,7 +145,6 @@ p.storeBootstrapResourcesFromManifest = function (manifest, callback) {
   var attributesArray = [];
   for (var originFilePath in manifest) {
     manifest[originFilePath].originFilePath = originFilePath;
-    manifest[originFilePath].isGenerated = false;
     attributesArray.push(manifest[originFilePath]);
   }
 
