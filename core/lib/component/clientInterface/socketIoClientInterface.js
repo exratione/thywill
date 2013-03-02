@@ -500,19 +500,19 @@ p._setExpressToServeResources = function () {
   // are added.
   var middleware = function (req, res, next) {
     // Is this request in the right base path?
-    var handled = false;
     if (req.path.match(self.config.baseClientPathRegExp)) {
       // But do we have a resource for this?
       self.getResource(req.path, function (error, resource) {
         // If there's an error or a resource, handle it.
         if (error || resource) {
-          handled = true;
           self.handleResourceRequest(req, res, next, error, resource);
+        } else {
+          // Otherwise, onwards and let Express take over.
+          next();
         }
       });
-    }
-    // Otherwise, onwards and let Express take over.
-    if (!handled) {
+    } else {
+      // Otherwise, onwards and let Express take over.
       next();
     }
   };
