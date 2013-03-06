@@ -1,7 +1,7 @@
 /**
  * @fileOverview
- * Exports functions to start up or prepare to shut down one of the cluster
- * members running the Draw application.
+ * Exports functions to start up one of the cluster members running the Draw
+ * application.
  */
 
 var express = require("express");
@@ -94,10 +94,12 @@ exports.start = function (clusterMemberId) {
     },
     // The cluster has four members.
     clusterMemberIds: ["alpha", "beta", "gamma", "delta"],
+    heartbeatInterval: 100,
+    heartbeatTimeout: 300,
     // The local member name is drawn from the arguments.
     localClusterMemberId: clusterMemberId,
-    redisPrefix: "thywill:draw:cluster:",
     publishRedisClient: createRedisClient(),
+    redisPrefix: "thywill:draw:cluster:",
     subscribeRedisClient: createRedisClient()
   };
 

@@ -204,7 +204,7 @@ p.received = function (message) {
 };
 
 /**
- * Called when a client connects or reconnects.
+ * Called when a client connects or reconnects to this cluster member process.
  *
  * @param {string} connectionId
  *   Unique ID of the connection.
@@ -220,7 +220,23 @@ p.connection = function (connectionId, sessionId, session) {
 };
 
 /**
- * Called when a client disconnects.
+ * Called when a client connects or reconnects to any cluster member
+ * process.
+ *
+ * @param {string} clusterMemberId
+ *   ID of the cluster member that has the new connection.
+ * @param {string} connectionId
+ *   Unique ID of the connection.
+ * @param {string} sessionId
+ *   Unique ID of the session associated with this connection - one session
+ *   might have multiple concurrent connections.
+ */
+p.connectionTo = function (clusterMemberId, connectionId, sessionId) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * Called when a client disconnects from this cluster member process.
  *
  * @param {string} connectionId
  *   Unique ID of the connection.
@@ -230,6 +246,43 @@ p.connection = function (connectionId, sessionId, session) {
  */
 p.disconnection = function (connectionId, sessionId) {
   throw new Error("Not implemented.");
+};
+
+/**
+ * Called when a client disconnects from any cluster member process.
+ *
+ * @param {string} clusterMemberId
+ *   ID of the cluster member that has the new connection.
+ * @param {string} connectionId
+ *   Unique ID of the connection.
+ * @param {string} sessionId
+ *   Unique ID of the session associated with this connection - one session
+ *   might have multiple concurrent connections.
+ */
+p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * Called when on of the other cluster members fails, and thus it can be
+ * assumed that all of its clients have disconnected.
+ *
+ * Note that in most application setups this will result in a flurry of
+ * reconnections to other cluster members by the disconnected clients, and the
+ * dead cluster member itself will restart quite quickly.
+ *
+ * Bear this in mind when considering how to react; e.g. anything that takes
+ * too much time to loop through the disconnected items will quickly be
+ * overtaken by events.
+ *
+ * @param {string} clusterMemberId
+ *   ID of the cluster member that failed.
+ * @param {object} connectionData
+ *   A copy of the connection data for the cluster prior to its failure,
+ *   listing session IDs and connection IDs.
+ */
+p.clusterMemberDown = function (clusterMemberId, connectionData) {
+  throw new Error("Not implemented");
 };
 
 //-----------------------------------------------------------

@@ -12,9 +12,10 @@ var Thywill = require("thywill");
 
 /**
  * @class
- * A Cluster implementation for single processes - i.e. there is no cluster.
- * Useful for stubbing out and testing cluster code, or otherwise acting as
- * a placeholder.
+ * A Cluster implementation for single process backends or multiple process
+ * backends that don't need to be cluster-aware.
+ *
+ * @see Cluster
  */
 function NoCluster() {
   NoCluster.super_.call(this);
@@ -41,45 +42,52 @@ NoCluster.CONFIG_TEMPLATE = {
 //-----------------------------------------------------------
 
 /**
- * Return an array of IDs for the members of this cluster.
- *
- * @return {array}
+ * @see Cluster#getClusterMemberIds
  */
 p.getClusterMemberIds = function () {
   return [this.config.localClusterMemberId];
 };
 
 /**
- * Send data that will be emitted by the Cluster instance on the specific
- * cluster member.
- *
- * @param {string} clusterMemberId
- * @param {string} taskName
- * @param {mixed} data
+ * @see Cluster#getLocalClusterMemberId
+ */
+p.getLocalClusterMemberId = function () {
+  return this.config.localClusterMemberId;
+};
+
+/**
+ * @see Cluster#getClusterMemberStatus
+ */
+p.getClusterMemberStatus = function (clusterMemberId) {
+  if (clusterMemberId === this.config.localClusterMemberId) {
+    return this.clusterMemberStatus.UP;
+  } else {
+    return this.clusterMemberStatus.UNKNOWN;
+  }
+};
+
+/**
+ * @see Cluster#sendTo
  */
 p.sendTo = function (clusterMemberId, taskName, data) {
   if (clusterMemberId === this.config.localClusterMemberId) {
+    data.taskName = taskName;
+    data.clusterMemberId = this.config.localClusterMemberId;
     this.emit(taskName, data);
   }
 };
 
 /**
- * Send data that will be emitted by the Cluster instance in all cluster
- * members.
- *
- * @param {string} taskName
- * @param {mixed} data
+ * @see Cluster#sendToAll
  */
 p.sendToAll = function (taskName, data) {
+  data.taskName = taskName;
+  data.clusterMemberId = this.config.localClusterMemberId;
   this.emit(taskName, data);
 };
 
 /**
- * Send data that will be emitted by the Cluster instance in all cluster
- * members other than this one.
- *
- * @param {string} taskName
- * @param {mixed} data
+ * @see Cluster#sendToOthers
  */
 p.sendToOthers = function (taskName, data) {
   // There are no others.

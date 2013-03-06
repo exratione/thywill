@@ -13,9 +13,10 @@ var Thywill = require("thywill");
 
 /**
  * @class
- * A Cluster implementation for single processes - i.e. there is no cluster.
- * Useful for stubbing out and testing cluster code, or otherwise acting as
- * a placeholder.
+ * A Cluster implementation backed by Redis. Communication between cluster
+ * members is managed via Redis publish/subscribe mechanisms.
+ *
+ * @see Cluster
  */
 function RedisCluster() {
   RedisCluster.super_.call(this);
@@ -35,16 +36,23 @@ RedisCluster.CONFIG_TEMPLATE = {
       required: true
     }
   },
-  localClusterMemberId: {
+  heartbeatInterval: {
     _configInfo: {
-      description: "The cluster member ID for this process.",
-      types: "string",
+      description: "Milliseconds between broadcast heartbeats for a cluster member.",
+      types: "integer",
       required: true
     }
   },
-  redisPrefix: {
+  heartbeatTimeout: {
     _configInfo: {
-      description: "A prefix used for channels and keys in Redis.",
+      description: "Milliseconds since the last received heartbeat when a cluster member is presumed dead.",
+      types: "integer",
+      required: true
+    }
+  },
+  localClusterMemberId: {
+    _configInfo: {
+      description: "The cluster member ID for this process.",
       types: "string",
       required: true
     }
@@ -53,6 +61,13 @@ RedisCluster.CONFIG_TEMPLATE = {
     _configInfo: {
       description: "A Redis client instance from package 'redis'. This must not be the same instance as the subscribeRedisClient.",
       types: "object",
+      required: true
+    }
+  },
+  redisPrefix: {
+    _configInfo: {
+      description: "A prefix used for channels and keys in Redis.",
+      types: "string",
       required: true
     }
   },
@@ -74,10 +89,13 @@ RedisCluster.CONFIG_TEMPLATE = {
  */
 p._configure = function (thywill, config, callback) {
   var self = this;
-  // Minimal configuration setup.
   this.thywill = thywill;
   this.config = config;
   this.readyCallback = callback;
+
+  // ---------------------------------------------------------
+  // Set up cluster communication via pub/sub.
+  // ---------------------------------------------------------
 
   // Define channel names.
   this.channels = {};
@@ -99,7 +117,64 @@ p._configure = function (thywill, config, callback) {
     }
   });
 
-  // Subscribe to channels for all cluster members and this one.
+  // ---------------------------------------------------------
+  // Set up heartbeats via the pub/sub mechanism.
+  // ---------------------------------------------------------
+
+  this.heartbeatTaskName = "thywill:cluster:heartbeat";
+  this.heartbeatTimestamps = {};
+  this.heartbeatStatus = {};
+  // Cluster member status starts out UNKNOWN - no alerting happens unless
+  // status switches from UP to DOWN or vice versa. A switch from UNKNOWN
+  // to one of those two does nothing.
+  this.config.clusterMemberIds.forEach(function (clusterMemberId, index, array) {
+    self.heartbeatStatus[clusterMemberId] = self.clusterMemberStatus.UNKNOWN;
+  });
+
+  // Send out a heartbeat on a regular interval.
+  this.heartbeatIntervalId = setInterval(function () {
+    self.sendToOthers(this.heartbeatTaskName, {
+      clusterMemberId: self.getLocalClusterMemberId()
+    });
+  }, this.config.heartbeatInterval);
+
+  // Listen for heartbeats from other cluster members and update the local
+  // timestamps.
+  this.on(this.heartbeatTaskName, function (data) {
+    self.heartbeatTimestamps[data.clusterMemberId] = Date.now();
+    // If that cluster member was down, emit a note that it's up.
+    if (self.heartbeatStatus[data.clusterMemberId] === self.clusterMemberStatus.DOWN) {
+      self.emit(self.taskNames.CLUSTER_MEMBER_UP, {
+        clusterMemberId: data.clusterMemberId
+      });
+    }
+    self.heartbeatStatus[data.clusterMemberId] = self.clusterMemberStatus.UP;
+  });
+
+  // Set a process to detect failed heartbeats by timeout.
+  this.heartbeatCheckIntervalId = setInterval(function () {
+    // We only check timestamps that have previously arrived - properties of
+    // the timestamps object aren't set until the first heartbeat from a given
+    // cluster member. This makes things less confused during startup of
+    // multiple processes.
+    var timeoutTimestamp = Date.now() - self.config.heartbeatTimeout;
+    for (var clusterMemberId in self.heartbeatTimestamps) {
+      if (self.heartbeatTimestamps[clusterMemberId] < timeoutTimestamp) {
+        // Only emit an alert if the cluster member was previously noted as up.
+        if (self.heartbeatStatus[clusterMemberId] === self.clusterMemberStatus.UP) {
+          self.emit(self.taskNames.CLUSTER_MEMBER_DOWN, {
+            clusterMemberId: clusterMemberId
+          });
+        }
+        self.heartbeatStatus[clusterMemberId] = self.clusterMemberStatus.DOWN;
+      }
+    }
+  }, this.config.heartbeatInterval);
+
+  // ---------------------------------------------------------
+  // Subscribe to the channels to start picking up tasks.
+  // ---------------------------------------------------------
+
   var fns = [
     function (asyncCallback) {
       self.config.subscribeRedisClient.subscribe(self.channels[self.config.localClusterMemberId], asyncCallback);
@@ -118,24 +193,32 @@ p._configure = function (thywill, config, callback) {
 //-----------------------------------------------------------
 
 /**
- * Return an array of IDs for the members of this cluster.
- *
- * @return {array}
+ * @see Cluster#getClusterMemberIds
  */
 p.getClusterMemberIds = function () {
   return this.config.clusterMemberIds;
 };
 
 /**
- * Send data that will be emitted by the Cluster instance on the specific
- * cluster member.
- *
- * @param {string} clusterMemberId
- * @param {string} taskName
- * @param {mixed} data
+ * @see Cluster#getLocalClusterMemberId
+ */
+p.getLocalClusterMemberId = function () {
+  return this.config.localClusterMemberId;
+};
+
+/**
+ * @see Cluster#getClusterMemberStatus
+ */
+p.getClusterMemberStatus = function (clusterMemberId) {
+  return this.heartbeatStatus[clusterMemberId];
+};
+
+/**
+ * @see Cluster#sendTo
  */
 p.sendTo = function (clusterMemberId, taskName, data) {
   data.taskName = taskName;
+  data.clusterMemberId = this.config.localClusterMemberId;
   if (clusterMemberId === this.config.localClusterMemberId) {
     this.emit(taskName, data);
   } else if (this.channels[clusterMemberId]) {
@@ -144,27 +227,21 @@ p.sendTo = function (clusterMemberId, taskName, data) {
 };
 
 /**
- * Send data that will be emitted by the Cluster instance in all cluster
- * members.
- *
- * @param {string} taskName
- * @param {mixed} data
+ * @see Cluster#sendToAll
  */
 p.sendToAll = function (taskName, data) {
   data.taskName = taskName;
+  data.clusterMemberId = this.config.localClusterMemberId;
   this.config.publishRedisClient.publish(this.allChannel, JSON.stringify(data));
 };
 
 /**
- * Send data that will be emitted by the Cluster instance in all cluster
- * members other than this one.
- *
- * @param {string} taskName
- * @param {mixed} data
+ * @see Cluster#sendToOthers
  */
 p.sendToOthers = function (taskName, data) {
   var self = this;
   data.taskName = taskName;
+  data.clusterMemberId = this.config.localClusterMemberId;
   this.config.clusterMemberIds.forEach(function (clusterMemberId, index, array) {
     if (clusterMemberId !== self.config.localClusterMemberId) {
       self.config.publishRedisClient.publish(self.channels[clusterMemberId], JSON.stringify(data));

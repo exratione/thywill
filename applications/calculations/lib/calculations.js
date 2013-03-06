@@ -30,7 +30,7 @@ util.inherits(Calculations, Thywill.getBaseClass("RpcCapableApplication"));
 var p = Calculations.prototype;
 
 //-----------------------------------------------------------
-// Initialization and Shutdown
+// Initialization
 //-----------------------------------------------------------
 
 /**
@@ -111,6 +111,13 @@ p.connection = function (connectionId, sessionId, session) {
 };
 
 /**
+ * @see Application#connectionTo
+ */
+p.connectionTo = function (clusterMemberId, connectionId, sessionId) {
+  // Do nothing, since this isn't a clustered example application.
+};
+
+/**
  * @see Application#disconnection
  *
  * Note that since this application is configured to use no sessions,
@@ -119,6 +126,20 @@ p.connection = function (connectionId, sessionId, session) {
 p.disconnection = function (connectionId, sessionId) {
   // Do nothing except log it.
   this.thywill.log.debug("Calculations: Client disconnected: " + connectionId);
+};
+
+/**
+ * @see Application#disconnectionFrom
+ */
+p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {
+  // Do nothing, since this isn't a clustered example application.
+};
+
+/**
+ * @see Application#clusterMemberDown
+ */
+p.clusterMemberDown = function (clusterMemberId, connectionData) {
+  // Do nothing, since this isn't a clustered example application.
 };
 
 //-----------------------------------------------------------

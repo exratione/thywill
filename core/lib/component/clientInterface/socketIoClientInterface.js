@@ -173,7 +173,7 @@ SocketIoClientInterface.CONFIG_TEMPLATE = {
 };
 
 // -----------------------------------------------------------
-// Initialization and Shutdown
+// Initialization
 // -----------------------------------------------------------
 
 /**
@@ -191,21 +191,99 @@ p._configure = function (thywill, config, callback) {
   var self = this;
   this.thywill = thywill;
   this.config = config;
+  // Create this once; it'll see a lot of use.
+  this.config.baseClientPathRegExp = new RegExp("^" + this.config.baseClientPath.replace("/", "\\/") + "\\/?");
 
-  this.config.baseClientPathRegExp = new RegExp("^" + this.config.baseClientPath + "\\/?");
+  // -----------------------------------------------------------------
+  // Data structures for keeping track of who is online.
+  // -----------------------------------------------------------------
 
-  // For sending cluster tasks.
-  this.subscribeTaskName = "thywill:clientInterface:subscribeClient";
-  this.unsubscribeTaskName = "thywill:clientInterface:unsubscribeClient";
-
-  // Deal with expected cluster tasks: subscribe and unsubscribe.
-  this.thywill.cluster.on(this.subscribeTaskName, function (data) {
-    this._subscribeLocalSocket(data.connectionId, data.channelId);
+  this.connections = {};
+  this.thywill.cluster.getClusterMemberIds().forEach(function (clusterMemberId, index, array) {
+    self.connections[clusterMemberId] = {
+      connections: {},
+      sessions: {}
+    };
   });
-  this.thywill.cluster.on(this.unsubscribeTaskName, function (data) {
-    this._unsubscribeLocalSocket(data.connectionId, data.channelId);
+
+  // -----------------------------------------------------------------
+  // Cluster configuration: communication between processes.
+  // -----------------------------------------------------------------
+
+  // Task names, those used internally by this clientInterface implementation.
+  this.clusterTask = {
+    // Delivery of all connected client data for a specific process.
+    connectionData: "thywill:clientInterface:connectedData",
+    // Request for all connected client data for a specific process.
+    connectionDataRequest: "thywill:clientInterface:connectedDataRequest",
+    // Client connection notice from another cluster member.
+    connection: "thywill:clientInterface:connection",
+    // Client disconnection notice from another cluster member.
+    disconnection: "thywill:clientInterface:disconnection",
+    // Request to subscribe a client if they exist locally.
+    subscribe: "thywill:clientInterface:subscribeClient",
+    // Request to unsubscribe a client if they exist locally.
+    unsubscribe: "thywill:clientInterface:unsubscribeClient"
+  };
+
+  // A cluster member fails and goes down.
+  this.thywill.cluster.on(this.thywill.cluster.taskNames.CLUSTER_MEMBER_DOWN, function (data) {
+    for (var id in self.thywill.applications) {
+      process.nextTick(function () {
+        self.thywill.applications[id].clusterMemberDown(data.clusterMemberId, {
+          connections: self.connections[data.clusterMemberId].connections,
+          sessions: self.connections[data.clusterMemberId].sessions
+        });
+      });
+    }
+    self._clearConnectionDataForClusterMember(data.clusterMemberId);
+  });
+  // Delivery of connection data from another server.
+  this.thywill.cluster.on(this.clusterTask.connectionData, function (data) {
+    self._updateAllConnectionDataForClusterMember(data.clusterMemberId, data.connections);
+  });
+  // Request for connection data from another server.
+  this.thywill.cluster.on(this.clusterTask.connectionDataRequest, function (data) {
+    self.thywill.cluster.sendTo(data.clusterMemberId, self.clusterTask.connectionData, {
+      connections: self.connections[self.thywill.cluster.getLocalClusterMemberId()]
+    });
+  });
+  // Connection notice from another cluster member.
+  this.thywill.cluster.on(this.clusterTask.connection, function (data) {
+    self._updateConnectionDataForConnection(data.clusterMemberId, data.connectionId, data.sessionId);
+    for (var id in self.thywill.applications) {
+      process.nextTick(function () {
+        self.thywill.applications[id].connectionTo(data.clusterMemberId, data.connectionId, data.sessionId);
+      });
+    }
+  });
+  // Disconnection notice from another cluster member.
+  this.thywill.cluster.on(this.clusterTask.disconnection, function (data) {
+    self._updateConnectionDataForDisconnection(data.clusterMemberId, data.connectionId, data.sessionId);
+    for (var id in self.thywill.applications) {
+      process.nextTick(function () {
+        self.thywill.applications[id].disconnectionFrom(data.clusterMemberId, data.connectionId, data.sessionId);
+      });
+    }
+  });
+  // Subscribe a connectionId if it exists locally.
+  this.thywill.cluster.on(this.clusterTask.subscribe, function (data) {
+    self._subscribeLocalSocket(data.connectionId, data.channelId);
+  });
+  // Subscribe a connectionId if it exists locally.
+  this.thywill.cluster.on(this.clusterTask.unsubscribe, function (data) {
+    self._unsubscribeLocalSocket(data.connectionId, data.channelId);
   });
 
+  // -----------------------------------------------------------------
+  // Final steps of configuration.
+  // -----------------------------------------------------------------
+
+  // Request an update on who is connected from all other cluster members, so
+  // as to bring data up to date in the case where a cluster member falls over.
+  this.thywill.cluster.sendToOthers(this.clusterTask.connectionDataRequest, {});
+
+  // Set ready status.
   this.readyCallback = callback;
   this._announceReady(this.NO_ERRORS);
 };
@@ -692,7 +770,7 @@ p.initializeNewSocketConnection = function (socket) {
    * A message arrives and the raw data object from Socket.IO code is passed in.
    */
   socket.on("fromClient", function (rawMessage) {
-    var message = messageManager.clientMessageToServerMessage(rawMessage);
+    var message = messageManager.convertClientMessageToServerMessage(rawMessage);
     // Set the connectionId.
     message.setConnectionId(socket.id);
     // Sort out origin and destination - always from client, to server.
@@ -859,7 +937,7 @@ p.send = function (message) {
   var channelId = message.getChannelId();
   var socketId = message.getConnectionId();
   // Strip the message down to what's to be sent to the client.
-  var clientMessage = messageManager.serverMessageToClientMessage(message);
+  var clientMessage = messageManager.convertServerMessageToClientMessage(message);
 
   // If there is a channel ID set, then publish message to the specified
   // channel.
@@ -894,7 +972,7 @@ p.send = function (message) {
     } else if (this.config.usePubSubForSending) {
       this.socketFactory.of(this.config.namespace).to(socketId).emit("toClient", clientMessage);
     } else {
-      this.thywill.log.error(new Error("No socket connected to this process with id: " + socketId));
+      this.thywill.log.debug("No socket connected to this process with id: " + socketId);
     }
   }
 };
@@ -902,16 +980,17 @@ p.send = function (message) {
 /**
  * @see ClientInterface#subscribe
  */
-p.subscribe = function (connectionId, channelId) {
+p.subscribe = function (connectionId, channelId, callback) {
   var socketPresent = this._subscribeLocalSocket(connectionId, channelId);
   // If the socket isn't connected to this process, then tell the other cluster
   // members to find the socket and subscribe it.
   if (!socketPresent) {
-    this.thywill.cluster.sendToOthers(this.subscribeTaskName, {
+    this.thywill.cluster.sendToOthers(this.clusterTask.subscribe, {
       connectionId: connectionId,
       channelId: channelId
     });
   }
+  callback();
 };
 
 /**
@@ -934,16 +1013,17 @@ p._subscribeLocalSocket = function (connectionId, channelId) {
 /**
  * @see ClientInterface#unsubscribe
  */
-p.unsubscribe = function (connectionId, channelId) {
+p.unsubscribe = function (connectionId, channelId, callback) {
   var socketPresent = this._unsubscribeLocalSocket(connectionId, channelId);
   // If the socket isn't connected to this process, then tell the other cluster
   // members to find the socket and unsubscribe it.
   if (!socketPresent) {
-    this.thywill.cluster.sendToOthers(this.unsubscribeTaskName, {
+    this.thywill.cluster.sendToOthers(this.clusterTask.unsubscribe, {
       connectionId: connectionId,
       channelId: channelId
     });
   }
+  callback();
 };
 
 /**
@@ -961,6 +1041,152 @@ p._unsubscribeLocalSocket = function (connectionId, channelId) {
   } else {
     return false;
   }
+};
+
+/**
+ * @see ClientInterface#connection
+ */
+p.connection = function (connectionId, sessionId, session) {
+  // Perform the standard superclass notifications in the local process.
+  this.constructor.super_.prototype.connection.call(this, connectionId, sessionId, session);
+  // Send out notices to all processes.
+  this.thywill.cluster.sendToAll(this.clusterTask.connection, {
+    connectionId: connectionId,
+    sessionId: sessionId
+  });
+};
+
+/**
+ * @see ClientInterface#disconnection
+ */
+p.disconnection = function (connectionId, sessionId) {
+  // Perform the standard superclass notifications in the local process.
+  this.constructor.super_.prototype.disconnection.call(this, connectionId, sessionId);
+  // Send out notices to all processes.
+  this.thywill.cluster.sendToAll(this.clusterTask.disconnection, {
+    connectionId: connectionId,
+    sessionId: sessionId
+  });
+};
+
+//-----------------------------------------------------------
+// Relating to tracking who is online.
+//-----------------------------------------------------------
+
+/**
+ * @see ClientInterface#clientIsConnected
+ */
+p.clientIsConnected = function (connectionId, callback) {
+  var self = this;
+  var connected = Object.keys(this.connections).some(function (clusterMemberId, index, array) {
+    return self.connections[clusterMemberId].connections[connectionId];
+  });
+  callback (null, connected);
+};
+
+/**
+ * @see ClientInterface#clientIsConnectedLocally
+ */
+p.clientIsConnectedLocally = function (connectionId, callback) {
+  var clusterMemberId = this.thywill.cluster.getLocalClusterMemberId();
+  var connected = (this.connections[clusterMemberId].connections[connectionId] !== undefined);
+  callback (null, connected);
+};
+
+/**
+ * @see ClientInterface#sessionIsConnected
+ */
+p.sessionIsConnected = function (sessionId, callback) {
+  var self = this;
+  var connected = Object.keys(this.connections).some(function (clusterMemberId, index, array) {
+    return self.connections[clusterMemberId].sessions[sessionId];
+  });
+  callback (null, connected);
+};
+
+/**
+ * @see ClientInterface#getConnectionData
+ */
+p.getConnectionData = function (callback) {
+  callback(null, this.connections);
+};
+
+/**
+ * Update the local connection data to note a connection.
+ *
+ * @param {string} clusterMemberId
+ *   The cluster member where the connection occurred.
+ * @param {string} connectionId
+ *   Unique ID of the connection.
+ * @param {string} sessionId
+ *   Unique ID of the session associated with this connection - one session
+ *   might have multiple concurrent connections.
+ */
+p._updateConnectionDataForConnection = function(clusterMemberId, connectionId, sessionId) {
+  var data = this.connections[clusterMemberId];
+  data.connections[connectionId] = Date.now();
+  if (!data.sessions[sessionId]) {
+    data.sessions[sessionId] = [connectionId];
+  } else {
+    var sessionConnections = data.sessions[sessionId];
+    if (sessionConnections.indexOf(connectionId) === -1) {
+      sessionConnections.push(connectionId);
+    }
+  }
+};
+
+/**
+ * Update the local connection data to note a disconnection.
+ *
+ * @param {string} clusterMemberId
+ *   The cluster member where the disconnection occurred.
+ * @param {string} connectionId
+ *   Unique ID of the connection.
+ * @param {string} sessionId
+ *   Unique ID of the session associated with this connection - one session
+ *   might have multiple concurrent connections.
+ */
+p._updateConnectionDataForDisconnection = function(clusterMemberId, connectionId, sessionId) {
+  var data = this.connections[clusterMemberId];
+  delete data.connections[connectionId];
+  if (data.sessions[sessionId]) {
+    var sessionConnections = data.sessions[sessionId];
+    sessionConnections = data.sessions[sessionId].filter(function (element, index, array) {
+      return (element !== connectionId);
+    });
+    if (sessionConnections.length === 0) {
+      delete data.sessions[sessionId];
+    }
+  }
+};
+
+/**
+ * Given all the connection data for a specific cluster member process, make it
+ * the local copy of record for that cluster member process.
+ *
+ * On startup, processes request all the data from other processes, so as to
+ * restore the local copy after a crash and restart situation.
+ *
+ * @param {string} clusterMemberId
+ *   The cluster member whose data it is.
+ * @param {object} data
+ *   The connection data for this cluster member.
+ */
+p._updateAllConnectionDataForClusterMember = function (clusterMemberId, data) {
+  this.connections[clusterMemberId] = data;
+};
+
+/**
+ * This is called when another cluster member fails, to clear out its
+ * connection data since all of the connected clients will now be
+ * disconnected.
+ *
+ * @param {string} clusterMemberId
+ *   The cluster member whose data it is.
+ */
+p._clearConnectionDataForClusterMember = function (clusterMemberId) {
+  this.connections[clusterMemberId].connections = {};
+  this.connections[clusterMemberId].sessions = {};
 };
 
 // -----------------------------------------------------------

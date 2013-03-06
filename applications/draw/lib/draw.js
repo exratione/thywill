@@ -32,7 +32,7 @@ util.inherits(Draw, Thywill.getBaseClass("Application"));
 var p = Draw.prototype;
 
 //-----------------------------------------------------------
-// Initialization and Shutdown
+// Initialization
 //-----------------------------------------------------------
 
 /**
@@ -119,9 +119,22 @@ p.received = function (message) {
  * @see Application#connection
  */
 p.connection = function (connectionId, sessionId, session) {
+  var self = this;
   this.thywill.log.debug("Draw: Client connected: " + connectionId);
   // Every client is subscribed to the same channel, used to broadcast updates.
-  this.thywill.clientInterface.subscribe(connectionId, this.channelId);
+  this.thywill.clientInterface.subscribe(connectionId, this.channelId, function (error) {
+    if (error) {
+      self.thywill.log.error(error);
+    }
+  });
+};
+
+/**
+ * @see Application#connectionTo
+ */
+p.connectionTo = function (clusterMemberId, connectionId, sessionId) {
+  // Do nothing; while this is a clustered example, it doesn't need to
+  // know about user connections on other processes.
 };
 
 /**
@@ -130,6 +143,22 @@ p.connection = function (connectionId, sessionId, session) {
 p.disconnection = function (connectionId, sessionId) {
   // Do nothing except log it.
   this.thywill.log.debug("Draw: Client disconnected: " + connectionId);
+};
+
+/**
+ * @see Application#disconnectionFrom
+ */
+p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {
+  // Do nothing; while this is a clustered example, it doesn't need to
+  // know about user disconnections on other processes.
+};
+
+/**
+ * @see Application#clusterMemberDown
+ */
+p.clusterMemberDown = function (clusterMemberId, connectionData) {
+  // Do nothing; while this is a clustered example, it doesn't need to
+  // know about user disconnections on other processes.
 };
 
 //-----------------------------------------------------------

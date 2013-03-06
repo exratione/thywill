@@ -56,7 +56,7 @@ connections. With that built, you can access Echo as follows:
 
     https://example.com/echo/
 
-Building New Thywill Applications
+Creating New Thywill Applications
 ---------------------------------
 
 A Thywill application implements the necessary server and client interfaces to:
@@ -71,53 +71,6 @@ ApplicationInterface class on the client.
 Beyond this minimum, a Thywill application can contain any arbitrary code. It
 does its thing, while Thywill manages the message transport between server and
 client.
-
-Remote Procedure Calls
-----------------------
-
-An application can issue remote procedure calls to server functions if it
-extends RpcCapableApplication on the server and RpcCapableApplicationInterface
-on the client.
-
-In the server code:
-
-    function ExampleApplication (id) {
-      ExampleApplication.super_.call(this, id);
-      // Set up an example function in a namespace.
-      this.rpcContext.exampleFunctions = {
-        exampleFunction: function (count) {
-          return count * 2;
-        }
-      };
-    }
-    util.inherits(ExampleApplication, Thywill.getBaseClass("RpcCapableApplication"));
-
-In the client code:
-
-    function ExampleApplicationInterface (applicationId) {
-      Thywill.RpcCapableApplicationInterface.call(this, applicationId);
-    }
-    Thywill.inherits(ExampleApplicationInterface, Thywill.RpcCapableApplicationInterface);
-
-Then to make a remote procedure call from the client:
-
-    var data = {
-      // Will look for this.rpcContext.exampleFunctions.exampleFunction in the
-      // server Application instance context.
-      name: "exampleFunctions.exampleFunction",
-      // True if the server function is asynchronous and accepts a callback as
-      // the last argument.
-      hasCallback: false,
-      // Arguments for the remote function, omitting the final callback
-      // argument if it has one.
-      args: [10]
-    };
-    exampleApplicationInterface.rpc(data, function (error, result) {
-      // result === 20
-      console.log(result);
-    });
-
-See the Calculations example application for a simple demonstration.
 
 Clustering
 ----------
@@ -175,6 +128,105 @@ Then anywhere in your application code, you can send to other cluster processes:
     this.thywill.cluster.sendToAll(myTaskType", {
       // Task data goes here.
     });
+
+Keeping Track of Current Connections
+------------------------------------
+
+A server-side Application instance is notified whenever a client connects or
+disconnects, even if this happens in other processes in a cluster:
+
+    // Invoked whenever a client connects to this process.
+    Application.prototype.connection = function (connectionId, sessionId, session) {};
+    // Invoked whenever a client connects to any process in the cluster.
+    Application.prototype.connectionTo = function (clusterMemberId, connectionId, sessionId) {};
+    // Invoked whenever a client disconnects from this process.
+    Application.prototype.disconnection = function (connectionId, sessionId) {};
+    // Invoked whenever a client disconnects from any process in the cluster.
+    Application.prototype.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {};
+
+There's also a notification for a mass disconnection on server failure - though
+admittedly a lot of thought can go into exactly what should be done by the
+application under that circumstance:
+
+    // Invoked when a cluster member process fails, thus disconnecting all its
+    // clients.
+    Application.prototype.clusterMemberDown = function (clusterMemberId, connectionData) {};
+
+The default core ClientInterface implementation keeps track of connected
+clients, even in a clustered backend. In application code, for example, you
+can call this method:
+
+    // isConnected will be true if the client is connected to any of the
+    // cluster processes.
+    this.thywill.clientInterface.clientIsConnected(connectionId, function (error, isConnected) {
+      if (isConnected) {
+        console.log(connectionId + " is connected.");
+      }
+    });
+
+The same thing works for sessions:
+
+    // isConnected will be true if this session has one or more clients
+    // connected to any of the cluster processes.
+    this.thywill.clientInterface.sessionIsConnected(sessionId, function (error, isConnected) {
+      if (isConnected) {
+        console.log(sessionId + " is connected.");
+      }
+    });
+
+You can also obtain all of the current connection data for all processes:
+
+    this.thywill.clientInterface.getConnectionData(function (error, data) {
+      // The data object may be a reference to locally used data, so treat it
+      // carefully.
+    });
+
+Remote Procedure Calls
+----------------------
+
+An application can issue remote procedure calls to server functions if it
+extends RpcCapableApplication on the server and RpcCapableApplicationInterface
+on the client.
+
+In the server code:
+
+    function ExampleApplication (id) {
+      ExampleApplication.super_.call(this, id);
+      // Set up an example function in a namespace.
+      this.rpcContext.exampleFunctions = {
+        exampleFunction: function (count) {
+          return count * 2;
+        }
+      };
+    }
+    util.inherits(ExampleApplication, Thywill.getBaseClass("RpcCapableApplication"));
+
+In the client code:
+
+    function ExampleApplicationInterface (applicationId) {
+      Thywill.RpcCapableApplicationInterface.call(this, applicationId);
+    }
+    Thywill.inherits(ExampleApplicationInterface, Thywill.RpcCapableApplicationInterface);
+
+Then to make a remote procedure call from the client:
+
+    var data = {
+      // Will look for this.rpcContext.exampleFunctions.exampleFunction in the
+      // server Application instance context.
+      name: "exampleFunctions.exampleFunction",
+      // True if the server function is asynchronous and accepts a callback as
+      // the last argument.
+      hasCallback: false,
+      // Arguments for the remote function, omitting the final callback
+      // argument if it has one.
+      args: [10]
+    };
+    exampleApplicationInterface.rpc(data, function (error, result) {
+      // result === 20
+      console.log(result);
+    });
+
+See the Calculations example application for a simple demonstration.
 
 A Work in Progress
 ------------------

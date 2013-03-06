@@ -94,6 +94,20 @@ p._startup = function (callback) {
 };
 
 /**
+ * Send a message out to a client or channel.
+ *
+ * @param {ServerMessage} message
+ *   A ServerMessage instance.
+ */
+p.send = function (message) {
+  throw new Error("Not implemented.");
+};
+
+//-----------------------------------------------------------
+// Relating to resources.
+//-----------------------------------------------------------
+
+/**
  * Define a resource to be loaded immediately on client connection.
  *
  * @param {Resource} resource
@@ -138,7 +152,7 @@ p.storeResource = function (resource, callback) {
  *
  * @param {string} clientPath
  *   A request path.
- * @param {function} [callback]
+ * @param {function} callback
  *   Of the form function (error, resource), where error === null on success
  *   and resource is the resource to be returned.
  */
@@ -146,15 +160,9 @@ p.getResource = function (clientPath, callback) {
   throw new Error("Not implemented.");
 };
 
-/**
- * Send a message out to a client or channel.
- *
- * @param {ServerMessage} message
- *   A ServerMessage instance.
- */
-p.send = function (message) {
-  throw new Error("Not implemented.");
-};
+//-----------------------------------------------------------
+// Relating to publish / subscribe.
+//-----------------------------------------------------------
 
 /**
  * Subscribe this connection to a channel.
@@ -163,8 +171,10 @@ p.send = function (message) {
  *   The connection ID.
  * @param {string} channelId
  *   The channel identifier.
+ * @param {function} callback
+ *   Of the form function (error).
  */
-p.subscribe = function (connectionId, channelId) {
+p.subscribe = function (connectionId, channelId, callback) {
   throw new Error("Not implemented.");
 };
 
@@ -175,8 +185,65 @@ p.subscribe = function (connectionId, channelId) {
  *   The connection ID.
  * @param {string} channelId
  *   The channel identifier.
+ * @param {function} callback
+ *   Of the form function (error).
  */
-p.unsubscribe = function (connectionId, channelId) {
+p.unsubscribe = function (connectionId, channelId, callback) {
+  throw new Error("Not implemented.");
+};
+
+//-----------------------------------------------------------
+// Relating to tracking who is online.
+//-----------------------------------------------------------
+
+/**
+ * Is the specified client connected to any of the cluster's server processes?
+ *
+ * @param {string} connectionId
+ *   The connection ID.
+ * @param {function} callback
+ *   Of the form function (error, boolean).
+ */
+p.clientIsConnected = function (connectionId, callback) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * Is the specified client connected to this process?
+ *
+ * @param {string} connectionId
+ *   The connection ID.
+ * @param {function} callback
+ *   Of the form function (error, boolean).
+ */
+p.clientIsConnectedLocally = function (connectionId, callback) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * Are any clients with the specified session connected to any of the cluster's
+ * server processes?
+ *
+ * @param {string} sessionId
+ *   The connection ID.
+ * @param {function} callback
+ *   Of the form function (error, boolean).
+ */
+p.sessionIsConnected = function (sessionId, callback) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * Return a reference to a data structure for connected sessions and clients
+ * for all of the cluster members.
+ *
+ * This data may or may not be a clone of the actual data structure used by
+ * the clientInterface to keep track of who is online.
+ *
+ * @param {function} callback
+ *   Of the form function (error, data).
+ */
+p.getConnectionData = function (callback) {
   throw new Error("Not implemented.");
 };
 

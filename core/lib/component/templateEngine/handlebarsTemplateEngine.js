@@ -40,7 +40,7 @@ HandlebarsTemplateEngine.CONFIG_TEMPLATE = {
 };
 
 //-----------------------------------------------------------
-// Initialization and Shutdown
+// Initialization
 //-----------------------------------------------------------
 
 /**

@@ -62,12 +62,13 @@
     var self = this;
     // Enable the button.
     jQuery("#sender button").addClass("enabled").on("click", function () {
-      var inputData = $("#sender textarea").val();
+      var textarea = jQuery("#sender textarea");
+      var inputData = textarea.val();
       if (inputData) {
         // Sending this user-entered data as a message to the server side of the
         // this application.
         self.send(inputData);
-        $("#sender textarea").val("");
+        textarea.val("");
       }
      });
   };

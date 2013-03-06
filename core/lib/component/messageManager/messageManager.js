@@ -45,7 +45,7 @@ var p = MessageManager.prototype;
  * @return {Message}
  *   A Message instance.
  */
-p.serverMessageToClientMessage = function (message) {
+p.convertServerMessageToClientMessage = function (message) {
   return message.createClientMessage();
 };
 
@@ -60,7 +60,7 @@ p.serverMessageToClientMessage = function (message) {
  * @return {ServerMessage}
  *   A ServerMessage instance.
  */
-p.clientMessageToServerMessage = function (message, additionalMetadata) {
+p.convertClientMessageToServerMessage = function (message, additionalMetadata) {
   additionalMetadata = additionalMetadata || {};
   // Add only the listed metadata from the original message - prevent other
   // things sneaking past.
@@ -97,20 +97,30 @@ p.createClientMessage = function (data, metadata) {
 };
 
 /**
- * Obtain a new ServerMessage object.
+ * Obtain a new ServerMessage object. There are two ways of calling this
+ * method:
  *
- * @param {mixed} data
- *   The message data.
- * @param {Object} [metadata]
- *   Message metadata: type, addressing, etc. This is optional, and can be
- *   set later on the message instance directly.
+ * createServerMessage(data, metadata);
+ * createServerMessage(data, connectionId, applicationId);
+ *
+ * In the latter case, the message will have metadata set to be delivered to
+ * the specified client connection and application.
+ *
  * @return {ServerMessage}
  *   A ServerMessage instance.
  */
-p.createServerMessage = function (data, metadata) {
+p.createServerMessage = function () {
   var message = new ServerMessage();
-  message.setData(data);
-  message.setMetadata(metadata);
+  message.setData(arguments[0]);
+  if (arguments.length < 3) {
+    message.setMetadata(arguments[1]);
+  } else {
+    message.setConnectionId(arguments[1]);
+    message.setFromApplication(arguments[2]);
+    message.setToApplication(arguments[2]);
+    message.setOrigin(this.origins.SERVER);
+    message.setDestination(this.destinations.CLIENT);
+  }
   return message;
 };
 
