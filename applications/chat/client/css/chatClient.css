@@ -1,0 +1,108 @@
+/*
+  Minimal CSS for the Chat client.
+*/
+body {
+  color: #666666;
+  font-family: Arial;
+  font-size: 16px;
+}
+#chat-wrapper {
+  margin: 40px auto;
+  position: relative;
+  width: 550px;
+}
+#title {
+  font-size: 28px;
+  letter-spacing: 3px;
+  margin-bottom: 15px;
+  text-shadow: 2px 2px #dddddd;
+}
+textarea {
+  background-color: #ebebeb;
+  border: 1px solid #cccccc;
+  color: #666666;
+  height: 40px;
+  margin-right: 10px;
+  padding: 10px;
+  vertical-align: middle;
+  width: 280px;
+}
+.enabled textarea {
+  background-color: #efebf5;
+}
+button {
+  background-color: #e5e5e5;
+  border: 1px solid #999999;
+  color: #666666;
+  cursor: default;
+  font-size: 18px;
+  height: 40px;
+  letter-spacing: 1px;
+  line-height: 18px;
+  margin: 0 10px;
+  -webkit-transition: all 0.2s ease-in-out;
+  -moz-transition: all 0.2s ease-in-out;
+  -o-transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
+  width: 90px;
+}
+.enabled button {
+  background-color: #e5efe5;
+  box-shadow: 5px 5px 10px 0 #cccccc;
+  cursor: pointer;
+}
+.enabled button:hover {
+   background-color: #e9f3e9;
+   box-shadow: 2px 2px 10px 0 #cccccc;
+}
+.enabled .kick-button {
+  background-color: #efe5e5;
+  box-shadow: 5px 5px 10px 0 #cccccc;
+  cursor: pointer;
+}
+.enabled .kick-button:hover {
+   background-color: #f3e9e9;
+   box-shadow: 2px 2px 10px 0 #cccccc;
+}
+#chat-output {
+  background-color: #ebebeb;
+  border: 1px solid #cccccc;
+  height: 200px;
+  margin: 20px 0 15px;
+  overflow-y: auto;
+}
+.enabled #chat-output {
+  background-color: #ebebf5;
+}
+.chat-message {
+  padding: 10px;
+  border-bottom: 1px solid #dddddd;
+}
+#waiting {
+  font-size: 22px;
+  letter-spacing: 1px;
+  padding-top: 80px;
+  text-align: center;
+}
+#instructions {
+  text-align: justify;
+}
+#status {
+  font-size: 12px;
+  position: absolute;
+  right: 10px;
+  top: 14px;
+  -webkit-transition: all 0.2s ease-in-out;
+  -moz-transition: all 0.2s ease-in-out;
+  -o-transition: all 0.2s ease-in-out;
+  transition: all 0.2s ease-in-out;
+}
+#status.connected {
+  color: #559955;
+}
+#status.connecting {
+  color: #999999;
+}
+#status.disconnected {
+  color: #995555;
+}
