@@ -238,7 +238,8 @@ p.isDesignatedHandlerFor = function (clusterMemberId, callback) {
   if (index === this.config.clusterMemberIds.length) {
     index = 0;
   }
-  callback(this.NO_ERRORS, index);
+  var isDesignatedHandler = (index === this.config.clusterMemberIds.indexOf(this.getLocalClusterMemberId()));
+  callback(this.NO_ERRORS, isDesignatedHandler);
 };
 
 /**

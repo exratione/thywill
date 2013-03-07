@@ -133,9 +133,6 @@
    *   Array of connection IDs.
    */
   p.removeConnections = function(clusterMemberId, connectionIds) {
-    if (connectionIds.length === 1) {
-      this.displayMessage(clusterMemberId, connectionIds[0] + " disconnected.");
-    }
     var selector = connectionIds.map(function (connectionId, index, array) {
       return "#" + connectionId;
     }).join(", ");
@@ -164,20 +161,28 @@
    */
   p.received = function (message) {
     var data = message.getData();
+    var clusterMemberId;
+
+console.log(data);
+
     switch (data.type) {
       case "connection":
-        if (data.connectionIds.length === 1) {
-          this.displayMessage(data.clusterMemberId, data.connectionIds[0] + " connected.");
-        }
-        this.displayConnections(data.clusterMemberId, data.connectionIds);
+        this.displayMessage(data.clusterMemberId, data.connectionId + " connected.");
+        this.displayConnections(data.clusterMemberId, [data.connectionId]);
         break;
       case "connectionList":
-        for (var clusterMemberId in data.connections) {
+        for (clusterMemberId in data.connections) {
           this.displayConnections(clusterMemberId, data.connections[clusterMemberId]);
         }
         break;
       case "disconnection":
-        this.removeConnections(data.clusterMemberId, data.connectionIds);
+        this.displayMessage(data.clusterMemberId, data.connectionId + " disconnected.");
+        this.removeConnections(data.clusterMemberId, [data.connectionId]);
+        break;
+      case "disconnectionList":
+        for (clusterMemberId in data.connections) {
+          this.removeConnections(clusterMemberId, data.connections[clusterMemberId]);
+        }
         break;
       case "text":
         this.displayMessage(data.clusterMemberId, data.text);

@@ -228,13 +228,17 @@ p._configure = function (thywill, config, callback) {
 
   // A cluster member fails and goes down.
   this.thywill.cluster.on(this.thywill.cluster.taskNames.CLUSTER_MEMBER_DOWN, function (data) {
-    for (var id in self.thywill.applications) {
+    function notify (connections, sessions) {
       process.nextTick(function () {
         self.thywill.applications[id].clusterMemberDown(data.clusterMemberId, {
-          connections: self.connections[data.clusterMemberId].connections,
-          sessions: self.connections[data.clusterMemberId].sessions
+          connections: connections,
+          sessions: sessions
         });
       });
+    }
+    for (var id in self.thywill.applications) {
+      var connectionData = self.connections[data.clusterMemberId];
+      notify(connectionData.connections, connectionData.sessions);
     }
     self._clearConnectionDataForClusterMember(data.clusterMemberId);
   });
@@ -1185,8 +1189,13 @@ p._updateAllConnectionDataForClusterMember = function (clusterMemberId, data) {
  *   The cluster member whose data it is.
  */
 p._clearConnectionDataForClusterMember = function (clusterMemberId) {
-  this.connections[clusterMemberId].connections = {};
-  this.connections[clusterMemberId].sessions = {};
+  // Important that we replace the object at the top, rather than the
+  // sessions and connections properties, as the original connections and
+  // sessions items will be passed on and used to update applications.
+  this.connections[clusterMemberId] = {
+    connections: {},
+    sessions: {}
+  };
 };
 
 // -----------------------------------------------------------

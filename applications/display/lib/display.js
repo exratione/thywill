@@ -131,7 +131,7 @@ p.sendText = function (text) {
 p.sendConnectionNotice = function (connectionId) {
   this.publish({
     type: "connection",
-    connectionIds: [connectionId]
+    connectionId: connectionId
   });
 };
 
@@ -163,15 +163,12 @@ p.sendConnectionList = function (connectionId) {
 /**
  * Tell the clients that one or more users disconnected from this process.
  *
- * @param {string|array} connectionIds
+ * @param {string} connectionId
  */
-p.sendDisconnectionNotice = function (connectionIds) {
-  if (!Array.isArray(connectionIds)) {
-    connectionIds = [connectionIds];
-  }
+p.sendDisconnectionNotice = function (connectionId) {
   this.publish({
     type: "disconnection",
-    connectionIds: connectionIds
+    connectionId: connectionId
   });
 };
 
@@ -249,7 +246,14 @@ p.clusterMemberDown = function (clusterMemberId, connectionData) {
       self.thywill.log.error(error);
     }
     if (isDesignatedHandler) {
-      self.sendDisconnectionNotice(Object.keys(connectionData.connections));
+      var connections = {};
+      connections[clusterMemberId] = Object.keys(connectionData.connections);
+      var messageData = {
+        type: "disconnectionList",
+        connections: connections
+      };
+      var message = self.thywill.messageManager.createServerMessageToChannel(messageData, self.channelId, self.id);
+      self.send(message);
     }
   });
 };
