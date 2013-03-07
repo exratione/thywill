@@ -58,11 +58,24 @@ p.getLocalClusterMemberId = function () {
 /**
  * @see Cluster#getClusterMemberStatus
  */
-p.getClusterMemberStatus = function (clusterMemberId) {
+p.getClusterMemberStatus = function (clusterMemberId, callback) {
   if (clusterMemberId === this.config.localClusterMemberId) {
-    return this.clusterMemberStatus.UP;
+    callback(this.NO_ERRORS, this.clusterMemberStatus.UP);
   } else {
-    return this.clusterMemberStatus.UNKNOWN;
+    callback(this.NO_ERRORS, this.clusterMemberStatus.UNKNOWN);
+  }
+};
+
+/**
+ * @see Cluster#isDesignatedHandlerFor
+ */
+p.isDesignatedHandlerFor = function (clusterMemberId, callback) {
+  // You're your own handler - not that this will do much good, but it's
+  // logically correct for the NoCluster single process case.
+  if (clusterMemberId === this.config.localClusterMemberId) {
+    callback(this.NO_ERRORS, true);
+  } else {
+    callback(this.NO_ERRORS, false);
   }
 };
 

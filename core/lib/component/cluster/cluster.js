@@ -92,9 +92,32 @@ p.getLocalClusterMemberId = function () {
  * Return the status of the cluster member, as seen by this cluster member.
  *
  * @param {string} clusterMemberId
- * @return {mixed}
+ *   A cluster member ID.
+ * @param {function} callback
+ *   Of the form function (error, status).
  */
-p.getClusterMemberStatus = function (clusterMemberId) {
+p.getClusterMemberStatus = function (clusterMemberId, callback) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * Is this process the designated handler for issues that the indicated cluster
+ * member can't or shouldn't handle. E.g. cleanup that must happen immediately
+ * on process failure, and cannot wait for the process itself to restart and
+ * do that.
+ *
+ * Only one process is the designated handler for a given other process.
+ *
+ * This function exists because every cluster member is notified when one
+ * member fails, but in some cases you don't want every remaining cluster
+ * member to take action.
+ *
+ * @param {string} clusterMemberId
+ *   The cluster member in need of handling.
+ * @param {function} callback
+ *   Of the form function (error, boolean).
+ */
+p.isDesignatedHandlerFor = function (clusterMemberId, callback) {
   throw new Error("Not implemented.");
 };
 
@@ -103,8 +126,11 @@ p.getClusterMemberStatus = function (clusterMemberId) {
  * cluster member.
  *
  * @param {string} clusterMemberId
+ *   The specified destination cluster member.
  * @param {string} taskName
+ *   The name of the event that will be emitted.
  * @param {mixed} data
+ *   Data that will be emitted with the event.
  */
 p.sendTo = function (clusterMemberId, taskName, data) {
   throw new Error("Not implemented.");
@@ -115,7 +141,9 @@ p.sendTo = function (clusterMemberId, taskName, data) {
  * members.
  *
  * @param {string} taskName
+ *   The name of the event that will be emitted.
  * @param {mixed} data
+ *   Data that will be emitted with the event.
  */
 p.sendToAll = function (taskName, data) {
   throw new Error("Not implemented.");
@@ -126,7 +154,9 @@ p.sendToAll = function (taskName, data) {
  * members other than this one.
  *
  * @param {string} taskName
+ *   The name of the event that will be emitted.
  * @param {mixed} data
+ *   Data that will be emitted with the event.
  */
 p.sendToOthers = function (taskName, data) {
   throw new Error("Not implemented.");

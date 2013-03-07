@@ -47,8 +47,8 @@ p._defineBootstrapResources = function (callback) {
     function (asyncCallback) {
       self.storeBootstrapResourcesFromManifest(bootstrapManifest, asyncCallback);
     },
-    // Add the Calculations client Javascript separately, as it needs to be rendered
-    // as a template.
+    // Add the client Javascript separately, as it needs to be rendered as a
+    // template.
     function (asyncCallback) {
       // Load the file.
       var originFilePath = path.resolve(__dirname, "../client/js/calculationsClient.js");

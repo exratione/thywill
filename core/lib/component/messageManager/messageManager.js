@@ -125,9 +125,38 @@ p.createServerMessage = function () {
 };
 
 /**
+ * Obtain a new ServerMessage object set to go out to a channel rather than a
+ * specific client.
+ *
+ * @param {mixed} data
+ *   The data to be delivered.
+ * @param {string} channelId
+ *   The ID of the channel to publish to.
+ * @param {string} applicationId
+ *   The application that sends this message.
+ * @return {ServerMessage}
+ *   A ServerMessage instance.
+ */
+p.createServerMessageToChannel = function (data, channelId, applicationId) {
+  var message = new ServerMessage();
+  message.setData(data);
+  message.setChannelId(channelId);
+  message.setFromApplication(applicationId);
+  message.setToApplication(applicationId);
+  message.setOrigin(this.origins.SERVER);
+  message.setDestination(this.destinations.CLIENT);
+  return message;
+};
+
+/**
  * @see MessageManager#createServerMessage
  */
 p.createMessage = p.createServerMessage;
+
+/**
+ * @see MessageManager#createServerMessageToChannel
+ */
+p.createMessageToChannel = p.createServerMessageToChannel;
 
 /**
  * Create a reply Message instance addressed to the sender of the provided

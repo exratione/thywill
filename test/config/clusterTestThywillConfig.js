@@ -23,6 +23,8 @@ config.cluster = {
   },
   // The cluster has two members.
   clusterMemberIds: ["alpha", "beta"],
+  heartbeatInterval: 200,
+  heartbeatTimeout: 500,
   // Undefined values will be set in the start script.
   localClusterMemberId: undefined,
   redisPrefix: "test:thywill:cluster:",

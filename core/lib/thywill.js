@@ -409,7 +409,7 @@ p._initializeComponents = function (passedApplications, callback) {
     );
   }
 
-  // Finish by starting up the clientInterface, which will process all the
+  // Start up the clientInterface, which will process all the
   // resources defined so far.
   fns.push(function (asyncCallback) {
     self.clientInterface._startup(asyncCallback);

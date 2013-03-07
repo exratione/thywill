@@ -131,45 +131,49 @@ p._configure = function (thywill, config, callback) {
     self.heartbeatStatus[clusterMemberId] = self.clusterMemberStatus.UNKNOWN;
   });
 
-  // Send out a heartbeat on a regular interval.
-  this.heartbeatIntervalId = setInterval(function () {
-    self.sendToOthers(this.heartbeatTaskName, {
-      clusterMemberId: self.getLocalClusterMemberId()
-    });
-  }, this.config.heartbeatInterval);
-
-  // Listen for heartbeats from other cluster members and update the local
-  // timestamps.
-  this.on(this.heartbeatTaskName, function (data) {
-    self.heartbeatTimestamps[data.clusterMemberId] = Date.now();
-    // If that cluster member was down, emit a note that it's up.
-    if (self.heartbeatStatus[data.clusterMemberId] === self.clusterMemberStatus.DOWN) {
-      self.emit(self.taskNames.CLUSTER_MEMBER_UP, {
-        clusterMemberId: data.clusterMemberId
-      });
-    }
-    self.heartbeatStatus[data.clusterMemberId] = self.clusterMemberStatus.UP;
-  });
-
-  // Set a process to detect failed heartbeats by timeout.
-  this.heartbeatCheckIntervalId = setInterval(function () {
-    // We only check timestamps that have previously arrived - properties of
-    // the timestamps object aren't set until the first heartbeat from a given
-    // cluster member. This makes things less confused during startup of
-    // multiple processes.
-    var timeoutTimestamp = Date.now() - self.config.heartbeatTimeout;
-    for (var clusterMemberId in self.heartbeatTimestamps) {
-      if (self.heartbeatTimestamps[clusterMemberId] < timeoutTimestamp) {
-        // Only emit an alert if the cluster member was previously noted as up.
-        if (self.heartbeatStatus[clusterMemberId] === self.clusterMemberStatus.UP) {
-          self.emit(self.taskNames.CLUSTER_MEMBER_DOWN, {
-            clusterMemberId: clusterMemberId
-          });
+  // Only start after the expensive setup stuff is done and Thywill is ready,
+  // otherwise there might be all sorts of blocking issues taking place.
+  this.thywill.on("thywill.ready", function () {
+    // Set a process to detect failed heartbeats by timeout.
+    self.heartbeatCheckIntervalId = setInterval(function () {
+      // We only check timestamps that have previously arrived - properties of
+      // the timestamps object aren't set until the first heartbeat from a given
+      // cluster member. This makes things less confused during startup of
+      // multiple processes.
+      var timeoutTimestamp = Date.now() - self.config.heartbeatTimeout;
+      for (var clusterMemberId in self.heartbeatTimestamps) {
+        if (self.heartbeatTimestamps[clusterMemberId] < timeoutTimestamp) {
+          // Only emit an alert if the cluster member was previously noted as up.
+          if (self.heartbeatStatus[clusterMemberId] === self.clusterMemberStatus.UP) {
+            self.emit(self.taskNames.CLUSTER_MEMBER_DOWN, {
+              clusterMemberId: clusterMemberId
+            });
+          }
+          self.heartbeatStatus[clusterMemberId] = self.clusterMemberStatus.DOWN;
         }
-        self.heartbeatStatus[clusterMemberId] = self.clusterMemberStatus.DOWN;
       }
-    }
-  }, this.config.heartbeatInterval);
+    }, self.config.heartbeatInterval);
+
+    // Emit heartbeats at an interval.
+    self.heartbeatIntervalId = setInterval(function () {
+      self.sendToOthers(self.heartbeatTaskName, {
+        clusterMemberId: self.getLocalClusterMemberId()
+      });
+    }, self.config.heartbeatInterval);
+
+    // Listen for heartbeats from other cluster members and update the local
+    // timestamps.
+    self.on(self.heartbeatTaskName, function (data) {
+      self.heartbeatTimestamps[data.clusterMemberId] = Date.now();
+      // If that cluster member was down, emit a note that it's up.
+      if (self.heartbeatStatus[data.clusterMemberId] === self.clusterMemberStatus.DOWN) {
+        self.emit(self.taskNames.CLUSTER_MEMBER_UP, {
+          clusterMemberId: data.clusterMemberId
+        });
+      }
+      self.heartbeatStatus[data.clusterMemberId] = self.clusterMemberStatus.UP;
+    });
+  });
 
   // ---------------------------------------------------------
   // Subscribe to the channels to start picking up tasks.
@@ -209,8 +213,32 @@ p.getLocalClusterMemberId = function () {
 /**
  * @see Cluster#getClusterMemberStatus
  */
-p.getClusterMemberStatus = function (clusterMemberId) {
+p.getClusterMemberStatus = function (clusterMemberId, callback) {
+  callback(this.NO_ERRORS, this.getClusterMemberStatusSync(clusterMemberId));
+};
+
+/**
+ * Since cluster member status is maintained in memory, the async method isn't
+ * required for this implementation.
+ *
+ * @see Cluster#getClusterMemberStatus
+ */
+p.getClusterMemberStatusSync = function (clusterMemberId) {
   return this.heartbeatStatus[clusterMemberId];
+};
+
+/**
+ * @see Cluster#isDesignatedHandlerFor
+ */
+p.isDesignatedHandlerFor = function (clusterMemberId, callback) {
+  // A simplistic implementation that doesn't account for multiple cluster
+  // members falling over. The handler is just the next one along in the array
+  // of cluster members.
+  var index = this.config.clusterMemberIds.indexOf(clusterMemberId) + 1;
+  if (index === this.config.clusterMemberIds.length) {
+    index = 0;
+  }
+  callback(this.NO_ERRORS, index);
 };
 
 /**

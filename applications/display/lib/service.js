@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * Exports functions to start up one of the cluster members running the Draw
+ * Exports functions to start up one of the cluster members running the Display
  * application.
  */
 
@@ -9,23 +9,17 @@ var RedisSessionStore = require("connect-redis")(express);
 var RedisStore = require("socket.io/lib/stores/redis");
 var http = require("http");
 var redis = require("redis");
-var Draw = require("./draw");
+var Display = require("./display");
 var config = require("../../../serverConfig/thywill/baseThywillConfig");
 var Thywill = require("thywill");
 
 // Data for the cluster members.
 var cluster = {
   alpha: {
-    port: 10083
+    port: 10091
   },
   beta: {
-    port: 10084
-  },
-  gamma: {
-    port: 10085
-  },
-  delta: {
-    port: 10086
+    port: 10092
   }
 };
 
@@ -40,7 +34,7 @@ function createRedisClient () {
 }
 
 /**
- * Start a Draw application process running.
+ * Start a Display application process running.
  *
  * @param {string} clusterMemberName
  *   The name of the cluster member to start.
@@ -53,8 +47,8 @@ exports.start = function (clusterMemberId) {
 
   // An example application should have its own base path and Socket.IO
   // namespace.
-  config.clientInterface.baseClientPath = "/draw";
-  config.clientInterface.namespace = "/draw";
+  config.clientInterface.baseClientPath = "/display";
+  config.clientInterface.namespace = "/display";
   // We're using sessions, managed via Express.
   config.clientInterface.sessions.type = "express";
   // Thywill needs access to the session cookie secret and key.
@@ -77,8 +71,8 @@ exports.start = function (clusterMemberId) {
   var server = http.createServer(app).listen(cluster[clusterMemberId].port);
   config.clientInterface.server.server = server;
   // Note that the client resource has no leading /. These must otherwise match.
-  config.clientInterface.socketClientConfig.resource = "draw/socket.io";
-  config.clientInterface.socketConfig.global.resource = "/draw/socket.io";
+  config.clientInterface.socketClientConfig.resource = "display/socket.io";
+  config.clientInterface.socketConfig.global.resource = "/display/socket.io";
   // Create a RedisStore for Socket.IO.
   config.clientInterface.socketConfig.global.store = new RedisStore({
     redisPub: createRedisClient(),
@@ -93,13 +87,13 @@ exports.start = function (clusterMemberId) {
       name: "redisCluster"
     },
     // The cluster has four members.
-    clusterMemberIds: ["alpha", "beta", "gamma", "delta"],
+    clusterMemberIds: ["alpha", "beta"],
     heartbeatInterval: 200,
     heartbeatTimeout: 500,
     // The local member name is drawn from the arguments.
     localClusterMemberId: clusterMemberId,
     publishRedisClient: createRedisClient(),
-    redisPrefix: "thywill:draw:cluster:",
+    redisPrefix: "thywill:display:cluster:",
     subscribeRedisClient: createRedisClient()
   };
 
@@ -107,8 +101,8 @@ exports.start = function (clusterMemberId) {
   config.log.level = "debug";
 
   // Base paths to use when defining new resources for merged CSS and Javascript.
-  config.minifier.cssBaseClientPath = "/draw/css";
-  config.minifier.jsBaseClientPath = "/draw/js";
+  config.minifier.cssBaseClientPath = "/display/css";
+  config.minifier.jsBaseClientPath = "/display/js";
 
   // Use a Redis-backed ResourceManager to allow resources to be shared between
   // cluster members - not that this is important for this particular example
@@ -119,7 +113,7 @@ exports.start = function (clusterMemberId) {
       name: "redisResourceManager"
     },
     cacheSize: 100,
-    redisPrefix: "thywill:draw:resource:",
+    redisPrefix: "thywill:display:resource:",
     // This will be set in the start script.
     redisClient: createRedisClient()
   };
@@ -149,14 +143,14 @@ exports.start = function (clusterMemberId) {
   });
 
   // Instantiate an application object.
-  var draw = new Draw("draw");
+  var display = new Display("display");
 
   // ------------------------------------------------------
   // Launch Thywill.
   // ------------------------------------------------------
 
   // And off we go: launch a Thywill instance to run the the application.
-  Thywill.launch(config, draw, function (error, thywill) {
+  Thywill.launch(config, display, function (error, thywill) {
     if (error) {
       if (error instanceof Error) {
         error = error.stack;
@@ -164,7 +158,7 @@ exports.start = function (clusterMemberId) {
       console.error("Thywill launch failed with error: " + error);
       process.exit(1);
     } else {
-      thywill.log.info("Thywill is ready to run cluster member [" + clusterMemberId + "] for the Draw example application.");
+      thywill.log.info("Thywill is ready to run cluster member [" + clusterMemberId + "] for the Display example application.");
     }
   });
 };
