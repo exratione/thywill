@@ -163,8 +163,6 @@
     var data = message.getData();
     var clusterMemberId;
 
-console.log(data);
-
     switch (data.type) {
       case "connection":
         this.displayMessage(data.clusterMemberId, data.connectionId + " connected.");
