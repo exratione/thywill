@@ -95,8 +95,10 @@ exports.setupConfig = function (baseConfig, options) {
 
   config.cluster.localClusterMemberId = options.localClusterMemberId;
   if (config.cluster.implementation.name === "redisCluster") {
-    config.cluster.publishRedisClient = createRedisClient();
-    config.cluster.subscribeRedisClient = createRedisClient();
+    config.cluster.communication.publishRedisClient = createRedisClient();
+    config.cluster.communication.subscribeRedisClient = createRedisClient();
+    config.cluster.heartbeat.publishRedisClient = createRedisClient();
+    config.cluster.heartbeat.subscribeRedisClient = createRedisClient();
   }
 
   // ------------------------------------------------------------

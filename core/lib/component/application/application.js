@@ -275,6 +275,9 @@ p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {
  * too much time to loop through the disconnected items will quickly be
  * overtaken by events.
  *
+ * The application will not get disconnectionFrom() notices for any of the
+ * connectionIds provided via this method.
+ *
  * @param {string} clusterMemberId
  *   ID of the cluster member that failed.
  * @param {object} connectionData

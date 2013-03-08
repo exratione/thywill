@@ -226,7 +226,7 @@ p._configure = function (thywill, config, callback) {
     unsubscribe: "thywill:clientInterface:unsubscribeClient"
   };
 
-  // A cluster member fails and goes down.
+  // A cluster member fails and goes down. Clear local data, and notify applications.
   this.thywill.cluster.on(this.thywill.cluster.taskNames.CLUSTER_MEMBER_DOWN, function (data) {
     function notify (connections, sessions) {
       process.nextTick(function () {
@@ -286,6 +286,11 @@ p._configure = function (thywill, config, callback) {
   // Request an update on who is connected from all other cluster members, so
   // as to bring data up to date in the case where a cluster member falls over.
   this.thywill.cluster.sendToOthers(this.clusterTask.connectionDataRequest, {});
+  // Send out a notice that this server has no connections, to ensure that
+  // the other processes are correct in their counts.
+  this.thywill.cluster.sendToOthers(self.clusterTask.connectionData, {
+    connections: this.connections[this.thywill.cluster.getLocalClusterMemberId()]
+  });
 
   // Set ready status.
   this.readyCallback = callback;

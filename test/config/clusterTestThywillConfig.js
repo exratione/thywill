@@ -23,13 +23,19 @@ config.cluster = {
   },
   // The cluster has two members.
   clusterMemberIds: ["alpha", "beta"],
-  heartbeatInterval: 200,
-  heartbeatTimeout: 500,
+  communication: {
+    publishRedisClient: undefined,
+    subscribeRedisClient: undefined
+  },
+  heartbeat: {
+    interval: 200,
+    publishRedisClient: undefined,
+    subscribeRedisClient: undefined,
+    timeout: 500
+  },
   // Undefined values will be set in the start script.
   localClusterMemberId: undefined,
-  redisPrefix: "test:thywill:cluster:",
-  publishRedisClient: undefined,
-  subscribeRedisClient: undefined
+  redisPrefix: "test:thywill:cluster:"
 };
 
 // Set the http.Server instance and Express in the start script, not here.

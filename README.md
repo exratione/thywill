@@ -93,11 +93,19 @@ example:
       },
       // The cluster has four member processes.
       clusterMemberIds: ["alpha", "beta", "gamma", "delta"],
+      communication: {
+        publishRedisClient: createRedisClient(6379, "127.0.0.1"),
+        subscribeRedisClient: createRedisClient(6379, "127.0.0.1")
+      },
+      heartbeat: {
+        interval: 200,
+        publishRedisClient: createRedisClient(6379, "127.0.0.1"),
+        subscribeRedisClient: createRedisClient(6379, "127.0.0.1"),
+        timeout: 500
+      },
       // This is the alpha process.
       localClusterMemberId: "alpha",
-      redisPrefix: "thywill:draw:cluster:",
-      publishRedisClient: redis.createClient(6379, "127.0.0.1"),
-      subscribeRedisClient: redis.createClient(6379, "127.0.0.1")
+      redisPrefix: "thywill:draw:cluster:"
     };
 
 It is easy to pass data between cluster members in your application. For

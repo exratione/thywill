@@ -86,15 +86,21 @@ exports.start = function (clusterMemberId) {
       type: "core",
       name: "redisCluster"
     },
-    // The cluster has four members.
+    // The cluster has two members.
     clusterMemberIds: ["alpha", "beta"],
-    heartbeatInterval: 200,
-    heartbeatTimeout: 500,
+    communication: {
+      publishRedisClient: createRedisClient(),
+      subscribeRedisClient: createRedisClient()
+    },
+    heartbeat: {
+      interval: 100,
+      publishRedisClient: createRedisClient(),
+      subscribeRedisClient: createRedisClient(),
+      timeout: 300
+    },
     // The local member name is drawn from the arguments.
     localClusterMemberId: clusterMemberId,
-    publishRedisClient: createRedisClient(),
-    redisPrefix: "thywill:display:cluster:",
-    subscribeRedisClient: createRedisClient()
+    redisPrefix: "thywill:display:cluster:"
   };
 
   // Set an appropriate log level for an example application.
