@@ -20,7 +20,7 @@ var Thywill = require("thywill");
  *
  * e.g. Process A sends a task to process B:
  *
- * thywill.cluster.sendTo("B", "doThisThing", { thing: "stuff" });
+ * cluster.sendTo("B", "doThisThing", { thing: "stuff" });
  *
  * Process B listens for such tasks as follows:
  *
@@ -28,14 +28,14 @@ var Thywill = require("thywill");
  *   // Do work here.
  * }
  *
- * A cluster implementation will emit events when other cluster members go
+ * A cluster implementation must emit events when other cluster members go
  * down or come up again. To listen on these events:
  *
- * thywill.cluster.on("thywill.cluster.down", function (data) {
+ * thywill.cluster.on(thywill.cluster.eventNames.CLUSTER_MEMBER_DOWN, function (data) {
  *   console.log("Cluster process down: " + data.clusterMemberId);
  * });
  *
- * thywill.cluster.on("thywill.cluster.up", function (data) {
+ * thywill.cluster.on(thywill.cluster.eventNames.CLUSTER_MEMBER_UP, function (data) {
  *   console.log("Cluster process up: " + data.clusterMemberId);
  * });
  *
@@ -46,7 +46,7 @@ function Cluster() {
 
   // Useful shortcuts.
   this.clusterMemberStatus = Cluster.CLUSTER_MEMBER_STATUS;
-  this.taskNames = Cluster.TASK_NAMES;
+  this.eventNames = Cluster.EVENT_NAMES;
 }
 util.inherits(Cluster, Thywill.getBaseClass("Component"));
 var p = Cluster.prototype;
@@ -55,7 +55,7 @@ var p = Cluster.prototype;
 // "Static" parameters
 //-----------------------------------------------------------
 
-Cluster.TASK_NAMES = {
+Cluster.EVENT_NAMES = {
   CLUSTER_MEMBER_DOWN: "thywill.cluster.down",
   CLUSTER_MEMBER_UP: "thywill.cluster.up"
 };

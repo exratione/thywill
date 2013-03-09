@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * ClientInteface class definition.
+ * ClientInterface superclass definition.
  */
 
 var util = require("util");
@@ -12,70 +12,50 @@ var Thywill = require("thywill");
 
 /**
  * @class
- * The superclass for Thywill client interfaces. This is not intended to be
- * instantiated.
+ * The superclass for Thywill client interfaces.
+ *
+ * ClientInterface implementations must emit the following events, which
+ * require integration with the cluster communication mechanisms.
+ *
+ * Emit when a message arrives from a client.
+ * clientInterface.on(clientInterface.events.FROM_CLIENT, function (message) {});
+ *
+ * When a cluster member goes down, emit the list of connectionIds and
+ * sessionIds that were disconnected.
+ * clientInterface.on(clientInterface.events.CLUSTER_MEMBER_DOWN, function (clusterMemberId, connectionData) {});
+ *
+ * Emit on connection of a client.
+ * clientInterface.on(clientInterface.events.CONNECTION, function (connectionId, sessionId, session) {});
+ *
+ * Emit when a client disconnects from this or any other cluster member.
+ * clientInterface.on(clientInterface.events.CONNECTION_TO, function (clusterMemberId, connectionId, sessionId) {});
+ *
+ * Emit on disconnection of a client.
+ * clientInterface.on(clientInterface.events.DISCONNECTION, function (connectionId, sessionId) {});
+ *
+ * Emit when a client disconnects from this or any other cluster member.
+ * clientInterface.on(clientInterface.events.DISCONNECTION_FROM, function (clusterMemberId, connectionId, sessionId) {});
  */
 function ClientInterface () {
   ClientInterface.super_.call(this);
   this.componentType = "clientInterface";
+  // Useful reference.
+  this.events = ClientInterface.EVENTS;
 }
 util.inherits(ClientInterface, Thywill.getBaseClass("Component"));
 var p = ClientInterface.prototype;
 
 //-----------------------------------------------------------
-// Methods
+// "Static"
 //-----------------------------------------------------------
 
-/**
- * Called when a message is received from a client.
- *
- * @param {ServerMessage} message
- *   A ServerMessage instance.
- */
-p.received = function (message) {
-  var self = this;
-  var toApplicationId = message.getToApplication();
-  if (this.thywill.applications[toApplicationId]) {
-    this.thywill.applications[toApplicationId].received(message);
-  }
-};
-
-/**
- * Called when a client connects or reconnects.
- *
- * @param {string} connectionId
- *   Unique ID of the connection.
- * @param {string} sessionId
- *   Unique ID of the session associated with this connection - one session
- *   might have multiple concurrent connections.
- * @param {Object} session
- *   The session.
- */
-p.connection = function (connectionId, sessionId, session) {
-  var self = this;
-  for (var id in this.thywill.applications) {
-    process.nextTick(function () {
-      self.thywill.applications[id].connection(connectionId, sessionId, session);
-    });
-  }
-};
-
-/**
- * Called when a client disconnects.
- *
- * @param {string} connectionId
- *   Unique ID of the connection.
- * @param {string} sessionId
- *   Unique ID of the session associated with this connection - one session
- *   might have multiple concurrent connections.
- */
-p.disconnection = function (connectionId, sessionId) {
-  var self = this;
-  for (var id in this.thywill.applications) {
-    process.nextTick(function () {
-      self.thywill.applications[id].disconnection(connectionId, sessionId);
-    });
-  }
+ClientInterface.EVENTS = {
+  CONNECTION: "connection",
+  CONNECTION_TO: "connectionTo",
+  DISCONNECTION: "disconnection",
+  DISCONNECTION_FROM: "disconnectionFrom",
+  CLUSTER_MEMBER_DOWN: "clusterMemberDown",
+  FROM_CLIENT: "fromClient"
 };
 
 //-----------------------------------------------------------

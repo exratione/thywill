@@ -1,4 +1,5 @@
 /*global
+  dateFormat: false,
   document: false,
   Handlebars: false,
   Thywill: false
@@ -67,8 +68,7 @@
    * Make the UI enabled and allow sending.
    */
   p.uiEnable = function () {
-
-
+    // Not needed.
   };
 
   /**
@@ -96,6 +96,7 @@
   p.displayMessage = function(clusterMemberId, text) {
     var messages = jQuery("#" + clusterMemberId + " .messages");
     jQuery(this.templates.textTemplate({
+      timestamp: dateFormat(Date.now(), "HH:MM:ss"),
       text: text
     })).hide().appendTo(messages).slideDown("fast", function () {
       messages.scrollTop(messages.height());

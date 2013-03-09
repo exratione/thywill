@@ -217,30 +217,34 @@ p._configure = function (thywill, config, callback) {
     // Request for all connected client data for a specific process.
     connectionDataRequest: "thywill:clientInterface:connectedDataRequest",
     // Client connection notice from another cluster member.
-    connection: "thywill:clientInterface:connection",
+    connectionTo: "thywill:clientInterface:connectionTo",
     // Client disconnection notice from another cluster member.
-    disconnection: "thywill:clientInterface:disconnection",
+    disconnectionFrom: "thywill:clientInterface:disconnectionFrom",
     // Request to subscribe a client if they exist locally.
     subscribe: "thywill:clientInterface:subscribeClient",
     // Request to unsubscribe a client if they exist locally.
     unsubscribe: "thywill:clientInterface:unsubscribeClient"
   };
 
-  // A cluster member fails and goes down. Clear local data, and notify applications.
-  this.thywill.cluster.on(this.thywill.cluster.taskNames.CLUSTER_MEMBER_DOWN, function (data) {
-    function notify (connections, sessions) {
-      process.nextTick(function () {
-        self.thywill.applications[id].clusterMemberDown(data.clusterMemberId, {
-          connections: connections,
-          sessions: sessions
-        });
-      });
-    }
-    for (var id in self.thywill.applications) {
-      var connectionData = self.connections[data.clusterMemberId];
-      notify(connectionData.connections, connectionData.sessions);
-    }
+  // A cluster member fails and goes down. Emit the connection data, then clear it.
+  this.thywill.cluster.on(this.thywill.cluster.eventNames.CLUSTER_MEMBER_DOWN, function (data) {
+    var connections = self.connections[data.clusterMemberId].connections;
+    var sessions = self.connections[data.clusterMemberId].sessions;
+    self.emit(self.events.CLUSTER_MEMBER_DOWN, data.clusterMemberId, {
+      connections: connections,
+      sessions: sessions
+    });
     self._clearConnectionDataForClusterMember(data.clusterMemberId);
+  });
+  // Connection notice from another cluster member.
+  this.thywill.cluster.on(this.clusterTask.connectionTo, function (data) {
+    self._updateConnectionDataForConnection(data.clusterMemberId, data.connectionId, data.sessionId);
+    self.emit(self.events.CONNECTION_TO, data.clusterMemberId, data.connectionId, data.sessionId);
+  });
+  // Disconnection notice from another cluster member.
+  this.thywill.cluster.on(this.clusterTask.disconnectionFrom, function (data) {
+    self._updateConnectionDataForDisconnection(data.clusterMemberId, data.connectionId, data.sessionId);
+    self.emit(self.events.DISCONNECTION_FROM, data.clusterMemberId, data.connectionId, data.sessionId);
   });
   // Delivery of connection data from another server.
   this.thywill.cluster.on(this.clusterTask.connectionData, function (data) {
@@ -251,24 +255,6 @@ p._configure = function (thywill, config, callback) {
     self.thywill.cluster.sendTo(data.clusterMemberId, self.clusterTask.connectionData, {
       connections: self.connections[self.thywill.cluster.getLocalClusterMemberId()]
     });
-  });
-  // Connection notice from another cluster member.
-  this.thywill.cluster.on(this.clusterTask.connection, function (data) {
-    self._updateConnectionDataForConnection(data.clusterMemberId, data.connectionId, data.sessionId);
-    for (var id in self.thywill.applications) {
-      process.nextTick(function () {
-        self.thywill.applications[id].connectionTo(data.clusterMemberId, data.connectionId, data.sessionId);
-      });
-    }
-  });
-  // Disconnection notice from another cluster member.
-  this.thywill.cluster.on(this.clusterTask.disconnection, function (data) {
-    self._updateConnectionDataForDisconnection(data.clusterMemberId, data.connectionId, data.sessionId);
-    for (var id in self.thywill.applications) {
-      process.nextTick(function () {
-        self.thywill.applications[id].disconnectionFrom(data.clusterMemberId, data.connectionId, data.sessionId);
-      });
-    }
   });
   // Subscribe a connectionId if it exists locally.
   this.thywill.cluster.on(this.clusterTask.subscribe, function (data) {
@@ -437,7 +423,7 @@ p._startup = function (callback) {
     // applications) and stash them in an accessible array.
     loadAllBootstrapResources: function (asyncCallback) {
       self.getBootstrapResources(function(error, otherResources) {
-        if (otherResources instanceof Array) {
+        if (Array.isArray(otherResources)) {
           resources = resources.concat(otherResources);
         }
         asyncCallback(error);
@@ -583,8 +569,8 @@ p._setExpressToServeResources = function () {
   var express = require("express");
 
   // This middleware essentially performs the action of a route. This is a way
-  // to ensure that Thywill routes will run no matter when routes or middleware
-  // are added.
+  // to ensure that Thywill routes will run no matter the order in which
+  // routes or middleware are added.
   var middleware = function (req, res, next) {
     // Is this request in the right base path?
     if (req.path.match(self.config.baseClientPathRegExp)) {
@@ -788,18 +774,25 @@ p.initializeNewSocketConnection = function (socket) {
 
     // If valid now, send it onward.
     if (message.isValid()) {
-      self.received(message);
+      self.emit(self.events.FROM_CLIENT, message);
     } else {
       self.thywill.log.debug("Empty or broken message received from connection: " + socket.id + " with contents: " + JSON.stringify(rawMessage));
     }
   });
 
   /**
-   * The socket disconnects.
+   * The socket disconnects. Note that in practice this event is unreliable -
+   * it works nearly all of the time, but not all of the time.
    */
   socket.on("disconnect", function() {
     var data = self.connectionDataFromSocket(socket);
-    self.disconnection(data.connectionId, data.sessionId);
+    // Notify all listeners that a client has disconnected.
+    self.emit(self.events.DISCONNECTION, data.connectionId, data.sessionId);
+    // Send out notices to all cluster processes.
+    self.thywill.cluster.sendToAll(self.clusterTask.disconnectionFrom, {
+      connectionId: data.connectionId,
+      sessionId: data.sessionId
+    });
   });
 
   // Socket.io connections will try to reconnect automatically if configured
@@ -811,9 +804,14 @@ p.initializeNewSocketConnection = function (socket) {
   });
   */
 
-  // Finally, tell applications that a new client has connected.
+  // Finally, notify all listeners and other cluster processes that a new
+  // client has connected.
   var data = this.connectionDataFromSocket(socket);
-  this.connection(data.connectionId, data.sessionId, data.session);
+  this.emit(this.events.CONNECTION, data.connectionId, data.sessionId, data.session);
+  this.thywill.cluster.sendToAll(this.clusterTask.connectionTo, {
+    connectionId: data.connectionId,
+    sessionId: data.sessionId
+  });
 };
 
 /**
@@ -1050,32 +1048,6 @@ p._unsubscribeLocalSocket = function (connectionId, channelId) {
   } else {
     return false;
   }
-};
-
-/**
- * @see ClientInterface#connection
- */
-p.connection = function (connectionId, sessionId, session) {
-  // Perform the standard superclass notifications in the local process.
-  this.constructor.super_.prototype.connection.call(this, connectionId, sessionId, session);
-  // Send out notices to all processes.
-  this.thywill.cluster.sendToAll(this.clusterTask.connection, {
-    connectionId: connectionId,
-    sessionId: sessionId
-  });
-};
-
-/**
- * @see ClientInterface#disconnection
- */
-p.disconnection = function (connectionId, sessionId) {
-  // Perform the standard superclass notifications in the local process.
-  this.constructor.super_.prototype.disconnection.call(this, connectionId, sessionId);
-  // Send out notices to all processes.
-  this.thywill.cluster.sendToAll(this.clusterTask.disconnection, {
-    connectionId: connectionId,
-    sessionId: sessionId
-  });
 };
 
 //-----------------------------------------------------------

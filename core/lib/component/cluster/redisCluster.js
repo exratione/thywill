@@ -175,7 +175,7 @@ p._configure = function (thywill, config, callback) {
           // Only emit an alert if the cluster member was previously noted as up.
           if (self.heartbeatStatus[clusterMemberId] === self.clusterMemberStatus.UP) {
             self.thywill.log.warn("RedisCluster: " + clusterMemberId + " is down.");
-            self.emit(self.taskNames.CLUSTER_MEMBER_DOWN, {
+            self.emit(self.eventNames.CLUSTER_MEMBER_DOWN, {
               clusterMemberId: clusterMemberId
             });
           }
@@ -201,7 +201,7 @@ p._configure = function (thywill, config, callback) {
       // If that cluster member was down, emit a note that it's up.
       if (self.heartbeatStatus[clusterMemberId] === self.clusterMemberStatus.DOWN) {
         self.thywill.log.warn("RedisCluster: " + clusterMemberId + " is up.");
-        self.emit(self.taskNames.CLUSTER_MEMBER_UP, {
+        self.emit(self.eventNames.CLUSTER_MEMBER_UP, {
           clusterMemberId: clusterMemberId
         });
       }

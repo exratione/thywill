@@ -368,10 +368,10 @@ p._initializeComponents = function (passedApplications, callback) {
     }
   });
 
-  // Add two loops through the applications array, if we have one, to
-  // the list of functions to call.
+  // Add various loops through the applications array, if we have one. The
+  // application setup functions are called in order.
   if (passedApplications) {
-    if (!(passedApplications instanceof Array)) {
+    if (!Array.isArray(passedApplications)) {
       passedApplications = [passedApplications];
     }
     fns.push(
@@ -402,6 +402,17 @@ p._initializeComponents = function (passedApplications, callback) {
           passedApplications,
           function (application, innerAsyncCallback) {
             application._setup(innerAsyncCallback);
+          },
+          asyncCallback
+        );
+      }
+    );
+    fns.push(
+      function (asyncCallback) {
+        async.forEach(
+          passedApplications,
+          function (application, innerAsyncCallback) {
+            application._setupListeners(innerAsyncCallback);
           },
           asyncCallback
         );

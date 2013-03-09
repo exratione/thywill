@@ -55,6 +55,14 @@ var manifest = {
     type: Resource.TYPES.JAVASCRIPT,
     weight: 10
   },
+  // Add dateformat.js.
+  "../../../thirdParty/dateformat/dateformat.1.2.3.js": {
+    clientPath: "/display/js/dateformat.js",
+    encoding: encoding,
+    minified: false,
+    type: Resource.TYPES.JAVASCRIPT,
+    weight: 20
+  },
   // Add HTML5 Boilerplate CSS.
   "../../../thirdParty/html5boilerplate/html5boilerplate.css": {
     clientPath: "/display/css/html5boilerplate.css",

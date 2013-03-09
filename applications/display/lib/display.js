@@ -91,10 +91,10 @@ p._defineBootstrapResources = function (callback) {
  */
 p._setup = function (callback) {
   var self = this;
-  this.thywill.cluster.on(this.thywill.cluster.taskNames.CLUSTER_MEMBER_DOWN, function (data) {
+  this.thywill.cluster.on(this.thywill.cluster.eventNames.CLUSTER_MEMBER_DOWN, function (data) {
     self.sendText(data.clusterMemberId + " is down.");
   });
-  this.thywill.cluster.on(this.thywill.cluster.taskNames.CLUSTER_MEMBER_UP, function (data) {
+  this.thywill.cluster.on(this.thywill.cluster.eventNames.CLUSTER_MEMBER_UP, function (data) {
     self.sendText(data.clusterMemberId + " is up.");
   });
   callback();

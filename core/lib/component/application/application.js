@@ -15,6 +15,14 @@ var Thywill = require("thywill");
  * @class
  * The superclass for applications running on Thywill.
  *
+ * When Thywill starts up, the following functions are invoked in order:
+ *
+ * application._defineBootstrapResources()
+ * application._setup()
+ * application._setupListeners()
+ *
+ * Only the first two of these have to be implemented by a child class.
+ *
  * @param {string} id
  *   An ID uniquely identifying this application.
  */
@@ -157,6 +165,49 @@ p.storeBootstrapResourcesFromManifest = function (manifest, callback) {
   );
 };
 
+
+//-----------------------------------------------------------
+// Methods: setup
+//-----------------------------------------------------------
+
+/**
+ * Set up the listeners that ensure the various notification functions in this
+ * instance are invoked at the right time.
+ *
+ * @param {function} callback
+ *   Of the form function (error).
+ */
+p._setupListeners = function (callback) {
+  var self = this;
+  var clientInterface = this.thywill.clientInterface;
+
+  // The all-important listener for messages from clients.
+  clientInterface.on(clientInterface.events.FROM_CLIENT, function (message) {
+    if (message.getToApplication() === self.id) {
+      self.received(message);
+    }
+  });
+
+  // Connection and disconnection listeners.
+  clientInterface.on(clientInterface.events.CLUSTER_MEMBER_DOWN, function () {
+    self.clusterMemberDown.apply(self, arguments);
+  });
+  clientInterface.on(clientInterface.events.CONNECTION, function () {
+    self.connection.apply(self, arguments);
+  });
+  clientInterface.on(clientInterface.events.CONNECTION_TO, function () {
+    self.connectionTo.apply(self, arguments);
+  });
+  clientInterface.on(clientInterface.events.DISCONNECTION, function () {
+    self.disconnection.apply(self, arguments);
+  });
+  clientInterface.on(clientInterface.events.DISCONNECTION_FROM, function () {
+    self.disconnectionFrom.apply(self, arguments);
+  });
+
+  callback();
+};
+
 //-----------------------------------------------------------
 // Methods to be implemented by subclasses.
 //-----------------------------------------------------------
@@ -175,7 +226,7 @@ p.storeBootstrapResourcesFromManifest = function (manifest, callback) {
  * this.thywill.clientInterface.storeBootstrapResource(resource, callback);
  *
  * @param {function} callback
- *   Of the form function (error) {}, where error === null on success.
+ *   Of the form function (error).
  */
 p._defineBootstrapResources = function (callback) {
   throw new Error("Not implemented.");
