@@ -188,6 +188,35 @@ Thywill.getBaseClass = (function () {
   };
 } ());
 
+/**
+ * Redis clients from the "redis" package can emit "end" events and then
+ * silently block on all future method calls. This happens if the Redis server
+ * has a client timeout set, but can happen intermittently even without that
+ * being the case. See:
+ *
+ * http://www.exratione.com/2013/01/nodejs-connections-will-end-close-and-otherwise-blow-up/
+ *
+ * This function ensures that a Redis client will be replaced if this happens.
+ *
+ * @param {RedisClient} client
+ *   A RedisClient instances from the "redis" package.
+ */
+Thywill.protectRedisClient = function (client) {
+  var redis = require("redis");
+  function replace (client) {
+    // Ensure that all connection handles are definitely closed.
+    client.end();
+    client = redis.createClient(client.port, client.host, client.options);
+    Thywill.protectRedisClient(client);
+  }
+  client.on("close", function () {
+    replace(client);
+  });
+  client.on("end", function () {
+    replace(client);
+  });
+};
+
 //-----------------------------------------------------------
 // Utility methods
 //-----------------------------------------------------------

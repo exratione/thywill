@@ -30,7 +30,9 @@ var cluster = {
  */
 function createRedisClient () {
   var options = {};
-  return redis.createClient(6379, "127.0.0.1", options);
+  var client = redis.createClient(6379, "127.0.0.1", options);
+  Thywill.protectRedisClient(client);
+  return client;
 }
 
 /**
