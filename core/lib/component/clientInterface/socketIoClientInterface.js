@@ -355,6 +355,21 @@ p._startup = function (callback) {
 
   // Array of loader functions to be called in series.
   var fns = {
+    // Create a resource for the socket.IO client code.
+    createSocketIoJSResource: function (asyncCallback) {
+      var originFilePath = pathHelpers.resolve(__dirname, "../../../../node_modules/socket.io-client/dist/socket.io.min.js");
+      var data = fs.readFileSync(originFilePath, self.config.textEncoding);
+      // Generate a resource.
+      var resource = resourceManager.createResource(data, {
+        clientPath: self.config.baseClientPath + "/js/socket.io.js",
+        encoding: self.config.textEncoding,
+        minified: true,
+        originFilePath: originFilePath,
+        type: resourceManager.types.JAVASCRIPT,
+        weight: -99999
+      });
+      self.storeBootstrapResource(resource, asyncCallback);
+    },
     // Create a resource for the main client-side Thywill Javascript. We are
     // passing in some additional code via templating.
     createMainThywillJsResource: function (asyncCallback) {
@@ -475,23 +490,6 @@ p._startup = function (callback) {
         }
         resourcesByType[resources[i].type].push(resources[i]);
       }
-
-      // This Javascript resource is supplied by Socket.io, so we don't have
-      // the content.
-      //
-      // TODO: how best to get it running as a resource rather than this
-      // ad-hoc placement?
-      //
-      if (!resourcesByType[resourceManager.types.JAVASCRIPT]) {
-        resourcesByType[resourceManager.types.JAVASCRIPT] = [];
-      }
-      // This is a fake resource object with only the data needed for the
-      // templating. Sketchy. It has to be first, or at least very near the
-      // top.
-      resourcesByType[resourceManager.types.JAVASCRIPT].unshift({
-        clientPath: self.socketFactory.get('resource') + '/socket.io.js',
-        type: resourceManager.types.JAVASCRIPT
-      });
 
       // Render the template and stash it as a resource.
       var mainPage = mainPageTemplate({

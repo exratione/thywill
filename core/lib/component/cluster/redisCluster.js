@@ -169,23 +169,34 @@ p._configure = function (thywill, config, callback) {
       // the timestamps object aren't set until the first heartbeat from a given
       // cluster member. This makes things less confused during startup of
       // multiple processes.
-      var timeoutTimestamp = Date.now() - self.config.heartbeat.timeout;
       for (var clusterMemberId in self.heartbeatTimestamps) {
-        if (self.heartbeatTimestamps[clusterMemberId] < timeoutTimestamp) {
-          // Only emit an alert if the cluster member was previously noted as up.
-          if (self.heartbeatStatus[clusterMemberId] === self.clusterMemberStatus.UP) {
-            self.thywill.log.warn("RedisCluster: " + clusterMemberId + " is down.");
-            self.emit(self.eventNames.CLUSTER_MEMBER_DOWN, {
-              clusterMemberId: clusterMemberId
-            });
-          }
+        // Only bother checking those that are marked up.
+        if (self.heartbeatStatus[clusterMemberId] !== self.clusterMemberStatus.UP) {
+          return;
+        }
+        var sinceLast = Date.now() - self.heartbeatTimestamps[clusterMemberId];
+        if (sinceLast > self.config.heartbeat.timeout) {
           self.heartbeatStatus[clusterMemberId] = self.clusterMemberStatus.DOWN;
+          self.thywill.log.warn("RedisCluster: " + clusterMemberId + " is down. " + sinceLast + "ms since last heartbeat.");
+          self.emit(self.eventNames.CLUSTER_MEMBER_DOWN, {
+            clusterMemberId: clusterMemberId
+          });
         }
       }
     }, self.config.heartbeat.interval);
 
     // Emit heartbeats at an interval.
+    var lastHeartbeat;
+    var lagDelay = 1.5 * self.config.heartbeat.interval;
     self.heartbeatIntervalId = setInterval(function () {
+      var timestamp = Date.now();
+      if (lastHeartbeat) {
+        var since = timestamp - lastHeartbeat;
+        if (since > lagDelay) {
+          self.thywill.log.debug("RedisCluster: heartbeat interval is lagging: " + since + "ms since last.");
+        }
+      }
+      lastHeartbeat = timestamp;
       self.sendHeartbeat();
     }, self.config.heartbeat.interval);
 
@@ -198,14 +209,16 @@ p._configure = function (thywill, config, callback) {
       }
 
       self.heartbeatTimestamps[clusterMemberId] = Date.now();
-      // If that cluster member was down, emit a note that it's up.
+      // If that cluster member was down, emit to declare that it's up.
       if (self.heartbeatStatus[clusterMemberId] === self.clusterMemberStatus.DOWN) {
+        self.heartbeatStatus[clusterMemberId] = self.clusterMemberStatus.UP;
         self.thywill.log.warn("RedisCluster: " + clusterMemberId + " is up.");
         self.emit(self.eventNames.CLUSTER_MEMBER_UP, {
           clusterMemberId: clusterMemberId
         });
+      } else if (self.heartbeatStatus[clusterMemberId] === self.clusterMemberStatus.UNKNOWN) {
+        self.heartbeatStatus[clusterMemberId] = self.clusterMemberStatus.UP;
       }
-      self.heartbeatStatus[clusterMemberId] = self.clusterMemberStatus.UP;
     });
   });
 
