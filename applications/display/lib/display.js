@@ -91,12 +91,23 @@ p._defineBootstrapResources = function (callback) {
  */
 p._setup = function (callback) {
   var self = this;
+
+  // Start listening on generic cluster events.
   this.thywill.cluster.on(this.thywill.cluster.eventNames.CLUSTER_MEMBER_DOWN, function (data) {
     self.sendText(data.clusterMemberId + " is down.");
   });
   this.thywill.cluster.on(this.thywill.cluster.eventNames.CLUSTER_MEMBER_UP, function (data) {
     self.sendText(data.clusterMemberId + " is up.");
   });
+
+  // Listen in on socketIoClientInterface-specific cluster events.
+  this.thywill.cluster.on(this.thywill.clientInterface.clusterTask.connectionData, function (data) {
+    self.sendText("Connection data delivered from " + data.clusterMemberId);
+  });
+  this.thywill.cluster.on(this.thywill.clientInterface.clusterTask.connectionDataRequest, function (data) {
+    self.sendText("Request for connection data from " + data.clusterMemberId);
+  });
+
   callback();
 };
 

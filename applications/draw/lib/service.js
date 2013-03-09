@@ -31,6 +31,7 @@ var cluster = {
 
 /**
  * Utility function to create a client for a local Redis server.
+ *
  * @return {object}
  *   A Redis client.
  */
@@ -104,6 +105,9 @@ exports.start = function (clusterMemberId) {
       interval: 200,
       publishRedisClient: createRedisClient(),
       subscribeRedisClient: createRedisClient(),
+      // Note that the timeout has to be chosen with server load and networ
+      // latency in mind. The heartbeat runs in a separate thread, but the
+      // heartbeat messages are propagated via Redis.
       timeout: 500
     },
     // The local member name is drawn from the arguments.

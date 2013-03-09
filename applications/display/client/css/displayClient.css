@@ -37,9 +37,12 @@ body {
   border: 1px solid #cccccc;
   box-shadow: 3px 3px 5px 0 #dddddd;
   margin: 10px;
-  height: 150px;
+  height: 100px;
   overflow-y: auto;
   padding: 0;
+}
+.cluster-member .messages {
+  height: 200px;
 }
 .cluster-member li {
   list-style: none;

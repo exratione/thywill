@@ -236,6 +236,12 @@ p._configure = function (thywill, config, callback) {
     });
     self._clearConnectionDataForClusterMember(data.clusterMemberId);
   });
+  // A cluster member comes back up. Either it was down, or the heartbeat
+  // mechanism messed up and it was up all along. Make sure we have an up to
+  // date set of connection data either way.
+  this.thywill.cluster.on(this.thywill.cluster.eventNames.CLUSTER_MEMBER_UP, function (data) {
+    self.thywill.cluster.sendTo(data.clusterMemberId, self.clusterTask.connectionDataRequest, {});
+  });
   // Connection notice from another cluster member.
   this.thywill.cluster.on(this.clusterTask.connectionTo, function (data) {
     self._updateConnectionDataForConnection(data.clusterMemberId, data.connectionId, data.sessionId);
@@ -248,10 +254,12 @@ p._configure = function (thywill, config, callback) {
   });
   // Delivery of connection data from another server.
   this.thywill.cluster.on(this.clusterTask.connectionData, function (data) {
+    self.thywill.log.debug("RedisCluster: delivery of connection data from: " + data.clusterMemberId);
     self._updateAllConnectionDataForClusterMember(data.clusterMemberId, data.connections);
   });
   // Request for connection data from another server.
   this.thywill.cluster.on(this.clusterTask.connectionDataRequest, function (data) {
+    self.thywill.log.debug("RedisCluster: request for connection data from: " + data.clusterMemberId);
     self.thywill.cluster.sendTo(data.clusterMemberId, self.clusterTask.connectionData, {
       connections: self.connections[self.thywill.cluster.getLocalClusterMemberId()]
     });
@@ -269,13 +277,11 @@ p._configure = function (thywill, config, callback) {
   // Final steps of configuration.
   // -----------------------------------------------------------------
 
-  // Request an update on who is connected from all other cluster members, so
-  // as to bring data up to date in the case where a cluster member falls over.
-  this.thywill.cluster.sendToOthers(this.clusterTask.connectionDataRequest, {});
-  // Send out a notice that this server has no connections, to ensure that
-  // the other processes are correct in their counts.
-  this.thywill.cluster.sendToOthers(self.clusterTask.connectionData, {
-    connections: this.connections[this.thywill.cluster.getLocalClusterMemberId()]
+  // When Thywill launches, after this._setup() is done:
+  this.thywill.on("thywill.ready", function () {
+    // Request an update on who is connected from all other cluster members, so
+    // as to bring data up to date in the case where a cluster member falls over.
+    self.thywill.cluster.sendToOthers(self.clusterTask.connectionDataRequest, {});
   });
 
   // Set ready status.
