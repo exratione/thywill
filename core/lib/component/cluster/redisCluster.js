@@ -4,7 +4,9 @@
  */
 
 var util = require("util");
+var path = require("path");
 var async = require("async");
+var clusterMaster = require("cluster-master");
 var Thywill = require("thywill");
 
 //-----------------------------------------------------------
@@ -15,6 +17,10 @@ var Thywill = require("thywill");
  * @class
  * A Cluster implementation backed by Redis. Communication between cluster
  * members is managed via Redis publish/subscribe mechanisms.
+ *
+ * The RedisCluster implementation spawns a separate process via the Node.js
+ * code cluster functionality to run a heartbeat and check on other cluster
+ * member heartbeats.
  *
  * @see Cluster
  */
@@ -131,7 +137,6 @@ p._configure = function (thywill, config, callback) {
     self.channels[clusterMemberId] = self.config.redisPrefix + clusterMemberId;
   });
   this.allChannel = this.config.redisPrefix + "all";
-  this.heartbeatChannel = this.config.redisPrefix + "heartbeat";
 
   // If the channel emits, then emit from this instance.
   this.config.communication.subscribeRedisClient.on("message", function (channel, json) {
@@ -159,66 +164,80 @@ p._configure = function (thywill, config, callback) {
     self.heartbeatStatus[clusterMemberId] = self.clusterMemberStatus.UNKNOWN;
   });
 
-  // Only start after the expensive setup stuff is done and Thywill is ready,
-  // otherwise there might be all sorts of blocking issues taking place to
-  // disrupt timing.
+  // Only start the heartbeat after the expensive setup stuff is done and
+  // Thywill is ready, otherwise there might be all sorts of blocking issues
+  // taking place to disrupt timing.
+  //
+  // As things stand, we still throw off heartbeat management into a separate
+  // thread to try to ensure it runs on time.
   this.thywill.on("thywill.ready", function () {
-    // Set a process to detect failed heartbeats by timeout.
-    self.heartbeatCheckIntervalId = setInterval(function () {
-      // We only check timestamps that have previously arrived - properties of
-      // the timestamps object aren't set until the first heartbeat from a given
-      // cluster member. This makes things less confused during startup of
-      // multiple processes.
-      for (var clusterMemberId in self.heartbeatTimestamps) {
-        // Only bother checking those that are marked up.
-        if (self.heartbeatStatus[clusterMemberId] !== self.clusterMemberStatus.UP) {
-          return;
-        }
-        var sinceLast = Date.now() - self.heartbeatTimestamps[clusterMemberId];
-        if (sinceLast > self.config.heartbeat.timeout) {
-          self.heartbeatStatus[clusterMemberId] = self.clusterMemberStatus.DOWN;
-          self.thywill.log.warn("RedisCluster: " + clusterMemberId + " is down. " + sinceLast + "ms since last heartbeat.");
-          self.emit(self.eventNames.CLUSTER_MEMBER_DOWN, {
-            clusterMemberId: clusterMemberId
-          });
-        }
-      }
-    }, self.config.heartbeat.interval);
 
-    // Emit heartbeats at an interval.
-    var lastHeartbeat;
-    var lagDelay = 1.5 * self.config.heartbeat.interval;
-    self.heartbeatIntervalId = setInterval(function () {
-      var timestamp = Date.now();
-      if (lastHeartbeat) {
-        var since = timestamp - lastHeartbeat;
-        if (since > lagDelay) {
-          self.thywill.log.debug("RedisCluster: heartbeat interval is lagging: " + since + "ms since last.");
-        }
-      }
-      lastHeartbeat = timestamp;
-      self.sendHeartbeat();
-    }, self.config.heartbeat.interval);
-
-    // Listen for heartbeats from other cluster members and update the local
-    // timestamps.
-    self.config.heartbeat.subscribeRedisClient.on("message", function (channel, clusterMemberId) {
-      // Ignore our own heartbeat.
-      if (clusterMemberId === self.config.localClusterMemberId) {
+    /**
+     * Invoked when a message is sent from the heartbeat process.
+     *
+     * @param {string} message
+     *   A JSON string from the process.
+     */
+    function heartbeatProcessMessage (message) {
+      try {
+        message = JSON.parse(message);
+      } catch (e) {
+        self.thywill.log.error(e);
         return;
       }
 
-      self.heartbeatTimestamps[clusterMemberId] = Date.now();
-      // If that cluster member was down, emit to declare that it's up.
-      if (self.heartbeatStatus[clusterMemberId] === self.clusterMemberStatus.DOWN) {
-        self.heartbeatStatus[clusterMemberId] = self.clusterMemberStatus.UP;
-        self.thywill.log.warn("RedisCluster: " + clusterMemberId + " is up.");
-        self.emit(self.eventNames.CLUSTER_MEMBER_UP, {
-          clusterMemberId: clusterMemberId
-        });
-      } else if (self.heartbeatStatus[clusterMemberId] === self.clusterMemberStatus.UNKNOWN) {
-        self.heartbeatStatus[clusterMemberId] = self.clusterMemberStatus.UP;
+      switch (message.type) {
+        case "log":
+          self.thywill.log[message.level](message.message);
+          break;
+
+        case "up":
+          if (self.heartbeatStatus[message.clusterMemberId] === self.clusterMemberStatus.DOWN) {
+            self.heartbeatStatus[message.clusterMemberId] = self.clusterMemberStatus.UP;
+            self.thywill.log.warn("RedisCluster: " + message.clusterMemberId + " is up.");
+            self.emit(self.eventNames.CLUSTER_MEMBER_UP, {
+              clusterMemberId: message.clusterMemberId
+            });
+          } else if (self.heartbeatStatus[message.clusterMemberId] === self.clusterMemberStatus.UNKNOWN) {
+            self.heartbeatStatus[message.clusterMemberId] = self.clusterMemberStatus.UP;
+          }
+          break;
+
+        case "down":
+          self.heartbeatStatus[message.clusterMemberId] = self.clusterMemberStatus.DOWN;
+          self.thywill.log.warn("RedisCluster: " + message.clusterMemberId + " is down. " + message.sinceLast + "ms since last heartbeat.");
+          self.emit(self.eventNames.CLUSTER_MEMBER_DOWN, {
+            clusterMemberId: message.clusterMemberId
+          });
+          break;
       }
+    }
+
+    // Set up the heartbeat process arguments by converting them to JSON and
+    // then a base64 encoded string.
+    var heartbeatProcessArguments = {
+      clusterMemberIds: self.config.clusterMemberIds,
+      heartbeatInterval: self.config.heartbeat.interval,
+      heartbeatTimeout: self.config.heartbeat.timeout,
+      localClusterMemberId: self.config.localClusterMemberId,
+      redisPort: self.config.communication.publishRedisClient.port,
+      redisHost: self.config.communication.publishRedisClient.host,
+      redisOptions: self.config.communication.publishRedisClient.options,
+      redisPrefix: self.config.redisPrefix
+    };
+
+    heartbeatProcessArguments = JSON.stringify(heartbeatProcessArguments);
+    heartbeatProcessArguments = new Buffer(heartbeatProcessArguments, "utf8").toString("base64");
+
+    clusterMaster({
+      exec: path.join(__dirname, "redisClusterHeartbeat.js"),
+      size: 1,
+      // Pass over all of the environment.
+      env: process.ENV,
+      args: [heartbeatProcessArguments],
+      silent: false,
+      signals: false,
+      onMessage: heartbeatProcessMessage
     });
   });
 
@@ -324,18 +343,6 @@ p.sendToOthers = function (taskName, data) {
   this.config.clusterMemberIds.forEach(function (clusterMemberId, index, array) {
     if (clusterMemberId !== self.config.localClusterMemberId) {
       self.config.communication.publishRedisClient.publish(self.channels[clusterMemberId], JSON.stringify(data));
-    }
-  });
-};
-
-/**
- * Send a heartbeat via Redis pub/sub to other cluster members.
- */
-p.sendHeartbeat = function () {
-  var self = this;
-  this.config.clusterMemberIds.forEach(function (clusterMemberId, index, array) {
-    if (clusterMemberId !== self.config.localClusterMemberId) {
-      self.config.heartbeat.publishRedisClient.publish(self.heartbeatChannel, self.config.localClusterMemberId);
     }
   });
 };
