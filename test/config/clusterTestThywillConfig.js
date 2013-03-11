@@ -29,8 +29,6 @@ config.cluster = {
   },
   heartbeat: {
     interval: 200,
-    publishRedisClient: undefined,
-    subscribeRedisClient: undefined,
     timeout: 500
   },
   // Undefined values will be set in the start script.

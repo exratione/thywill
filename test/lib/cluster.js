@@ -1,18 +1,18 @@
 /**
  * @fileOverview
- * Batches for testing the RedisCluster class.
+ * Batches for testing Cluster class implementations.
  */
 
 var assert = require("assert");
 
 /**
- * Add RedisCluster cluster-specific tests to the suite.
+ * Add Cluster cluster-specific tests to the suite.
  *
  * These test the communication between cluster members.
  */
 exports.cluster = function (suite) {
   suite.addBatch({
-    "redisCluster#sendTo": {
+    "cluster#sendTo": {
       topic: function () {
         var self = this;
         var taskData = {
@@ -30,7 +30,7 @@ exports.cluster = function (suite) {
     }
   });
   suite.addBatch({
-    "redisCluster#sendToOthers": {
+    "cluster#sendToOthers": {
       topic: function () {
         var self = this;
         var taskData = {
@@ -48,7 +48,7 @@ exports.cluster = function (suite) {
     }
   });
   suite.addBatch({
-    "redisCluster#sendToAll": {
+    "cluster#sendToAll": {
       topic: function () {
         var self = this;
         var taskData = {

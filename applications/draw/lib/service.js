@@ -103,9 +103,7 @@ exports.start = function (clusterMemberId) {
     },
     heartbeat: {
       interval: 200,
-      publishRedisClient: createRedisClient(),
-      subscribeRedisClient: createRedisClient(),
-      // Note that the timeout has to be chosen with server load and networ
+      // Note that the timeout has to be chosen with server load and network
       // latency in mind. The heartbeat runs in a separate thread, but the
       // heartbeat messages are propagated via Redis.
       timeout: 500

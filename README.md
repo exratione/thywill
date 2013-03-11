@@ -78,12 +78,12 @@ Clustering
 If you want to scale to serve large numbers of concurrent client connections,
 then at some point you have to start adding extra servers. Multiple Thywill
 processes can run as a cluster and communicate with one another when set up
-with a core cluster component implementation such as RedisCluster.
+with a core cluster component implementation such as RedisCluster or
+HttpCluster.
 
-If using RedisCluster, the configuration object for each cluster process needs
-to inform that process of (a) the list of cluster member IDs and (b) its own
-cluster member ID. You might look at /applications/draw/lib/service.js for an
-example:
+The RedisCluster implementation uses Redis pub/sub for communication, and runs
+a heartbeat and monitor in a separate process. Here is an example of the
+RedisCluster configuration:
 
     // The cluster implementation is backed by Redis.
     config.cluster = {
@@ -99,8 +99,6 @@ example:
       },
       heartbeat: {
         interval: 200,
-        publishRedisClient: createRedisClient(6379, "127.0.0.1"),
-        subscribeRedisClient: createRedisClient(6379, "127.0.0.1"),
         timeout: 500
       },
       // This is the alpha process.
@@ -108,8 +106,39 @@ example:
       redisPrefix: "thywill:draw:cluster:"
     };
 
+The HttpCluster implementation sets up its own web server per cluster member
+and uses it for communication and status checks between cluster members. Here
+is an example of the HttpCluster configuration:
+
+    // The cluster implementation uses a web server for communication.
+    config.cluster = {
+      implementation: {
+        type: "core",
+        name: "httpCluster"
+      },
+      // The cluster has two member processes.
+      clusterMembers: {
+        "alpha": {
+          host: "127.0.0.1",
+          port: 20091
+        },
+        "beta": {
+          host: "127.0.0.1",
+          port: 20092
+        }
+      },
+      upCheck: {
+        // How many consecutive failures in order to consider a server down?
+        consecutiveFailedChecks: 2,
+        interval: 200,
+        requestTimeout: 500
+      },
+      localClusterMemberId: "alpha",
+      taskRequestTimeout: 500
+    };
+
 It is easy to pass data between cluster members in your application. For
-example, on application setup:
+example, on application setup listen on the cluster for specific events:
 
     /**
      * @see Application#_setup
@@ -122,20 +151,19 @@ example, on application setup:
       callback();
     };
 
-Then anywhere in your application code, you can send to other cluster processes:
+Then anywhere in application code that event can be triggered in other cluster
+processes:
 
+    // Task data is any object.
+    var taskData = {
+      // Task data goes here.
+    };
     // Send to the beta process.
-    this.thywill.cluster.sendTo("beta", "myTaskType", {
-      // Task data goes here.
-    });
+    this.thywill.cluster.sendTo("beta", "myTaskType", taskData);
     // Send to all of the other processes.
-    this.thywill.cluster.sendToOthers(myTaskType", {
-      // Task data goes here.
-    });
+    this.thywill.cluster.sendToOthers("myTaskType", taskData);
     // Send to all processes, including this one.
-    this.thywill.cluster.sendToAll(myTaskType", {
-      // Task data goes here.
-    });
+    this.thywill.cluster.sendToAll("myTaskType", taskData);
 
 Keeping Track of Current Connections
 ------------------------------------
@@ -152,12 +180,14 @@ disconnects, even if this happens in other processes in a cluster:
     // Invoked whenever a client disconnects from any process in the cluster.
     Application.prototype.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {};
 
-There's also a notification for a mass disconnection on server failure - though
-admittedly a lot of thought can go into exactly what should be done by the
-application under that circumstance:
+There's also a notification for any mass disconnection resulting from server
+process crash or restart. Bear in mind that lot of thought can go into exactly
+what should be done by the application under that circumstance and best
+practice absolutely depends on the nature of that application:
 
     // Invoked when a cluster member process fails, thus disconnecting all its
-    // clients.
+    // clients - who will immediately be trying to reconnect to other cluster
+    // members.
     Application.prototype.clusterMemberDown = function (clusterMemberId, connectionData) {};
 
 The default core ClientInterface implementation keeps track of connected

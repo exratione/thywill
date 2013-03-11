@@ -21,7 +21,9 @@ var Thywill = require("thywill");
  */
 function createRedisClient () {
   var options = {};
-  return redis.createClient(6379, "127.0.0.1", options);
+  var client = redis.createClient(6379, "127.0.0.1", options);
+  Thywill.protectRedisClient(client);
+  return client;
 }
 
 /**
@@ -97,8 +99,6 @@ exports.setupConfig = function (baseConfig, options) {
   if (config.cluster.implementation.name === "redisCluster") {
     config.cluster.communication.publishRedisClient = createRedisClient();
     config.cluster.communication.subscribeRedisClient = createRedisClient();
-    config.cluster.heartbeat.publishRedisClient = createRedisClient();
-    config.cluster.heartbeat.subscribeRedisClient = createRedisClient();
   }
 
   // ------------------------------------------------------------

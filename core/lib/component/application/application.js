@@ -332,7 +332,7 @@ p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {
  * @param {string} clusterMemberId
  *   ID of the cluster member that failed.
  * @param {object} connectionData
- *   A copy of the connection data for the cluster prior to its failure,
+ *   A copy of the connection data for the cluster member prior to its failure,
  *   listing session IDs and connection IDs.
  */
 p.clusterMemberDown = function (clusterMemberId, connectionData) {

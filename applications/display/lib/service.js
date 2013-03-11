@@ -83,30 +83,44 @@ exports.start = function (clusterMemberId) {
     redisClient: createRedisClient()
   });
 
-  // The cluster implementation is backed by Redis.
+  // The cluster implementation.
   config.cluster = {
     implementation: {
       type: "core",
-      name: "redisCluster"
+      name: "httpCluster"
     },
     // The cluster has two members.
-    clusterMemberIds: ["alpha", "beta"],
-    communication: {
-      publishRedisClient: createRedisClient(),
-      subscribeRedisClient: createRedisClient()
+    clusterMembers: {
+      "alpha": {
+        host: "127.0.0.1",
+        port: 20091
+      },
+      "beta": {
+        host: "127.0.0.1",
+        port: 20092
+      }
     },
-    heartbeat: {
+    // Up checks run via HTTP.
+    upCheck: {
+      // How many consecutive failures in order to consider a server down?
+      consecutiveFailedChecks: 2,
+      // Interval is the time between the end of one request and the start
+      // of the next one. This can lag late for all sorts of reasons: e.g.
+      // network latency in the request, or more likely the Node.js process
+      // on client or endpoint is doing something else and being slow in
+      // getting to either launch the request or respond to it.
       interval: 200,
-      publishRedisClient: createRedisClient(),
-      subscribeRedisClient: createRedisClient(),
-      // Note that the timeout has to be chosen with server load and networ
-      // latency in mind. The heartbeat runs in a separate thread, but the
-      // heartbeat messages are propagated via Redis.
-      timeout: 500
+      // Adjust the timeout for expectations as to how long a cluster member
+      // can likely take to respond. It should be close to immediate unless
+      // there are long-running and computationally expensive tasks taking
+      // place.
+      requestTimeout: 500
     },
     // The local member name is drawn from the arguments.
     localClusterMemberId: clusterMemberId,
-    redisPrefix: "thywill:display:cluster:"
+    // Again, adjust for expectations as to how long a cluster member can
+    // take to immediately respond to a requests.
+    taskRequestTimeout: 500
   };
 
   // Set an appropriate log level for an example application.

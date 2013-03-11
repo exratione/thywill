@@ -27,7 +27,7 @@ var ThywillCluster = Thywill.getBaseClass("Cluster");
  *   The data to send as a message.
  */
 function sendMessage (data) {
-  cluster.worker.send(JSON.stringify(data));
+  process.send(JSON.stringify(data));
 }
 
 /**

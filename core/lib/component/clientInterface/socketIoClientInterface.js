@@ -254,12 +254,12 @@ p._configure = function (thywill, config, callback) {
   });
   // Delivery of connection data from another server.
   this.thywill.cluster.on(this.clusterTask.connectionData, function (data) {
-    self.thywill.log.debug("RedisCluster: delivery of connection data from: " + data.clusterMemberId);
+    self.thywill.log.debug("SocketIoClientInterface: delivery of connection data from: " + data.clusterMemberId);
     self._updateAllConnectionDataForClusterMember(data.clusterMemberId, data.connections);
   });
   // Request for connection data from another server.
   this.thywill.cluster.on(this.clusterTask.connectionDataRequest, function (data) {
-    self.thywill.log.debug("RedisCluster: request for connection data from: " + data.clusterMemberId);
+    self.thywill.log.debug("SocketIoClientInterface: request for connection data from: " + data.clusterMemberId);
     self.thywill.cluster.sendTo(data.clusterMemberId, self.clusterTask.connectionData, {
       connections: self.connections[self.thywill.cluster.getLocalClusterMemberId()]
     });

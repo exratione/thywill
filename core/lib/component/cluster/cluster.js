@@ -89,7 +89,7 @@ p.getLocalClusterMemberId = function () {
 };
 
 /**
- * Return the status of the cluster member, as seen by this cluster member.
+ * Return the status of another cluster member, as seen by this cluster member.
  *
  * @param {string} clusterMemberId
  *   A cluster member ID.
