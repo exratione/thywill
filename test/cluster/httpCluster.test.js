@@ -39,7 +39,7 @@ config.cluster = {
 };
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuiteForCluster("Cluster: cluster/redisCluster", {
+var suite = tools.createVowsSuiteForCluster("Cluster: cluster/httpCluster", {
   config: config,
   applications: null,
   useExpress: true,
