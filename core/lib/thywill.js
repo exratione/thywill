@@ -27,11 +27,6 @@ function Thywill() {
   this.componentType = "thywill";
   this.server = null;
 
-  // Was this Thywill instance provided with an http.Server (true) or did it
-  // create a default http.Server as a part of launch and configuration
-  // (false)?
-  this.providedServer = true;
-
   // Components.
   this.applications = {};
   this.cacheManager = null;
@@ -188,11 +183,17 @@ Thywill.getBaseClass = (function () {
   };
 } ());
 
+//-----------------------------------------------------------
+// Utility methods
+//-----------------------------------------------------------
+
 /**
  * Redis clients from the "redis" package can emit "end" events and then
  * silently block on all future method calls. This happens if the Redis server
  * has a client timeout set, but can happen intermittently even without that
- * being the case. See:
+ * being the case. The Redis client should reconnect, but sometimes doesn't -
+ * it just hangs. Hopefully this will be fixed and this function can go away
+ * in the future. See:
  *
  * http://www.exratione.com/2013/01/nodejs-connections-will-end-close-and-otherwise-blow-up/
  *
@@ -201,25 +202,89 @@ Thywill.getBaseClass = (function () {
  * @param {RedisClient} client
  *   A RedisClient instances from the "redis" package.
  */
-Thywill.protectRedisClient = function (client) {
+p.protectRedisClient = function (client) {
+  if (client.protectedByThywill) {
+    return;
+  } else {
+    client.protectedByThywill = true;
+  }
+
+  // Replacement wrappers for client functions, used to keep track of the
+  // subscriptions without relying on existing client internals.
+  var psubscribe = function () {
+    for (var i = 0, l = arguments.length; i < l; i++) {
+      if (typeof arguments[i] === "string") {
+        this._psubscriptions[arguments[i]] = true;
+      }
+    }
+    this._psubscribe.apply(this, arguments);
+  };
+  var punsubscribe = function () {
+    for (var i = 0, l = arguments.length; i < l; i++) {
+      if (typeof arguments[i] === "string") {
+        delete this._psubscriptions[arguments[i]];
+      }
+    }
+    this._punsubscribe.apply(this, arguments);
+  };
+  var subscribe = function () {
+    for (var i = 0, l = arguments.length; i < l; i++) {
+      if (typeof arguments[i] === "string") {
+        this._subscriptions[arguments[i]] = true;
+      }
+    }
+    this._subscribe.apply(this, arguments);
+  };
+  var unsubscribe = function () {
+    for (var i = 0, l = arguments.length; i < l; i++) {
+      if (typeof arguments[i] === "string") {
+        delete this._subscriptions[arguments[i]];
+      }
+    }
+    this._unsubscribe.apply(this, arguments);
+  };
+
+  // Keep track of subscriptions/unsubscriptions ourselves, rather than
+  // rely on existing client internals.
+  client._psubscriptions = {};
+  client._subscriptions = {};
+
+  // Put the replacement functions in place.
+  client._psubscribe = client.psubscribe;
+  client.psubscribe = psubscribe;
+  client._punsubscribe = client.punsubscribe;
+  client.punsubscribe = punsubscribe;
+  client._subscribe = client.subscribe;
+  client.subscribe = subscribe;
+  client._unsubscribe = client.unsubscribe;
+  client.unsubscribe = unsubscribe;
+
+  var self = this;
   var redis = require("redis");
   function replace (client) {
+    var subscriptions = Object.keys(client._subscriptions);
+    var psubscriptions = Object.keys(client._psubscriptions);
     // Ensure that all connection handles are definitely closed.
+    client.closing = true;
     client.end();
     client = redis.createClient(client.port, client.host, client.options);
-    Thywill.protectRedisClient(client);
+    self.protectRedisClient(client);
+
+    // Resubscribe where needed.
+    if (subscriptions.length) {
+      self.log.debug("Resubscribing Redis client:" + subscriptions);
+      client.subscribe.apply(client, subscriptions);
+    }
+    if (psubscriptions.length) {
+      self.log.debug("Resubscribing Redis client to patterns:" + subscriptions);
+      client.psubscribe.apply(client, psubscriptions);
+    }
   }
-  client.on("close", function () {
-    replace(client);
-  });
-  client.on("end", function () {
+  client.once("end", function () {
+    self.log.debug("Replacing Redis connection on end.");
     replace(client);
   });
 };
-
-//-----------------------------------------------------------
-// Utility methods
-//-----------------------------------------------------------
 
 /**
  * Obtain the process uid that will be used after Thywill setup is complete.

@@ -30,25 +30,23 @@ var cluster = {
 };
 
 /**
- * Utility function to create a client for a local Redis server.
- *
- * @return {object}
- *   A Redis client.
- */
-function createRedisClient () {
-  var options = {};
-  var client = redis.createClient(6379, "127.0.0.1", options);
-  Thywill.protectRedisClient(client);
-  return client;
-}
-
-/**
  * Start a Draw application process running.
  *
  * @param {string} clusterMemberName
  *   The name of the cluster member to start.
  */
 exports.start = function (clusterMemberId) {
+
+  // All the Redis clients that will be needed.
+  var redisClients = {
+    sessionStore: redis.createClient(6379, "127.0.0.1"),
+    socketPub: redis.createClient(6379, "127.0.0.1"),
+    socketSub: redis.createClient(6379, "127.0.0.1"),
+    socketClient: redis.createClient(6379, "127.0.0.1"),
+    clusterPub: redis.createClient(6379, "127.0.0.1"),
+    clusterSub: redis.createClient(6379, "127.0.0.1"),
+    resourceManager: redis.createClient(6379, "127.0.0.1")
+  };
 
   // ------------------------------------------------------
   // Adapt the base configuration for this example.
@@ -67,7 +65,7 @@ exports.start = function (clusterMemberId) {
   // sessions can be assigned to websocket connections. Since this is a
   // clustered example, we're using a Redis-backed store here.
   config.clientInterface.sessions.store = new RedisSessionStore({
-    client: createRedisClient()
+    client: redisClients.sessionStore
   });
 
   // Resource minification settings.
@@ -84,9 +82,9 @@ exports.start = function (clusterMemberId) {
   config.clientInterface.socketConfig.global.resource = "/draw/socket.io";
   // Create a RedisStore for Socket.IO.
   config.clientInterface.socketConfig.global.store = new RedisStore({
-    redisPub: createRedisClient(),
-    redisSub: createRedisClient(),
-    redisClient: createRedisClient()
+    redisPub: redisClients.socketPub,
+    redisSub: redisClients.socketSub,
+    redisClient: redisClients.socketClient
   });
 
   // The cluster implementation is backed by Redis.
@@ -98,8 +96,8 @@ exports.start = function (clusterMemberId) {
     // The cluster has four members.
     clusterMemberIds: ["alpha", "beta", "gamma", "delta"],
     communication: {
-      publishRedisClient: createRedisClient(),
-      subscribeRedisClient: createRedisClient()
+      publishRedisClient: redisClients.clusterPub,
+      subscribeRedisClient: redisClients.clusterSub
     },
     heartbeat: {
       interval: 200,
@@ -131,7 +129,7 @@ exports.start = function (clusterMemberId) {
     cacheSize: 100,
     redisPrefix: "thywill:draw:resource:",
     // This will be set in the start script.
-    redisClient: createRedisClient()
+    redisClient: redisClients.resourceManager
   };
 
   // ------------------------------------------------------
@@ -173,8 +171,13 @@ exports.start = function (clusterMemberId) {
       }
       console.error("Thywill launch failed with error: " + error);
       process.exit(1);
-    } else {
-      thywill.log.info("Thywill is ready to run cluster member [" + clusterMemberId + "] for the Draw example application.");
     }
+
+    // Protect the Redis clients from hanging if they are timed out by the server.
+    for (var key in redisClients) {
+      thywill.protectRedisClient(redisClients[key]);
+    }
+
+    thywill.log.info("Thywill is ready to run cluster member [" + clusterMemberId + "] for the Draw example application.");
   });
 };

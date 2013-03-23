@@ -22,7 +22,26 @@ var Thywill = require("thywill");
 function createRedisClient () {
   var options = {};
   var client = redis.createClient(6379, "127.0.0.1", options);
-  Thywill.protectRedisClient(client);
+
+  // This is fairly hacky, but needed to exercise the protection code. Create
+  // a dummy Thywill instance, stick a dummy log into it, and run the protect
+  // function on the client.
+  var thywill = new Thywill();
+  thywill.log = {
+    debug: function (message) {
+      console.log(message);
+    },
+    info: function (message) {
+      console.log(message);
+    },
+    warn: function (message) {
+      console.log(message);
+    },
+    error: function (message) {
+      console.log(message);
+    }
+  };
+  thywill.protectRedisClient(client);
   return client;
 }
 
