@@ -120,8 +120,11 @@ args = JSON.parse(args);
 
 var subscribeRedisClient = redis.createClient(args.redisPort, args.redisHost, args.redisOptions);
 var publishRedisClient = redis.createClient(args.redisPort, args.redisHost, args.redisOptions);
-Thywill.protectRedisClient(subscribeRedisClient);
-Thywill.protectRedisClient(publishRedisClient);
+// Dummy instance to use for protecting these clients. This is somewhat hacky and fragile.
+var thywill = new Thywill();
+thywill.log = log;
+thywill.protectRedisClient(subscribeRedisClient);
+thywill.protectRedisClient(publishRedisClient);
 
 // --------------------------------------------------
 // Heartbeat
