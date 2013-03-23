@@ -30,22 +30,24 @@ var cluster = {
 };
 
 /**
- * Utility function to create a client for a local Redis server.
- * @return {object}
- *   A Redis client.
- */
-function createRedisClient () {
-  var options = {};
-  return redis.createClient(6379, "127.0.0.1", options);
-}
-
-/**
  * Start a Chat application process running.
  *
  * @param {string} clusterMemberName
  *   The name of the cluster member to start.
  */
 exports.start = function (clusterMemberId) {
+
+  // All the Redis clients that will be needed.
+  var redisClients = {
+    sessionStore: redis.createClient(6379, "127.0.0.1"),
+    socketPub: redis.createClient(6379, "127.0.0.1"),
+    socketSub: redis.createClient(6379, "127.0.0.1"),
+    socketClient: redis.createClient(6379, "127.0.0.1"),
+    clusterPub: redis.createClient(6379, "127.0.0.1"),
+    clusterSub: redis.createClient(6379, "127.0.0.1"),
+    resourceManager: redis.createClient(6379, "127.0.0.1"),
+    application: redis.createClient(6379, "127.0.0.1")
+  };
 
   // ------------------------------------------------------
   // Adapt the base configuration for this example.
@@ -64,7 +66,7 @@ exports.start = function (clusterMemberId) {
   // sessions can be assigned to websocket connections. Since this is a
   // clustered example, we're using a Redis-backed store here.
   config.clientInterface.sessions.store = new RedisSessionStore({
-    client: createRedisClient()
+    client: redisClients.sessionStore
   });
 
   // Resource minification settings.
@@ -81,9 +83,9 @@ exports.start = function (clusterMemberId) {
   config.clientInterface.socketConfig.global.resource = "/chat/socket.io";
   // Create a RedisStore for Socket.IO.
   config.clientInterface.socketConfig.global.store = new RedisStore({
-    redisPub: createRedisClient(),
-    redisSub: createRedisClient(),
-    redisClient: createRedisClient()
+    redisPub: redisClients.socketPub,
+    redisSub: redisClients.socketSub,
+    redisClient: redisClients.socketClient
   });
 
   // The cluster implementation is backed by Redis.
@@ -94,13 +96,20 @@ exports.start = function (clusterMemberId) {
     },
     // The cluster has four members.
     clusterMemberIds: ["alpha", "beta", "gamma", "delta"],
-    heartbeatInterval: 100,
-    heartbeatTimeout: 300,
-    // The local member name is taken from the arguments.
+    communication: {
+      publishRedisClient: redisClients.clusterPub,
+      subscribeRedisClient: redisClients.clusterSub
+    },
+    heartbeat: {
+      interval: 200,
+      // Note that the timeout has to be chosen with server load and network
+      // latency in mind. The heartbeat runs in a separate thread, but the
+      // heartbeat messages are propagated via Redis.
+      timeout: 500
+    },
+    // The local member name is drawn from the arguments.
     localClusterMemberId: clusterMemberId,
-    publishRedisClient: createRedisClient(),
-    redisPrefix: "thywill:chat:cluster:",
-    subscribeRedisClient: createRedisClient()
+    redisPrefix: "thywill:chat:cluster:"
   };
 
   // Set an appropriate log level for an example application.
@@ -121,7 +130,7 @@ exports.start = function (clusterMemberId) {
     cacheSize: 100,
     redisPrefix: "thywill:chat:resource:",
     // This will be set in the start script.
-    redisClient: createRedisClient()
+    redisClient: redisClients.resourceManager
   };
 
   // ------------------------------------------------------
@@ -151,7 +160,7 @@ exports.start = function (clusterMemberId) {
   // Instantiate an application object.
   var chat = new Chat("chat", {
     redis: {
-      client: createRedisClient(),
+      client: redisClients.application,
       prefix: "thywill:chat:application:"
     }
   });
@@ -168,8 +177,13 @@ exports.start = function (clusterMemberId) {
       }
       console.error("Thywill launch failed with error: " + error);
       process.exit(1);
-    } else {
-      thywill.log.info("Thywill is ready to run cluster member [" + clusterMemberId + "] for the Chat example application.");
     }
+
+    // Protect the Redis clients from hanging if they are timed out by the server.
+    for (var key in redisClients) {
+      thywill.protectRedisClient(redisClients[key]);
+    }
+
+    thywill.log.info("Thywill is ready to run cluster member [" + clusterMemberId + "] for the Chat example application.");
   });
 };
