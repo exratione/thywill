@@ -95,13 +95,16 @@
    */
   p.displayMessage = function(clusterMemberId, text) {
     var messages = jQuery("#" + clusterMemberId + " .messages");
-    jQuery(this.templates.textTemplate({
+    var html = this.templates.textTemplate({
       timestamp: dateFormat(Date.now(), "HH:MM:ss"),
       text: text
-    })).hide().appendTo(messages).slideDown("fast", function () {
+    });
+    // Transform into DOM nodes - which requires that trim() or jQuery will be
+    // confused by leading and trailing line feeds.
+    html = jQuery.parseHTML(html.trim());
+    jQuery(html).hide().appendTo(messages).slideDown("fast", function () {
       messages.scrollTop(messages.height());
     });
-
   };
 
   /**
@@ -120,6 +123,9 @@
         connectionId: connectionId
       });
     }).join("\n");
+    // Transform into DOM nodes - which requires that trim() or jQuery will be
+    // confused by leading and trailing line feeds.
+    html = jQuery.parseHTML(html.trim());
     jQuery(html).hide().appendTo("#" + clusterMemberId + " .connections").slideDown("fast", function () {
       connections.scrollTop(connections.height());
     });

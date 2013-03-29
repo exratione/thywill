@@ -1,4 +1,5 @@
 /*global
+  document: false,
   Handlebars: false,
   Thywill: false
 */
@@ -70,7 +71,7 @@
         self.send(inputData);
         textarea.val("");
       }
-     });
+    });
   };
 
   /**
@@ -112,6 +113,9 @@
     var rendered = this.templates.messageTemplate({
       data: message.getData()
     });
+    // Transform into DOM nodes - which requires that trim() or jQuery will be
+    // confused by leading and trailing line feeds.
+    rendered = jQuery.parseHTML(rendered.trim());
     // Add the message content to the output div, and slide it in.
     jQuery(rendered).hide().prependTo("#echo-output").slideDown();
   };

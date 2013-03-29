@@ -75,9 +75,7 @@ p._defineBootstrapResources = function (callback) {
       var resource = self.thywill.resourceManager.createResource(data, {
         clientPath: "/display/js/displayClient.js",
         encoding: encoding,
-        minified: false,
         originFilePath: originFilePath,
-        type: self.thywill.resourceManager.types.JAVASCRIPT,
         weight: 50
       });
       self.storeBootstrapResource(resource, asyncCallback);

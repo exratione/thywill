@@ -23,8 +23,6 @@
  *   // piped resources or writing out generated resources that are not going
  *   // to be cached in memory.
  *   filePath: undefined,
- *   // True if the resource has been minified.
- *   minified: false,
  *   // The absolute path of the file that the resource is based on. This might
  *   // be a template file, undefined for a generated resource, or an exact copy
  *   // of the resource data.
@@ -50,7 +48,6 @@ function Resource (buffer, attributes) {
   this.clientPath = undefined;
   this.encoding = "utf8";
   this.filePath = undefined;
-  this.minified = false;
   this.originFilePath = undefined;
   this.type = Resource.TYPES.TEXT;
   this.weight = 0;
@@ -61,7 +58,7 @@ function Resource (buffer, attributes) {
     this[property] = attributes[property];
   }
 
-  // TODO: some validation. e.g. clientPath can't be null.
+  // TODO: some validation. e.g. clientPath can't be empty.
 
   // The data buffer.
   this.buffer = buffer;
@@ -84,6 +81,20 @@ Resource.TYPES = {
   TEXT: "text/plain",
   // For templates used by Underscore.js, Handlebars.js, etc.
   TEMPLATE: "text/template"
+};
+
+/**
+ * If no type can be arrived at, use this type.
+ */
+Resource.DEFAULT_TYPE = Resource.TYPES.TEXT;
+
+/**
+ * Mapping file extensions to default resource types.
+ */
+Resource.TYPE_BY_EXTENSION = {
+  ".css": Resource.TYPES.CSS,
+  ".html": Resource.TYPES.HTML,
+  ".js": Resource.TYPES.JAVASCRIPT
 };
 
 //-----------------------------------------------------------

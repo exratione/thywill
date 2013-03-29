@@ -66,15 +66,23 @@ ClientInterface.EVENTS = {
  * Start the client interface running - should be the very last initialization
  * call, after all resources are set by all applications and components.
  *
- * @param {Function} [callback]
- *   Of the form function (error) {}, where error === null on success.
+ * @param {Function} callback
+ *   Of the form function (error).
  */
 p._startup = function (callback) {
   throw new Error("Not implemented.");
 };
 
 /**
- * Send a message out to a client or channel.
+ * Send a message out to either:
+ *
+ * - A client connection.
+ * - All the client connections for a session.
+ * - A channel with many subscribed connections.
+ *
+ * Which of these options is used depends on the ServerMessage metadata.
+ * See the MessageManager component for convenience methods to create
+ * ServerMessage instances with the appropriate addressing metadata.
  *
  * @param {ServerMessage} message
  *   A ServerMessage instance.
@@ -93,9 +101,9 @@ p.send = function (message) {
  * @param {Resource} resource
  *   A Resource instance.
  * @param {function} callback
- *   Of the form function (error, storedResource) {}, where error === null on
- *   success and storedResource is the provided resource object with any
- *   amendments that might have been made by the store.
+ *   Of the form function (error, storedResource), where storedResource is
+ *   the provided resource object with any amendments that might have been
+ *   made by the store.
  */
 p.storeBootstrapResource = function (resource, callback) {
   throw new Error("Not implemented.");
@@ -105,8 +113,7 @@ p.storeBootstrapResource = function (resource, callback) {
  * Return all bootstrap resource objects defined to date.
  *
  * @param {function} callback
- *   Of the form function (error, resources) {}, where error === null on
- *   success and resources is an array.
+ *   Of the form function (error, resources), where resources is an array.
  */
 p.getBootstrapResources = function (callback) {
   throw new Error("Not implemented.");
@@ -118,9 +125,9 @@ p.getBootstrapResources = function (callback) {
  * @param {Resource} resource
  *   A Resource instance.
  * @param {function} callback
- *   Of the form function (error, storedResource) {}, where error === null on
- *   success and storedResource is the provided resource object with any
- *   amendments that might have been made by the store.
+ *   Of the form function (error, storedResource), where toredResource is the
+ *   provided resource object with any amendments that might have been made by
+ *   the store.
  */
 p.storeResource = function (resource, callback) {
   throw new Error("Not implemented.");
@@ -133,8 +140,8 @@ p.storeResource = function (resource, callback) {
  * @param {string} clientPath
  *   A request path.
  * @param {function} callback
- *   Of the form function (error, resource), where error === null on success
- *   and resource is the resource to be returned.
+ *   Of the form function (error, resource), where resource is the resource to
+ *   be returned.
  */
 p.getResource = function (clientPath, callback) {
   throw new Error("Not implemented.");
@@ -145,30 +152,30 @@ p.getResource = function (clientPath, callback) {
 //-----------------------------------------------------------
 
 /**
- * Subscribe this connection to a channel.
+ * Subscribe this connection to one or more channels.
  *
  * @param {string} connectionId
  *   The connection ID.
- * @param {string} channelId
- *   The channel identifier.
+ * @param {string|array} channelIds
+ *   One or more channel identifiers.
  * @param {function} callback
  *   Of the form function (error).
  */
-p.subscribe = function (connectionId, channelId, callback) {
+p.subscribe = function (connectionId, channelIds, callback) {
   throw new Error("Not implemented.");
 };
 
 /**
- * Unsubscribe this connection from a channel.
+ * Unsubscribe this connection one or more channels.
  *
  * @param {string} connectionId
  *   The connection ID.
- * @param {string} channelId
- *   The channel identifier.
+ * @param {string|array} channelIds
+ *   One or more channel identifiers.
  * @param {function} callback
  *   Of the form function (error).
  */
-p.unsubscribe = function (connectionId, channelId, callback) {
+p.unsubscribe = function (connectionId, channelIds, callback) {
   throw new Error("Not implemented.");
 };
 
@@ -210,6 +217,18 @@ p.clientIsConnectedLocally = function (connectionId, callback) {
  *   Of the form function (error, boolean).
  */
 p.sessionIsConnected = function (sessionId, callback) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * Obtain an array of connection IDs associated with this session.
+ *
+ * @param {string} sessionId
+ *   The connection ID.
+ * @param {function} callback
+ *   Of the form function (error, connectionIds).
+ */
+p.connectionIdsForSession = function (sessionId, callback) {
   throw new Error("Not implemented.");
 };
 

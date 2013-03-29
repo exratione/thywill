@@ -3,6 +3,7 @@
  * Chat class definition, a trivial example application.
  */
 
+var crypto = require("crypto");
 var util = require("util");
 var path = require("path");
 var fs = require("fs");
@@ -77,9 +78,7 @@ p._defineBootstrapResources = function (callback) {
       var resource = self.thywill.resourceManager.createResource(data, {
         clientPath: "/chat/js/chatClient.js",
         encoding: encoding,
-        minified: false,
         originFilePath: originFilePath,
-        type: self.thywill.resourceManager.types.JAVASCRIPT,
         weight: 50
       });
       self.storeBootstrapResource(resource, asyncCallback);
@@ -93,10 +92,6 @@ p._defineBootstrapResources = function (callback) {
  */
 p._setup = function (callback) {
   this.queueKey = this.config.redis.prefix + "queue";
-  // Each server is responsible for keeping track of local connections that
-  // are paired, so that if the other connection disconnects, then the local
-  // connection is notified.
-  this.pairedWithLocalConnections = {};
   callback(this.NO_ERRORS);
 };
 
@@ -111,26 +106,19 @@ p.received = function (message) {
   var self = this;
   var data = message.getData();
 
-  // This is a chat message going from user A to user B with data of the form:
+  // This is a chat message for the channel that this user is joined to.
   // {
   //   action: "message"
   //   // The typed text message.
   //   message: string
-  //   // Who it's going to.
-  //   toCid: string
   // }
   if (data.action === "message") {
-    var outgoingData = {
-      action: "message",
-      message: data.message,
-      fromCid: message.getConnectionId()
-    };
-    var outgoingMessage = this.thywill.messageManager.createMessage(outgoingData, data.toCid, this.id);
-    this.send(outgoingMessage);
+    this.publishMessageToCurrentChannel(message);
   }
   // This user kicked the current chat partner.
   else if (data.action === "kick") {
-    this.unpairClientsViaKick(message.getConnectionId(), function (error) {
+    this.thywill.log.debug("Session " + message.getSessionId() + " kicked its chat partner.");
+    this.unpairClientSessionsViaKick(message.getSessionId(), function (error) {
       if (error) {
         self.thywill.log.error(error);
       }
@@ -138,7 +126,7 @@ p.received = function (message) {
   }
   // The client is looking for a chat partner.
   else if (data.action === "findPartner") {
-    this.checkQueue(message.getConnectionId, function (error) {
+    this.checkQueue(message.getSessionId(), function (error) {
       if (error) {
         self.thywill.log.error(error);
       }
@@ -147,174 +135,177 @@ p.received = function (message) {
 };
 
 /**
- * One client has disconnected, so disband the chat and send the remaining
- * client looking for a new partner. Call this even for disconnects occurring
- * prior to pairing of chat partners, as it will clean up the queue as well.
+ * Publish the contents of this message to the channel that the client is
+ * subscribed to - i.e. sent it to the paired user in the channel.
  *
- * @param {string} connectionId
- *   The disconnected client.
+ * @param {ServerMessage} message
+ */
+p.publishMessageToCurrentChannel = function (message) {
+  var self = this;
+  this.thywill.channelManager.getChannelIdsForSession(message.getSessionId(), function (error, channelIds) {
+    if (error) {
+      self.thywill.log(error);
+      return;
+    }
+
+    // Should only be one channel we're sending to here.
+    if (channelIds.length) {
+      var outgoingData = {
+        action: "message",
+        message: message.getData().message
+      };
+      var messageManager = self.thywill.messageManager;
+      var outgoingMessage = messageManager.createMessageToChannel(outgoingData, channelIds[0], self.id);
+      self.send(outgoingMessage);
+    }
+  });
+};
+
+/**
+ * One client has kicked another, so disband the chat. The clients will then
+ * have to send separate requests for new partners to be found.
+ *
+ * @param {string} sessionId
+ *   Session ID for the client who issued the kick.
  * @param {function} callback
  *   Of the form function (error).
  */
-p.unpairClientsViaDisconnect = function (connectionId, callback) {
+p.unpairClientSessionsViaKick = function (sessionId, callback) {
   var self = this;
-  var otherConnectionId;
+  var channelId;
+  var sessionIds;
 
   var fns = {
-    findOtherClientConnectionId: function (asyncCallback) {
-      self.config.redis.client.hget(self.pairsKey, connectionId, function (error, value) {
-        otherConnectionId = value;
+    // Find which channels this session belongs to - it should only be one.
+    loadChannelIds: function (asyncCallback) {
+      // Check to see if this client is already set up with a chat channel.
+      self.thywill.channelManager.getChannelIdsForSession(sessionId, function (error, channelIds) {
+        if (!error) {
+          // If there are no channels, why are we here? Get out by calling the main callback.
+          if (!channelIds.length) {
+            self.thywill.log.warn("No channel when processing a kick issued by session:" + sessionId);
+            callback();
+            return;
+          } else {
+            channelId = channelIds[0];
+          }
+        }
         asyncCallback(error);
       });
     },
-    informOtherClient: function (asyncCallback) {
-      if (otherConnectionId) {
-        var outgoingData = {
-          action: "disconnected"
-        };
-        var outgoingMessage = self.thywill.messageManager.createMessage(
-          outgoingData, otherConnectionId, self.id
+    // Clear session IDs from the channel, and find the session that needs to
+    // be kicked. Should only be one.
+    clearChannel: function (asyncCallback) {
+      self.thywill.channelManager.clear(channelId, function (error, removedSessionIds) {
+        if (!error) {
+          // Remove the ID of the session issuing the kick.
+          sessionIds = removedSessionIds.filter(function (id, index, array) {
+            return (id !== sessionId);
+          });
+        }
+        asyncCallback(error);
+      });
+    },
+    // Send out the kick notices.
+    sendKickMessages: function (asyncCallback) {
+      var outgoingData = {
+        action: "kicked"
+      };
+      sessionIds.forEach(function (id, index, array) {
+        var outgoingMessage = self.thywill.messageManager.createMessageToSession(
+          outgoingData, id, self.id
         );
         self.send(outgoingMessage);
-      }
-      asyncCallback();
-    },
-    removeRecords: function (asyncCallback) {
-      // A disconnect can occur at all points in the process, so clean up the
-      // queue as well.
-      var multi = self.config.redis.client.multi()
-        .hdel(self.pairsKey, connectionId)
-        .srem(self.queueKey, connectionId);
-      if (otherConnectionId) {
-        multi.hdel(self.pairsKey, otherConnectionId);
-      }
-      multi.exec(asyncCallback);
-    },
-    // Send this client back to the queue for another partner.
-    checkQueueForOtherClient: function (asyncCallback) {
-      if (otherConnectionId) {
-        // Impose a short delay, give recognition and the front end a chance.
-        setTimeout(function () {
-          self.checkQueue(otherConnectionId, asyncCallback);
-        }, 2000);
-      } else {
-        asyncCallback();
-      }
+      });
     }
   };
 
   async.series(fns, callback);
 };
 
-
 /**
- * One client has kicked another, so disband the chat. The clients will then
- * have to send separate requests for new partners to be found.
+ * Set up two client sessions to chat to one another.
  *
- * @param {string} connectionId
- *   The client who kicked the other client.
+ * @param {string} localSessionId
+ *   Session ID of a connection to this server process.
+ * @param {string} otherSessionId
+ *   Session ID from the queue that may or may not be local.
  * @param {function} callback
  *   Of the form function (error).
  */
-p.unpairClientsViaKick = function (connectionId, callback) {
+p.pairClientSessions = function (localSessionId, otherSessionId, callback) {
   var self = this;
-  var kickedConnectionId = this.pairedWithLocalConnections[connectionId];
-  delete this.pairedWithLocalConnections[connectionId];
-  // The kicked connection ID is usually connected to one of the other server
-  // processes, but might be connected to this one. So try to remove anyway.
-  delete this.pairedWithLocalConnections[kickedConnectionId];
+  this.thywill.log.debug("Chat: Pairing " + localSessionId + " with " + otherSessionId);
 
-  // Tell the kicked connection, if it exists - which it should, but you can't
-  // be too careful.
-  if (kickedConnectionId) {
-    var outgoingData = {
-      action: "kicked"
-    };
-    var outgoingMessage = self.thywill.messageManager.createMessage(
-      outgoingData, kickedConnectionId, self.id
-    );
-    self.send(outgoingMessage);
-  }
-
-  callback();
-};
-
-/**
- * Set up two clients to chat to one another.
- *
- * @param {string} localConnectionId
- *   ID of a connection to this server process.
- * @param {string} otherConnectionId
- *   ID of a connection from the queue that may or may not be local.
- * @param {function} callback
- *   Of the forum function (error).
- */
-p.pairClients = function (localConnectionId, otherConnectionId, callback) {
-  var self = this;
-  this.thywill.log.debug("Chat: Pairing " + localConnectionId + " with " + otherConnectionId);
-
-  function setClientToChat(connectionId, chatWithConnectionId) {
-    var data = {
-      action: "startChat",
-      cid: chatWithConnectionId
-    };
-    var message = self.thywill.messageManager.createMessage(data, connectionId, self.id);
-    self.send(message);
-  }
-  setClientToChat(localConnectionId, otherConnectionId);
-  setClientToChat(otherConnectionId, localConnectionId);
-
-  // Add a record of who is paired up to clients connected to this process -
-  // note that it's possible that both are local.
-  this.pairedWithLocalConnections[otherConnectionId] = localConnectionId;
-  this.thywill.cluster.clientIsConnectedLocally(otherConnectionId, function (error, isConnected) {
-    if (isConnected) {
-      this.pairedWithLocalConnections[localConnectionId] = otherConnectionId;
+  // Create a channel and add these sessions to it.
+  var channelId = crypto.createHash("md5").update(localSessionId + otherSessionId).digest("hex");
+  this.thywill.channelManager.addSessionIds(channelId, [localSessionId, otherSessionId], function (error) {
+    if (error) {
+      self.thywill.log.error(error);
+      return;
     }
+    self.setClientToChat(localSessionId, channelId);
+    self.setClientToChat(otherSessionId, channelId);
   });
 };
 
 /**
- * Check the queue to see if there is a waiting connection to pair up with
- * this new connection.
+ * Tell the connected clients for a session that a chat is started.
  *
- * @param {string} localConnectionId
- *   ID of a connection to this server process.
+ * @param {string} sessionId
+ *   Session ID of to tell to start chatting.
+ * @param {string} channelId
+ *   The channel for the chat.
+ */
+p.setClientToChat = function (sessionId, channelId) {
+  var data = {
+    action: "startChat",
+    channel: channelId
+  };
+  var message = this.thywill.messageManager.createMessageToSession(data, sessionId, this.id);
+  this.send(message);
+};
+
+/**
+ * Check the queue to see if there is a waiting connection to pair up with this
+ * new connection. If so, then create a new channel via the channelManager
+ * and assign the sessions for both connections to it.
+ *
+ * @param {string} localSessionId
+ *   Session ID of a connection to this server process.
  * @param {function} callback
  *   Of the forum function (error).
  */
-p.checkQueue = function (localConnectionId, callback) {
+p.checkQueue = function (localSessionId, callback) {
   var self = this;
-  // See if there's a connection in the queue.
-  this.config.redis.client.spop(this.queueKey, function (error, otherConnectionId) {
+  // See if there's a session in the queue.
+  this.config.redis.client.spop(this.queueKey, function (error, otherSessionId) {
     if (error) {
       callback(error);
       return;
     }
-    // If there is a waiting connection, then pair them up.
-    if (otherConnectionId) {
-      // Is this connection ID still online? In some cases we're going to have
-      // zombie connections in the queue - e.g. a server process fell over,
-      // some of this code exploded, etc.
-      self.thywill.clientInterface.clientIsConnected(otherConnectionId, function (error, isConnected) {
+    // If there is a waiting session, then pair them up.
+    if (otherSessionId && otherSessionId !== localSessionId) {
+      // Is this session still online?
+      self.thywill.clientInterface.sessionIsConnected(otherSessionId, function (error, isConnected) {
         if (error) {
           callback(error);
           return;
         }
         // If the connection is still live, then pair these up.
         if (isConnected) {
-          self.pairClients(localConnectionId, otherConnectionId, callback);
+          self.pairClientSessions(localSessionId, otherSessionId, callback);
         }
         // Otherwise we recurse and go look for another connection - there
         // shouldn't be many zombies, and they'll get cleared this way.
         else {
-          self.checkQueue(localConnectionId, callback);
+          self.checkQueue(localSessionId, callback);
         }
       });
     }
     // Otherwise we add the new connection to the queue to wait.
     else {
-      self.config.redis.client.sadd(self.queueKey, localConnectionId, callback);
+      self.config.redis.client.sadd(self.queueKey, localSessionId, callback);
     }
   });
 };
@@ -324,14 +315,29 @@ p.checkQueue = function (localConnectionId, callback) {
  */
 p.connection = function (connectionId, sessionId, session) {
   var self = this;
-  this.thywill.log.debug("Chat: Client connected: " + connectionId);
-
-
-
-  // See if we can pair this client up with another one.
-  this.checkQueue(connectionId, function (error) {
+  // Check to see if this client is already set up with a chat channel.
+  this.thywill.channelManager.getChannelIdsForSession(sessionId, function (error, channelIds) {
     if (error) {
-      self.thywill.log.error(error);
+      self.thywill.log(error);
+    } else if (channelIds.length) {
+      // The channelManager will ensure that this client connection is
+      // resubscribed to receive messages via the channel.
+      self.thywill.log.debug("Chat: Client session " + sessionId + " connected, already has a chat channel: " + channelIds[0]);
+      // But we have to tell the client that the chat is on.
+      self.setClientToChat(sessionId, channelIds[0]);
+
+
+      // TODO: notify other side of the conversation of a reconnection.
+
+
+    } else {
+      self.thywill.log.debug("Chat: Client session " + sessionId + " connected, needs to be given a chat channel.");
+      // See if we can pair this client up with another one.
+      self.checkQueue(sessionId, function (error) {
+        if (error) {
+          self.thywill.log.error(error);
+        }
+      });
     }
   });
 };
@@ -347,16 +353,70 @@ p.connectionTo = function (clusterMemberId, connectionId, sessionId) {
  * @see Application#disconnection
  */
 p.disconnection = function (connectionId, sessionId) {
-  this.thywill.log.debug("Chat: Client disconnected: " + connectionId);
-};
-
-/**
- * @see Application#disconnectionFrom
- */
-p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {
   var self = this;
-  // Check to see whether this client was connected to a local client.
-  this.unpairClientsViaDisconnect(connectionId, function (error) {
+  var channelId;
+  var sessionIds = [];
+
+  var fns = {
+    // If this session has other connections, we don't have to do anything here.
+    checkSessionStillConnected: function (asyncCallback) {
+      self.thywill.clientInterface.sessionIsConnected(sessionId, function (error, isConnected) {
+        if (error || !isConnected) {
+          asyncCallback(error);
+        } else if (!isConnected) {
+          self.thywill.log.debug("Chat: Client session " + sessionId + " disconnected last connection: " + connectionId);
+          asyncCallback();
+        } else {
+          // If no error and is connected, just end here and don't continue.
+          // The user closed one of multiple browser panes and is still
+          // connected.
+          self.thywill.log.debug("Chat: Client session " + sessionId + " disconnected one of its established connections: " + connectionId);
+        }
+      });
+    },
+    // Find which channels this session belongs to - it should only be one.
+    loadChannelIds: function (asyncCallback) {
+      self.thywill.channelManager.getChannelIdsForSession(sessionId, function (error, channelIds) {
+        if (error) {
+          asyncCallback(error);
+          return;
+        }
+        // Only bother continuing with the async callback if this session has
+        // a channel.
+        if (channelIds.length) {
+          channelId = channelIds[0];
+          asyncCallback();
+        }
+      });
+    },
+    // Get the session ID for the other client in the chat.
+    findOtherClientSessionId: function (asyncCallback) {
+      self.thywill.channelManager.getSessionIds(channelId, function (error, loadedSessionIds) {
+        if (!error) {
+          // Remove the ID of the session issuing the kick.
+          sessionIds = loadedSessionIds.filter(function (id, index, array) {
+            return (id !== sessionId);
+          });
+        }
+        asyncCallback(error);
+      });
+    },
+    // Tell the client about the disconnection.
+    informOtherClient: function (asyncCallback) {
+      var outgoingData = {
+        action: "disconnected"
+      };
+      sessionIds.forEach(function (id, index, array) {
+        var outgoingMessage = self.thywill.messageManager.createMessageToSession(
+          outgoingData, id, self.id
+        );
+        self.send(outgoingMessage);
+      });
+      asyncCallback();
+    }
+  };
+
+  async.series(fns, function (error) {
     if (error) {
       self.thywill.log.error(error);
     }
@@ -364,11 +424,19 @@ p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {
 };
 
 /**
+ * @see Application#disconnectionFrom
+ */
+p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {
+  // We don't need to know about disconnections from other cluster members.
+};
+
+/**
  * @see Application#clusterMemberDown
  */
 p.clusterMemberDown = function (clusterMemberId, connectionData) {
-
-
+  // We don't do anything here; the clients will all reconnect to different processes,
+  // and the channelManager will ensure they're still subscribed and matched to the
+  // appropriate chat channel.
 };
 
 //-----------------------------------------------------------

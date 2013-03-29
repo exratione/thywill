@@ -39,14 +39,9 @@ exports.start = function (clusterMemberId) {
 
   // All the Redis clients that will be needed.
   var redisClients = {
-    sessionStore: redis.createClient(6379, "127.0.0.1"),
-    socketPub: redis.createClient(6379, "127.0.0.1"),
-    socketSub: redis.createClient(6379, "127.0.0.1"),
-    socketClient: redis.createClient(6379, "127.0.0.1"),
-    clusterPub: redis.createClient(6379, "127.0.0.1"),
-    clusterSub: redis.createClient(6379, "127.0.0.1"),
-    resourceManager: redis.createClient(6379, "127.0.0.1"),
-    application: redis.createClient(6379, "127.0.0.1")
+    pub: redis.createClient(6379, "127.0.0.1"),
+    sub: redis.createClient(6379, "127.0.0.1"),
+    other: redis.createClient(6379, "127.0.0.1")
   };
 
   // ------------------------------------------------------
@@ -66,12 +61,12 @@ exports.start = function (clusterMemberId) {
   // sessions can be assigned to websocket connections. Since this is a
   // clustered example, we're using a Redis-backed store here.
   config.clientInterface.sessions.store = new RedisSessionStore({
-    client: redisClients.sessionStore
+    client: redisClients.other
   });
 
   // Resource minification settings.
-  config.clientInterface.minifyCss = true;
-  config.clientInterface.minifyJavascript = true;
+  config.clientInterface.minifyCss = false;
+  config.clientInterface.minifyJavascript = false;
 
   // Set the http.Server instance and Express application.
   var app = express();
@@ -83,9 +78,9 @@ exports.start = function (clusterMemberId) {
   config.clientInterface.socketConfig.global.resource = "/chat/socket.io";
   // Create a RedisStore for Socket.IO.
   config.clientInterface.socketConfig.global.store = new RedisStore({
-    redisPub: redisClients.socketPub,
-    redisSub: redisClients.socketSub,
-    redisClient: redisClients.socketClient
+    redisPub: redisClients.pub,
+    redisSub: redisClients.sub,
+    redisClient: redisClients.other
   });
 
   // The cluster implementation is backed by Redis.
@@ -97,8 +92,8 @@ exports.start = function (clusterMemberId) {
     // The cluster has four members.
     clusterMemberIds: ["alpha", "beta", "gamma", "delta"],
     communication: {
-      publishRedisClient: redisClients.clusterPub,
-      subscribeRedisClient: redisClients.clusterSub
+      publishRedisClient: redisClients.pub,
+      subscribeRedisClient: redisClients.sub
     },
     heartbeat: {
       interval: 200,
@@ -129,8 +124,18 @@ exports.start = function (clusterMemberId) {
     },
     cacheSize: 100,
     redisPrefix: "thywill:chat:resource:",
-    // This will be set in the start script.
-    redisClient: redisClients.resourceManager
+    redisClient: redisClients.other
+  };
+
+  // A Redis implementation of a ChannelManager for keeping track of which
+  // clients are grouped together in chats.
+  config.channelManager = {
+    implementation: {
+      type: "extra",
+      name: "redisChannelManager"
+    },
+    redisPrefix: "thywill:chat:channel:",
+    redisClient: redisClients.other
   };
 
   // ------------------------------------------------------
@@ -160,7 +165,7 @@ exports.start = function (clusterMemberId) {
   // Instantiate an application object.
   var chat = new Chat("chat", {
     redis: {
-      client: redisClients.application,
+      client: redisClients.other,
       prefix: "thywill:chat:application:"
     }
   });
@@ -180,8 +185,8 @@ exports.start = function (clusterMemberId) {
     }
 
     // Protect the Redis clients from hanging if they are timed out by the server.
-    for (var key in redisClients) {
-      thywill.protectRedisClient(redisClients[key]);
+    for (var prop in redisClients) {
+      thywill.protectRedisClient(redisClients[prop]);
     }
 
     thywill.log.info("Thywill is ready to run cluster member [" + clusterMemberId + "] for the Chat example application.");

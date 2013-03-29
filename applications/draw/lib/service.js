@@ -128,7 +128,6 @@ exports.start = function (clusterMemberId) {
     },
     cacheSize: 100,
     redisPrefix: "thywill:draw:resource:",
-    // This will be set in the start script.
     redisClient: redisClients.resourceManager
   };
 

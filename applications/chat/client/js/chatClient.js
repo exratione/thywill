@@ -1,9 +1,6 @@
 /*global
   document: false,
   Handlebars: false,
-  paper: false,
-  Path: false,
-  Tool: false,
   Thywill: false
 */
 /**
@@ -61,11 +58,14 @@
    */
   p.closeChatUi = function () {
     // Remove the current chat partner.
-    delete this.chatPartnerConnectionId;
+
+    // TODO: display of chat partner
+
     // Turn off the buttons.
-    jQuery("#sender button").off("click");
+    jQuery(".send-button").off("click");
     // Set the chat display back to the waiting state.
     jQuery("#chat-wrapper").removeClass("enabled");
+    jQuery("textarea").val("");
     jQuery(".chat-message").fadeOut("fast", function () {
       jQuery(".chat-message").remove();
       jQuery("#waiting").fadeIn("fast");
@@ -75,31 +75,31 @@
   /**
    * Enable the chat UI for a new chat partner.
    *
-   * @param {string} connectionID
-   *   The connection ID of the chat partner.
+   * @param {string} sessionID
+   *   The session ID of the chat partner.
    */
-  p.openChatUi = function (connectionId) {
+  p.openChatUi = function (sessionId) {
     var self = this;
-    this.chatPartnerConnectionId = connectionId;
+
+    // TODO: display of chat partner
 
     // Enable the send button.
-    jQuery("#sender .send-button").on("click", function () {
-      var textarea = jQuery("#sender textarea");
+    jQuery(".send-button").on("click", function () {
+      var textarea = jQuery("textarea");
       var val = textarea.val().trim();
       if (val) {
         // Sending this user-entered data as a message to the server side of the
         // this application.
         self.send({
           action: "message",
-          message: val,
-          toCid: self.chatPartnerConnectionId
+          message: val
         });
         textarea.val("");
       }
     });
 
     // Enable the kick button.
-    jQuery("#sender .kick-button").addClass("enabled").on("click", function () {
+    jQuery(".kick-button").addClass("enabled").on("click", function () {
       // Shut off the UI.
       self.closeChatUi();
       // Tell the server to deliver a new chat partner.
@@ -129,6 +129,8 @@
     var rendered = this.templates.messageTemplate({
       data: messageText
     });
+    // Convert to DOM. The trim is needed to stop jQuery complaining.
+    rendered = jQuery.parseHTML(rendered.trim());
     // Add the message content to the output div, and slide it in.
     jQuery(rendered).hide().prependTo("#chat-output").slideDown();
   };
@@ -182,7 +184,7 @@ console.log(data);
     //   cid: string
     // }
     if (data.action === "startChat") {
-      this.openChatUi(data.cid);
+      this.openChatUi(data.sid);
     }
     // The other side kicked this client out of the chat.
     else if (data.action === "kicked") {
@@ -190,23 +192,17 @@ console.log(data);
     }
     // The other side disconnected.
     else if (data.action === "disconnected") {
-      this.closeChatUi();
+
+      // TODO: give a notice.
+      //this.closeChatUi();
     }
     // The data is of the form:
     // {
     //   action: "message",
-    //   message: string,
-    //   // The connectionId of the originating client.
-    //   fromCid: string
+    //   message: string
     // }
     else if (data.action === "message") {
-      // In this example, the server side allows anyone to send to anyone else
-      // if they know the connection ID. Probably not wise in the real world.
-      // Here we only display the message if it's from the current chat
-      // partner, and there is a current chat partner.
-      if (this.chatPartnerConnectionId && data.fromCid === this.chatPartnerConnectionId) {
-        this.displayChatMessage(data.message);
-      }
+      this.displayChatMessage(data.message);
     }
   };
 

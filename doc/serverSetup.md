@@ -86,6 +86,19 @@ access at all. It isn't even needed for the most common service setups using
 init.d or upstart scripts, or when running behind a proxy server such that the
 Node.js process won't be binding to a privileged port.
 
+Install Redis
+-------------
+
+If using core Redis-based components in your Thywill application, then you will
+want to install Redis. This is straightforward:
+
+    apt-get install redis-server
+
+You should probably update /etc/redis/redis.conf to disable the client timeout:
+
+    # Close the connection after a client is idle for N seconds (0 to disable)
+    timeout 0
+
 Install Thywill
 ---------------
 

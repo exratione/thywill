@@ -56,12 +56,11 @@ UglyMinifier.CONFIG_TEMPLATE = {
  */
 p.minifyResource = function (resource, callback) {
   var newResource = resource;
-  var error = this.NO_ERRORS;
   var resourceManager = this.thywill.resourceManager;
 
   // Only minify if not already minified.
-  if (resource.minified) {
-    callback(error, resource);
+  if (this.isMinified(resource)) {
+    callback(this.NO_ERRORS, resource);
     return;
   }
 
@@ -75,9 +74,8 @@ p.minifyResource = function (resource, callback) {
       minifiedData = this._minifyCss(resource);
     }
     newResource = resourceManager.createResource(minifiedData, {
-      clientPath: this._generateMinifiedClientPath(resource.clientPath),
+      clientPath: this.generateMinifiedClientPath(resource.clientPath),
       encoding: resource.encoding,
-      minified: true,
       originFilePath: resource.originFilePath,
       type: resource.type,
       weight: resource.weight
@@ -86,7 +84,7 @@ p.minifyResource = function (resource, callback) {
     this.thywill.log.error(e);
   }
 
-  callback.call(this, error, newResource);
+  callback(this.NO_ERRORS, newResource);
 };
 
 /**
@@ -121,7 +119,6 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
           jsResource = resourceManager.createResource(null, {
             clientPath: null,
             encoding: resource.encoding,
-            minified: true,
             originFilePath: null,
             type: resourceManager.types.JAVASCRIPT,
             weight: resource.weight
@@ -129,14 +126,14 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
           returnResource = jsResource;
         }
 
-        if (resource.buffer && resource.minified) {
+        if (self.isMinified(resource)) {
           // Have to put in a semicolon at the end because of things like Bootstrap
           // which leave off the trailing semicolon.
-          minifiedJs += resource.buffer.toString(resource.encoding) + ";\n";
+          minifiedJs += resource.toString() + ";\n";
         } else {
           try {
-          // Have to put in a semicolon at the end because of things like Bootstrap
-          // which leave off the trailing semicolon.
+            // Have to put in a semicolon at the end because of things like Bootstrap
+            // which leave off the trailing semicolon.
             minifiedJs += self._minifyJavascript(resource) + ";\n";
           } catch (e) {
             self.thywill.log.error(e);
@@ -151,7 +148,6 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
           cssResource = resourceManager.createResource(null, {
             clientPath: null,
             encoding: resource.encoding,
-            minified: true,
             originFilePath: null,
             type: resourceManager.types.CSS,
             weight: resource.weight
@@ -159,8 +155,8 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
           returnResource = cssResource;
         }
 
-        if (resource.minified) {
-          minifiedCss += resource.buffer.toString(resource.encoding) + "\n";
+        if (self.isMinified(resource)) {
+          minifiedCss += resource.toString() + "\n";
         } else {
           try {
             // CSS minification.
@@ -190,13 +186,13 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
       var md5;
       if (jsResource) {
         jsResource.buffer = new Buffer(minifiedJs, jsResource.encoding);
-        md5 = crypto.createHash('md5').update(minifiedJs).digest("hex");
+        md5 = crypto.createHash("md5").update(minifiedJs).digest("hex");
         jsResource.clientPath = self.config.jsBaseClientPath + "/" + md5 + ".min.js";
         addedResources.push(jsResource);
       }
       if (cssResource) {
         cssResource.buffer = new Buffer(minifiedCss, cssResource.encoding);
-        md5 = crypto.createHash('md5').update(minifiedCss).digest("hex");
+        md5 = crypto.createHash("md5").update(minifiedCss).digest("hex");
         cssResource.clientPath = self.config.cssBaseClientPath + "/" + md5 + ".min.css";
         addedResources.push(cssResource);
       }
@@ -275,18 +271,6 @@ p._updateCssUrls = function (css, clientPath) {
   });
 };
 
-/**
- * Given a path string, change the filename ending to show minification.
- * e.g. foo.js -> foo.min.js
- *
- * @param {string} path
- *   A resource path.
- * @return {string}
- *   The path with minified name.
- */
-p._generateMinifiedClientPath = function (path) {
-  return path.replace(/\.(\w+)$/, ".min.$1", "i");
-};
 
 //-----------------------------------------------------------
 // Exports - Class Constructor
