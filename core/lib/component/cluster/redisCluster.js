@@ -311,10 +311,16 @@ p.launchHeartbeatProcess = function () {
   process.on("exit", function () {
     self.heartbeatProcess.kill("SIGKILL");
   });
+  // Kind of ugly. TODO: replace with Domains or something better.
+  process.once("uncaughtException", function (error) {
+    self.heartbeatProcess.kill("SIGKILL");
+    throw error;
+  });
 
   // If the child process dies, then we have a problem, and need to die also.
   this.heartbeatProcess.on("exit", function (code, signal) {
-    throw new Error("RedisCluster: heartbeat process terminated with code: " + code);
+    self.thywill.log.error("RedisCluster: heartbeat process terminated with code: " + code);
+    process.exit(1);
   });
 };
 
