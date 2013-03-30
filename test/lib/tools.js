@@ -128,6 +128,14 @@ exports.setupConfig = function (baseConfig, options) {
     config.resourceManager.redisClient = createRedisClient();
   }
 
+  // ------------------------------------------------------------
+  // Set up channelManager.
+  // ------------------------------------------------------------
+
+  if (config.channelManager && config.channelManager.implementation.name === "redisChannelManager") {
+    config.channelManager.redisClient = createRedisClient();
+  }
+
   return config;
 };
 
