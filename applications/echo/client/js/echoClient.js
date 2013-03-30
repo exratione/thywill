@@ -53,7 +53,9 @@
    * Make the UI disabled - no sending.
    */
   p.uiDisable = function () {
-    jQuery("#sender button").removeClass("enabled").off("click");
+    jQuery("textarea").val("").prop("disabled", true);
+    jQuery("#echo-wrapper").removeClass("enabled");
+    jQuery("#sender button").off("click");
   };
 
   /**
@@ -61,8 +63,9 @@
    */
   p.uiEnable = function () {
     var self = this;
-    // Enable the button.
-    jQuery("#sender button").addClass("enabled").on("click", function () {
+    jQuery("textarea").prop("disabled", false);
+    jQuery("#echo-wrapper").addClass("enabled");
+    jQuery("#sender button").on("click", function () {
       var textarea = jQuery("#sender textarea");
       var inputData = textarea.val();
       if (inputData) {

@@ -18,14 +18,18 @@ body {
   text-shadow: 2px 2px #dddddd;
 }
 textarea {
-	background-color: #efebf5;
+	background-color: #ededed;
 	border: 1px solid #cccccc;
   color: #666666;
   height: 40px;
   margin-right: 30px;
   padding: 10px;
+  resize: none;
   vertical-align: middle;
   width: 300px;
+}
+.enabled textarea {
+  background-color: #efebf5;
 }
 button {
   background-color: #e5e5e5;
@@ -42,22 +46,25 @@ button {
   transition: all 0.2s ease-in-out;
   width: 100px;
 }
-button.enabled {
+.enabled button {
   background-color: #e5efe5;
   box-shadow: 5px 5px 10px 0 #cccccc;
   cursor: pointer;
 }
-button.enabled:hover {
+.enabled button:hover {
 	 background-color: #e9f3e9;
 	 box-shadow: 2px 2px 10px 0 #cccccc;
 }
 #echo-output {
-  background-color: #ebebf5;
+  background-color: #ededed;
 	border: 1px solid #cccccc;
 	height: 200px;
 	margin: 20px 0 15px;
 	overflow-y: auto;
 	width: 500px;
+}
+.enabled #echo-output {
+  background-color: #ebebf5;
 }
 .echoed-message {
 	padding: 10px;
