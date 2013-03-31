@@ -134,7 +134,6 @@ p.storeBootstrapResourceFromFile = function (filePath, attributes, callback) {
  *   "/file/system/path/to/file.css": {
  *     clientPath: "/path/to/file.css",
  *     encoding: encoding,
- *     minified: false,
  *     type: resourceManager.types.CSS,
  *     weight: 0,
  *     ... other attributes

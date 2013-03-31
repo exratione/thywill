@@ -266,11 +266,11 @@ p._configure = function (thywill, config, callback) {
   });
   // Subscribe a connectionId if it exists locally.
   this.thywill.cluster.on(this.clusterTask.subscribe, function (data) {
-    self._subscribeLocalSocket(data.connectionId, data.channelId);
+    self._subscribeLocalSocket(data.connectionId, data.channelIds);
   });
   // Subscribe a connectionId if it exists locally.
   this.thywill.cluster.on(this.clusterTask.unsubscribe, function (data) {
-    self._unsubscribeLocalSocket(data.connectionId, data.channelId);
+    self._unsubscribeLocalSocket(data.connectionId, data.channelIds);
   });
 
   // -----------------------------------------------------------------
@@ -369,7 +369,6 @@ p._startup = function (callback) {
       var resource = resourceManager.createResource(data, {
         clientPath: self.config.baseClientPath + "/js/socket.io.js",
         encoding: self.config.textEncoding,
-        minified: true,
         originFilePath: originFilePath,
         type: resourceManager.types.JAVASCRIPT,
         weight: -99999
@@ -390,7 +389,6 @@ p._startup = function (callback) {
       var resource = resourceManager.createResource(thywillTemplate(params), {
         clientPath: self.config.baseClientPath + "/js/thywill.js",
         encoding: self.config.textEncoding,
-        minified: false,
         originFilePath: originFilePath,
         type: resourceManager.types.JAVASCRIPT,
         weight: 0
@@ -418,7 +416,6 @@ p._startup = function (callback) {
       var resource = resourceManager.createResource(serverInterfaceTemplate(params), {
         clientPath: self.config.baseClientPath + "/js/serverInterface.js",
         encoding: self.config.textEncoding,
-        minified: false,
         originFilePath: originFilePath,
         type: resourceManager.types.JAVASCRIPT,
         weight: 1
@@ -434,7 +431,6 @@ p._startup = function (callback) {
       createBootstrapResourceFromFile("../../../client/socketIoClientInterface/thywillLoadLast.js", {
         clientPath: self.config.baseClientPath + "/js/thywillLoadLast.js",
         encoding: self.config.textEncoding,
-        minified: false,
         type: resourceManager.types.JAVASCRIPT,
         weight: 999999
       }, asyncCallback);
@@ -477,7 +473,8 @@ p._startup = function (callback) {
           }, function (error) {
             asyncCallback(error);
           });
-        });
+        }
+      );
     },
 
     // Template the main thywill HTML page, adding the necessary CSS and
@@ -490,7 +487,7 @@ p._startup = function (callback) {
 
       // Split out the assembled resources into arrays by type.
       var resourcesByType = {};
-      for ( var i = 0, length = resources.length; i < length; i++) {
+      for (var i = 0, length = resources.length; i < length; i++) {
         if (!resourcesByType[resources[i].type]) {
           resourcesByType[resources[i].type] = [];
         }
@@ -753,12 +750,15 @@ p._attachExpressSessionsToSockets = function () {
  * with it, and set up its ability to send and receive.
  *
  * @param {Object} socket
- *   We are expecting a socket object with socket.handshake and
- *   socket.handshake.session, where session is an Express session.
+ *   If the clientInterface is configured to use sessions, then we are
+ *   expecting a socket object with socket.handshake,
+ *   socket.handshake.session, and socket.handshake.sessionId, where session is
+ *   an Express session.
  */
 p.initializeNewSocketConnection = function (socket) {
   var self = this;
   var messageManager = self.thywill.messageManager;
+  var data = this.connectionDataFromSocket(socket);
 
   // If we're sending via pub/sub, then sign this socket up for its own channel.
   if (this.config.usePubSubForSending) {
@@ -770,8 +770,8 @@ p.initializeNewSocketConnection = function (socket) {
    */
   socket.on("fromClient", function (rawMessage) {
     var message = messageManager.convertClientMessageToServerMessage(rawMessage);
-    // Set the connectionId.
-    message.setConnectionId(socket.id);
+    message.setConnectionId(data.connectionId);
+    message.setSessionId(data.sessionId);
     // Sort out origin and destination - always from client, to server.
     message.setOrigin(messageManager.origins.CLIENT);
     message.setDestination(messageManager.destinations.SERVER);
@@ -780,7 +780,7 @@ p.initializeNewSocketConnection = function (socket) {
     if (message.isValid()) {
       self.emit(self.events.FROM_CLIENT, message);
     } else {
-      self.thywill.log.debug("Empty or broken message received from connection: " + socket.id + " with contents: " + JSON.stringify(rawMessage));
+      self.thywill.log.debug("Empty or broken message received from connection: " + data.connectionId + " with contents: " + JSON.stringify(rawMessage));
     }
   });
 
@@ -810,7 +810,6 @@ p.initializeNewSocketConnection = function (socket) {
 
   // Finally, notify all listeners and other cluster processes that a new
   // client has connected.
-  var data = this.connectionDataFromSocket(socket);
   this.emit(this.events.CONNECTION, data.connectionId, data.sessionId, data.session);
   this.thywill.cluster.sendToAll(this.clusterTask.connectionTo, {
     connectionId: data.connectionId,
@@ -945,7 +944,9 @@ p.send = function (message) {
     return;
   }
 
+  var self = this;
   var channelId = message.getChannelId();
+  var sessionId = message.getSessionId();
   var socketId = message.getConnectionId();
   // Strip the message down to what's to be sent to the client.
   var clientMessage = messageManager.convertServerMessageToClientMessage(message);
@@ -970,37 +971,79 @@ p.send = function (message) {
       this.socketFactory.of(this.config.namespace).to(channelId).emit("toClient", clientMessage);
     }
   }
+  // Is this going out to all the connections for a specific session?
+  else if (sessionId && !socketId) {
+    // Look through the connection data, get a list of connectionIds/socketIds.
+    var connectionsToSendTo = [];
+    for (var clusterMemberId in this.connections) {
+      var sessionConnections = this.connections[clusterMemberId].sessions[sessionId];
+      if(Array.isArray(sessionConnections)) {
+        connectionsToSendTo = connectionsToSendTo.concat(sessionConnections);
+      }
+    }
+    // Then send to each of them.
+    connectionsToSendTo.forEach(function (thisSocketId, index, array) {
+      self._sendToSocket(thisSocketId, clientMessage);
+    });
+  }
   // Otherwise the message is destined for a single client connection, so send
   // it out through the pertinent socket instance.
   else {
-    // If there are multiple Node processes in the backend and the application
-    // is structured such that process A may want to send a message to a socket
-    // connected to process B, then usePubSubForSending must be set true so
-    // that messages can be published to the individual connection's channel.
-    var destinationSocket = this.socketFactory.of(this.config.namespace).socket(socketId);
-    if (destinationSocket) {
-      destinationSocket.emit("toClient", clientMessage);
-    } else if (this.config.usePubSubForSending) {
-      this.socketFactory.of(this.config.namespace).to(socketId).emit("toClient", clientMessage);
-    } else {
-      this.thywill.log.debug("No socket connected to this process with id: " + socketId);
-    }
+    this._sendToSocket(socketId, clientMessage);
+  }
+};
+
+/**
+ * Send a Message instance to a specific socket. A convenience function.
+ *
+ * @param {string} socketId
+ *   ID of the socket to send to.
+ * @param {Message} clientMessage
+ *   The message instance to be sent.
+ */
+p._sendToSocket = function (socketId, clientMessage) {
+  // If there are multiple Node processes in the backend and the application
+  // is structured such that process A may want to send a message to a socket
+  // connected to process B, then usePubSubForSending must be set true so
+  // that messages can be published to the individual connection's channel.
+  var destinationSocket = this.socketFactory.of(this.config.namespace).socket(socketId);
+  if (destinationSocket) {
+    destinationSocket.emit("toClient", clientMessage);
+  } else if (this.config.usePubSubForSending) {
+    this.socketFactory.of(this.config.namespace).to(socketId).emit("toClient", clientMessage);
+  } else {
+    this.thywill.log.debug("No socket connected to this process with id: " + socketId);
   }
 };
 
 /**
  * @see ClientInterface#subscribe
  */
-p.subscribe = function (connectionId, channelId, callback) {
-  var socketPresent = this._subscribeLocalSocket(connectionId, channelId);
-  // If the socket isn't connected to this process, then tell the other cluster
-  // members to find the socket and subscribe it.
-  if (!socketPresent) {
-    this.thywill.cluster.sendToOthers(this.clusterTask.subscribe, {
-      connectionId: connectionId,
-      channelId: channelId
-    });
+p.subscribe = function (connectionIds, channelIds, callback) {
+  var self = this;
+  if (!Array.isArray(connectionIds)) {
+    connectionIds = [connectionIds];
   }
+  if (!connectionIds.length) {
+    callback();
+    return;
+  }
+
+  connectionIds.forEach(function (connectionId, index, array) {
+    if(self._subscribeLocalSocket(connectionId, channelIds)) {
+      return;
+    }
+    // The connection isn't local, but we know which cluster member the socket is
+    // connected to, so tell it directly.
+    for (var clusterMemberId in self.connections) {
+      if (self.connections[clusterMemberId].connections[connectionId]) {
+        self.thywill.cluster.sendTo(clusterMemberId, self.clusterTask.subscribe, {
+          connectionId: connectionId,
+          channelIds: channelIds
+        });
+      }
+    }
+  });
   callback();
 };
 
@@ -1010,11 +1053,16 @@ p.subscribe = function (connectionId, channelId, callback) {
  * @return {boolean}
  *   True if there was a local socket with this connectionId.
  */
-p._subscribeLocalSocket = function (connectionId, channelId) {
+p._subscribeLocalSocket = function (connectionId, channelIds) {
   var socket = this.socketFactory.of(this.config.namespace).socket(connectionId);
   // Is this connection connected to this process?
   if (socket) {
-    socket.join(channelId);
+    if (!Array.isArray(channelIds)) {
+      channelIds = [channelIds];
+    }
+    channelIds.forEach(function (channelId, index, array) {
+      socket.join(channelId);
+    });
     return true;
   } else {
     return false;
@@ -1024,16 +1072,32 @@ p._subscribeLocalSocket = function (connectionId, channelId) {
 /**
  * @see ClientInterface#unsubscribe
  */
-p.unsubscribe = function (connectionId, channelId, callback) {
-  var socketPresent = this._unsubscribeLocalSocket(connectionId, channelId);
-  // If the socket isn't connected to this process, then tell the other cluster
-  // members to find the socket and unsubscribe it.
-  if (!socketPresent) {
-    this.thywill.cluster.sendToOthers(this.clusterTask.unsubscribe, {
-      connectionId: connectionId,
-      channelId: channelId
-    });
+p.unsubscribe = function (connectionIds, channelIds, callback) {
+  var self = this;
+  if (!Array.isArray(connectionIds)) {
+    connectionIds = [connectionIds];
   }
+  if (!connectionIds.length) {
+    callback();
+    return;
+  }
+
+  connectionIds.forEach(function (connectionId, index, array) {
+    if(self._unsubscribeLocalSocket(connectionId, channelIds)) {
+      callback();
+      return;
+    }
+    // The connection isn't local, but we know which cluster member the socket is
+    // connected to, so tell it directly.
+    for (var clusterMemberId in self.connections) {
+      if (self.connections[clusterMemberId].connections[connectionId]) {
+        self.thywill.cluster.sendTo(clusterMemberId, self.clusterTask.unsubscribe, {
+          connectionId: connectionId,
+          channelIds: channelIds
+        });
+      }
+    }
+  });
   callback();
 };
 
@@ -1043,11 +1107,16 @@ p.unsubscribe = function (connectionId, channelId, callback) {
  * @return {boolean}
  *   True if there was a local socket with this connectionId.
  */
-p._unsubscribeLocalSocket = function (connectionId, channelId) {
+p._unsubscribeLocalSocket = function (connectionId, channelIds) {
   var socket = this.socketFactory.of(this.config.namespace).socket(connectionId);
   // Is this connection connected to this process?
   if (socket) {
-    socket.leave(channelId);
+    if (!Array.isArray(channelIds)) {
+      channelIds = [channelIds];
+    }
+    channelIds.forEach(function (channelId, index, array) {
+      socket.leave(channelId);
+    });
     return true;
   } else {
     return false;
@@ -1055,7 +1124,7 @@ p._unsubscribeLocalSocket = function (connectionId, channelId) {
 };
 
 //-----------------------------------------------------------
-// Relating to tracking who is online.
+// Methods relating to tracking who is online.
 //-----------------------------------------------------------
 
 /**
@@ -1087,6 +1156,21 @@ p.sessionIsConnected = function (sessionId, callback) {
     return self.connections[clusterMemberId].sessions[sessionId];
   });
   callback (null, connected);
+};
+
+/**
+ * @see ClientInterface#connectionIdsForSession
+ */
+p.connectionIdsForSession = function (sessionId, callback) {
+  var self = this;
+  var connectionIds = [];
+  var connected = Object.keys(this.connections).forEach(function (clusterMemberId, index, array) {
+    var ids = self.connections[clusterMemberId].sessions[sessionId];
+    if (ids) {
+      connectionIds = connectionIds.concat(ids);
+    }
+  });
+  callback (null, connectionIds);
 };
 
 /**

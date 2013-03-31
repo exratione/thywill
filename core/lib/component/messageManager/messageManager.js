@@ -15,8 +15,9 @@ var ServerMessage = require("./serverMessage");
 
 /**
  * @class
- * The superclass for resource managers, used to generate and store resources
- * in Thywill - meaning data to be served to a client.
+ * The superclass for message managers, a factory class for generating the
+ * messages that are sent to the client. Use the methods in this class
+ * rather than creating ServerMessage instances directly.
  */
 function MessageManager() {
   MessageManager.super_.call(this);
@@ -125,6 +126,11 @@ p.createServerMessage = function () {
 };
 
 /**
+ * @see MessageManager#createServerMessage
+ */
+p.createMessage = p.createServerMessage;
+
+/**
  * Obtain a new ServerMessage object set to go out to a channel rather than a
  * specific client.
  *
@@ -149,18 +155,42 @@ p.createServerMessageToChannel = function (data, channelId, applicationId) {
 };
 
 /**
- * @see MessageManager#createServerMessage
- */
-p.createMessage = p.createServerMessage;
-
-/**
  * @see MessageManager#createServerMessageToChannel
  */
 p.createMessageToChannel = p.createServerMessageToChannel;
 
 /**
- * Create a reply Message instance addressed to the sender of the provided
- * message.
+ * Obtain a new ServerMessage object set to go out to all the connections for
+ * a specific session.
+ *
+ * @param {mixed} data
+ *   The data to be delivered.
+ * @param {string} sessionId
+ *   The client session ID to send to.
+ * @param {string} applicationId
+ *   The application that sends this message.
+ * @return {ServerMessage}
+ *   A ServerMessage instance.
+ */
+p.createServerMessageToSession = function (data, sessionId, applicationId) {
+  var message = new ServerMessage();
+  message.setData(data);
+  message.setSessionId(sessionId);
+  message.setFromApplication(applicationId);
+  message.setToApplication(applicationId);
+  message.setOrigin(this.origins.SERVER);
+  message.setDestination(this.destinations.CLIENT);
+  return message;
+};
+
+/**
+ * @see MessageManager#createServerMessageToChannel
+ */
+p.createMessageToSession = p.createServerMessageToSession;
+
+/**
+ * Create a reply Message instance addressed to the originating connection
+ * of the provided message.
  *
  * @param {mixed} data
  *   The message data.

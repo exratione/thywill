@@ -144,7 +144,7 @@ Thywill.getBaseClass = (function () {
     var pathElement;
     if (!baseClasses[className]) {
       switch (className) {
-        // Core classes.
+        // Core classes under /core/lib/component.
         case "Component":
           baseClasses[className] = Component;
           break;
@@ -169,14 +169,23 @@ Thywill.getBaseClass = (function () {
         case "Resource":
           baseClasses[className] = require("./component/resourceManager/resource");
           break;
-        // Extra classes.
         case "RpcCapableApplication":
           pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
           baseClasses[className] = require("../../extra/lib/component/application/" + pathElement);
           break;
-        // Out of luck, found nothing.
         default:
-          throw new Error("No such base class: " + className);
+          // Look for classes under /extra/lib/component.
+          try {
+            pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
+            baseClasses[className] = require("../../extra/lib/component/" + pathElement + "/" + pathElement);
+            if (typeof baseClasses[className] !== "function") {
+              throw new Error();
+            }
+          } catch (e) {
+            // Out of luck, found nothing.
+            throw new Error("No such base class: " + className);
+          }
+          break;
       }
     }
     return baseClasses[className];
@@ -424,104 +433,90 @@ p._convertUserIdAndGroupId = function (callback) {
  */
 p._initializeComponents = function (passedApplications, callback) {
   var self = this;
-  var fns = [
-    // Core components, which have to be in this order.
-    function (asyncCallback) {
-      self._initializeComponent("log", asyncCallback);
-    },
-    function (asyncCallback) {
-      self._initializeComponent("cluster", asyncCallback);
-    },
-    function (asyncCallback) {
-      self._initializeComponent("cacheManager", asyncCallback);
-    },
-    function (asyncCallback) {
-      self._initializeComponent("resourceManager", asyncCallback);
-    },
-    function (asyncCallback) {
-      self._initializeComponent("messageManager", asyncCallback);
-    },
-    function (asyncCallback) {
-      self._initializeComponent("templateEngine", asyncCallback);
-    },
-    function (asyncCallback) {
-      self._initializeComponent("minifier", asyncCallback);
-    },
-    function (asyncCallback) {
-      self._initializeComponent("clientInterface", asyncCallback);
-    }
+  // Most of this method builds up this array of functions to be called at the
+  // end via async.series().
+  var fns = [];
+
+  // Core components have to be initialized in this order.
+  var coreComponentNames = [
+    "log",
+    "cluster",
+    "cacheManager",
+    "resourceManager",
+    "messageManager",
+    "templateEngine",
+    "minifier",
+    "clientInterface"
   ];
 
-  // Are any extra components defined in the configuration?
-  var extraComponents = [];
-  extraComponents.forEach(function (extraComponent, index, array) {
-    if (self.config[extraComponent]) {
-      fns.push(function (asyncCallback) {
-        self._initializeComponent(extraComponent, asyncCallback);
-      });
+  // Are any additional non-core components defined in the configuration?
+  var extraComponentNames = Object.keys(this.config).filter(function (name, index, array) {
+    if (name === "thywill" || coreComponentNames.indexOf(name) !== -1) {
+      return false;
+    }
+    // See if this has looks like a component definition.
+    try {
+      if (typeof self.config[name].implementation.type === "string") {
+        return true;
+      } else {
+        return false;
+      }
+    } catch (e) {
+      return false;
     }
   });
 
-  // Add various loops through the applications array, if we have one. The
-  // application setup functions are called in order.
+  // The list of all components to be initialized.
+  var componentNames = coreComponentNames.concat(extraComponentNames);
+  // Add a component initialization function to the array.
+  var initializeComponents = function (asyncCallback) {
+    async.forEachSeries(componentNames, function (name, innerAsyncCallback) {
+      self._initializeComponent(name, innerAsyncCallback);
+    }, asyncCallback);
+  };
+  fns.push(initializeComponents);
+
+  /**
+   * A convenience function for initializing applications.
+   */
+  var initializeApplication = function (application, callback) {
+    var fns = [
+      function (asyncCallback) {
+        self._registerApplication(application, asyncCallback);
+      },
+      function (asyncCallback) {
+        application._defineBootstrapResources(asyncCallback);
+      },
+      function (asyncCallback) {
+        application._setup(asyncCallback);
+      },
+      function (asyncCallback) {
+        application._setupListeners(asyncCallback);
+      }
+    ];
+    async.series(fns, callback);
+  };
+
+  // If we have applications, add a function to initialize them to the array.
   if (passedApplications) {
     if (!Array.isArray(passedApplications)) {
       passedApplications = [passedApplications];
     }
-    fns.push(
-      function (asyncCallback) {
-        async.forEach(
-          passedApplications,
-          function (application, innerAsyncCallback) {
-            self._registerApplication(application, innerAsyncCallback);
-          },
-          asyncCallback
-        );
-      }
-    );
-    fns.push(
-      function (asyncCallback) {
-        async.forEach(
-          passedApplications,
-          function (application, innerAsyncCallback) {
-            application._defineBootstrapResources(innerAsyncCallback);
-          },
-          asyncCallback
-        );
-      }
-    );
-    fns.push(
-      function (asyncCallback) {
-        async.forEach(
-          passedApplications,
-          function (application, innerAsyncCallback) {
-            application._setup(innerAsyncCallback);
-          },
-          asyncCallback
-        );
-      }
-    );
-    fns.push(
-      function (asyncCallback) {
-        async.forEach(
-          passedApplications,
-          function (application, innerAsyncCallback) {
-            application._setupListeners(innerAsyncCallback);
-          },
-          asyncCallback
-        );
-      }
-    );
+    var initializeApplications = function (callback) {
+      async.forEach(passedApplications, function (application, asyncCallback) {
+        initializeApplication(application, asyncCallback);
+      }, callback);
+    };
+    fns.push(initializeApplications);
   }
 
-  // Start up the clientInterface, which will process all the
-  // resources defined so far.
+  // Add a function to start up the clientInterface implementation.
   fns.push(function (asyncCallback) {
     self.clientInterface._startup(asyncCallback);
   });
 
   // Call the array of functions in order, each starting after the prior has
-  // finished, and invoke the original callback function at the end.
+  // finished.
   async.series(fns, callback);
 };
 

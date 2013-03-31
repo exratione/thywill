@@ -18,9 +18,9 @@ var Thywill = require("thywill");
  * A Cluster implementation backed by Redis. Communication between cluster
  * members is managed via Redis publish/subscribe mechanisms.
  *
- * The RedisCluster implementation spawns a separate process via the Node.js
- * code cluster functionality to run a heartbeat and check on other cluster
- * member heartbeats via a publish/subscribe channel.
+ * The RedisCluster implementation spawns a separate process to run a heartbeat
+ * and check on other cluster member heartbeats via a publish/subscribe
+ * channel.
  *
  * The heartbeat runs in a separate process and channel to ensure that it runs
  * on time, and is lagged as little as possible, thus allowed faster detection
@@ -136,8 +136,11 @@ p._configure = function (thywill, config, callback) {
     } catch (e) {
       self.thywill.log.error(e);
     }
-    if (data) {
-      self.emit(data.taskName, data);
+    if (data && data.taskName) {
+      // Messages to others are sent to all, but with an "ignoreIfOriginator" flag.
+      if (!data.ignoreIfOriginator || data.clusterMemberId !== self.config.localClusterMemberId) {
+        self.emit(data.taskName, data);
+      }
     }
   });
 
@@ -259,13 +262,8 @@ p.sendToAll = function (taskName, data) {
  */
 p.sendToOthers = function (taskName, data) {
   var self = this;
-  data.taskName = taskName;
-  data.clusterMemberId = this.config.localClusterMemberId;
-  this.config.clusterMemberIds.forEach(function (clusterMemberId, index, array) {
-    if (clusterMemberId !== self.config.localClusterMemberId) {
-      self.config.communication.publishRedisClient.publish(self.channels[clusterMemberId], JSON.stringify(data));
-    }
-  });
+  data.ignoreIfOriginator = true;
+  this.sendToAll(taskName, data);
 };
 
 
@@ -313,10 +311,16 @@ p.launchHeartbeatProcess = function () {
   process.on("exit", function () {
     self.heartbeatProcess.kill("SIGKILL");
   });
+  // Kind of ugly. TODO: replace with Domains or something better.
+  process.once("uncaughtException", function (error) {
+    self.heartbeatProcess.kill("SIGKILL");
+    throw error;
+  });
 
   // If the child process dies, then we have a problem, and need to die also.
   this.heartbeatProcess.on("exit", function (code, signal) {
-    throw new Error("RedisCluster: heartbeat process terminated with code: " + code);
+    self.thywill.log.error("RedisCluster: heartbeat process terminated with code: " + code);
+    process.exit(1);
   });
 };
 

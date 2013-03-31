@@ -22,6 +22,35 @@ util.inherits(Minifier, Thywill.getBaseClass("Component"));
 var p = Minifier.prototype;
 
 //-----------------------------------------------------------
+// Methods
+//-----------------------------------------------------------
+
+/**
+ * Check a Resource instance to see if it is already declaring itself minified.
+ *
+ * @param {Resource} resource
+ *   A Resource instance.
+ * @return {Boolean}
+ *   True if the Resource declares itself already minified.
+ */
+p.isMinified = function (resource) {
+  return resource.clientPath.match(/\.min\./i);
+};
+
+/**
+ * Given a path string, change the filename ending to show minification.
+ * e.g. foo.js -> foo.min.js
+ *
+ * @param {string} clientPath
+ *   A Resource clientPath.
+ * @return {string}
+ *   The path with minified name.
+ */
+p.generateMinifiedClientPath = function (clientPath) {
+  return clientPath.replace(/\.(\w+)$/, ".min.$1", "i");
+};
+
+//-----------------------------------------------------------
 // Methods to be implemented by subclasses.
 //-----------------------------------------------------------
 

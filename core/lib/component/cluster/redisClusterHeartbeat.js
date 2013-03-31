@@ -2,8 +2,7 @@
  * @fileOverview
  * This script runs the RedisCluster heartbeat.
  *
- * It is launched by RedisCluster to run in a separate process via the core
- * Node.js cluster functionality. (The collision of names is unfortunate).
+ * It is launched by RedisCluster to run in a separate process.
  *
  * This is done to ensure that cluster heartbeats run on time no matter
  * what is going on in the main Thywill process. Thus heartbeats can be

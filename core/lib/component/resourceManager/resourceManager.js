@@ -4,6 +4,7 @@
  */
 
 var fs = require("fs");
+var pathUtils = require("path");
 var util = require("util");
 var Thywill = require("thywill");
 var Resource = Thywill.getBaseClass("Resource");
@@ -20,10 +21,10 @@ var Resource = Thywill.getBaseClass("Resource");
 function ResourceManager() {
   ResourceManager.super_.call(this);
   this.componentType = "resourceManager";
-  // Convenience copy of the Resource types; resourceManager.createResource()
-  // needs the type, and it's easier if you don't have to go load the Resource
-  // class to get the type definitions.
+  // Convenience copies of Resource static values.
   this.types = Resource.TYPES;
+  this.defaultType = Resource.DEFAULT_TYPE;
+  this.typeByExtension = Resource.TYPE_BY_EXTENSION;
 }
 util.inherits(ResourceManager, Thywill.getBaseClass("Component"));
 var p = ResourceManager.prototype;
@@ -84,6 +85,12 @@ p.createResource = function (data, attributes) {
     }
     data = new Buffer(data, encoding);
   }
+  // Check to see if we're defaulting the type based on a file extension.
+  if (!attributes.type) {
+    var extension = pathUtils.extname(attributes.clientPath);
+    attributes.type = this.typeByExtension[extension] || this.defaultType;
+  }
+  // Generate the Resource instance.
   return new Resource(data, attributes);
 };
 

@@ -43,6 +43,9 @@ ServerMessage.METADATA.CHANNEL_ID = "chid";
 // If CHANNEL_ID is set, then CONNECTION_ID implies an originating client
 // that should be excluded from receiving the published message.
 ServerMessage.METADATA.CONNECTION_ID = "cid";
+// The ID of a specific client session, only set for convenience on messages
+// arriving from the client.
+ServerMessage.METADATA.SESSION_ID = "sid";
 // Whether the message is delivered to server or client.
 ServerMessage.METADATA.DESTINATION = "dest";
 // Whether the message originated from server or client.
@@ -66,6 +69,13 @@ p.getConnectionId = function () {
 };
 p.setConnectionId = function (connectionId) {
   this.setMetadata(ServerMessage.METADATA.CONNECTION_ID, connectionId);
+};
+
+p.getSessionId = function () {
+  return this.getMetadata(ServerMessage.METADATA.SESSION_ID);
+};
+p.setSessionId = function (sessionId) {
+  this.setMetadata(ServerMessage.METADATA.SESSION_ID, sessionId);
 };
 
 p.getDestination = function () {
@@ -143,15 +153,16 @@ p.isValid = function () {
     return false;
   }
 
-  // A message from the client has to have a connection ID.
+  // A message from the client has to have a connection ID and a session ID.
   if (origin === ServerMessage.ORIGINS.CLIENT) {
-    if(!this.getConnectionId()) {
+    if(!this.getConnectionId() || !this.getSessionId()) {
       return false;
     }
   }
-  // A message to the client has to have either a connection ID or a channel ID.
+  // A message to the client has to have either a connection ID, a session ID,
+  // or a channel ID.
   if (destination === ServerMessage.DESTINATIONS.CLIENT) {
-    if(!this.getConnectionId() && !this.getChannelId()) {
+    if(!this.getConnectionId() && !this.getSessionId() && !this.getChannelId()) {
       return false;
     }
   }

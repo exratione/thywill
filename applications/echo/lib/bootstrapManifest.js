@@ -16,67 +16,45 @@
 
 var path = require("path");
 var Thywill = require("thywill");
-
 var Resource = Thywill.getBaseClass("Resource");
-var encoding = "utf8";
 
 var manifest = {
   // Add Modernizr, which has to come first in the Javascript.
   "../../../thirdParty/modernizr/modernizr.2.6.1.min.js": {
     clientPath: "/echo/js/modernizr.min.js",
-    encoding: encoding,
-    minified: true,
-    type: Resource.TYPES.JAVASCRIPT,
     weight: -30
   },
   // Add jQuery as a resource, setting it a lower weight than the default
   // Thwyill code - having it come first is fairly necessary if you want
   // things to work rather than explode.
-  "../../../thirdParty/jquery/jquery.1.7.2.min.js": {
+  "../../../thirdParty/jquery/jquery.1.9.1.min.js": {
     clientPath: "/echo/js/jquery.min.js",
-    encoding: encoding,
-    minified: true,
-    type: Resource.TYPES.JAVASCRIPT,
     weight: -20
-
   },
   // Add the plugins.js code from HTML5 Boilerplate.
   "../../../thirdParty/html5boilerplate/plugins.js": {
     clientPath: "/echo/js/plugins.js",
-    encoding: encoding,
-    minified: false,
-    type: Resource.TYPES.JAVASCRIPT,
     weight: -10
   },
   // Add Handlebars.js.
   "../../../thirdParty/handlebars.js/handlebars.1.0.0.rc.1.js": {
     clientPath: "/echo/js/handlebars.js",
-    encoding: encoding,
-    minified: true,
-    type: Resource.TYPES.JAVASCRIPT,
     weight: 10
   },
   // Add HTML5 Boilerplate CSS.
   "../../../thirdParty/html5boilerplate/html5boilerplate.css": {
     clientPath: "/echo/css/html5boilerplate.css",
-    encoding: encoding,
-    minified: false,
-    type: Resource.TYPES.CSS,
     weight: 0
   },
   // Add the Echo client CSS.
   "../client/css/echoClient.css": {
     clientPath: "/echo/css/client.css",
-    encoding: encoding,
-    minified: false,
-    type: Resource.TYPES.CSS,
     weight: 10
   },
   // Add the Echo client UI template. Note that this won't be loaded over
   // HTTP, but rather included into the application main page.
   "../client/template/ui.tpl": {
     clientPath: "/echo/tpl/ui.tpl",
-    encoding: encoding,
     id: "echo-template-ui",
     type: Resource.TYPES.TEMPLATE,
     weight: 0
@@ -85,18 +63,20 @@ var manifest = {
   // loaded over HTTP, but rather included into the application main page.
   "../client/template/message.tpl": {
     clientPath: "/echo/tpl/message.tpl",
-    encoding: encoding,
     id: "echo-template-message",
     type: Resource.TYPES.TEMPLATE,
     weight: 0
   }
 };
 
-// Convert all the relative paths to absolute paths.
+// Convert all the relative paths to absolute paths, and set the encoding
+// while we're about it.
 var absolutePath, absoluteManifest = {};
+var encoding = "utf8";
 for (var originFilePath in manifest) {
   absolutePath = path.resolve(__dirname, originFilePath);
   absoluteManifest[absolutePath] = manifest[originFilePath];
+  absoluteManifest[absolutePath].encoding = encoding;
 }
 
 //-----------------------------------------------------------

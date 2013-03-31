@@ -1,6 +1,6 @@
 /**
  * @fileOverview
- * Exports functions to start up one of the cluster members running the Draw
+ * Exports functions to start up of the cluster members running the Chat
  * application.
  */
 
@@ -9,28 +9,28 @@ var RedisSessionStore = require("connect-redis")(express);
 var RedisStore = require("socket.io/lib/stores/redis");
 var http = require("http");
 var redis = require("redis");
-var Draw = require("./draw");
+var Chat = require("./chat");
 var config = require("../../../serverConfig/thywill/baseThywillConfig");
 var Thywill = require("thywill");
 
 // Data for the cluster members.
 var cluster = {
   alpha: {
-    port: 10083
+    port: 10087
   },
   beta: {
-    port: 10084
+    port: 10088
   },
   gamma: {
-    port: 10085
+    port: 10089
   },
   delta: {
-    port: 10086
+    port: 10090
   }
 };
 
 /**
- * Start a Draw application process running.
+ * Start a Chat application process running.
  *
  * @param {string} clusterMemberName
  *   The name of the cluster member to start.
@@ -39,13 +39,9 @@ exports.start = function (clusterMemberId) {
 
   // All the Redis clients that will be needed.
   var redisClients = {
-    sessionStore: redis.createClient(6379, "127.0.0.1"),
-    socketPub: redis.createClient(6379, "127.0.0.1"),
-    socketSub: redis.createClient(6379, "127.0.0.1"),
-    socketClient: redis.createClient(6379, "127.0.0.1"),
-    clusterPub: redis.createClient(6379, "127.0.0.1"),
-    clusterSub: redis.createClient(6379, "127.0.0.1"),
-    resourceManager: redis.createClient(6379, "127.0.0.1")
+    pub: redis.createClient(6379, "127.0.0.1"),
+    sub: redis.createClient(6379, "127.0.0.1"),
+    other: redis.createClient(6379, "127.0.0.1")
   };
 
   // ------------------------------------------------------
@@ -54,8 +50,8 @@ exports.start = function (clusterMemberId) {
 
   // An example application should have its own base path and Socket.IO
   // namespace.
-  config.clientInterface.baseClientPath = "/draw";
-  config.clientInterface.namespace = "/draw";
+  config.clientInterface.baseClientPath = "/chat";
+  config.clientInterface.namespace = "/chat";
   // We're using sessions, managed via Express.
   config.clientInterface.sessions.type = "express";
   // Thywill needs access to the session cookie secret and key.
@@ -65,12 +61,12 @@ exports.start = function (clusterMemberId) {
   // sessions can be assigned to websocket connections. Since this is a
   // clustered example, we're using a Redis-backed store here.
   config.clientInterface.sessions.store = new RedisSessionStore({
-    client: redisClients.sessionStore
+    client: redisClients.other
   });
 
   // Resource minification settings.
-  config.clientInterface.minifyCss = true;
-  config.clientInterface.minifyJavascript = true;
+  config.clientInterface.minifyCss = false;
+  config.clientInterface.minifyJavascript = false;
 
   // Set the http.Server instance and Express application.
   var app = express();
@@ -78,13 +74,13 @@ exports.start = function (clusterMemberId) {
   var server = http.createServer(app).listen(cluster[clusterMemberId].port);
   config.clientInterface.server.server = server;
   // Note that the client resource has no leading /. These must otherwise match.
-  config.clientInterface.socketClientConfig.resource = "draw/socket.io";
-  config.clientInterface.socketConfig.global.resource = "/draw/socket.io";
+  config.clientInterface.socketClientConfig.resource = "chat/socket.io";
+  config.clientInterface.socketConfig.global.resource = "/chat/socket.io";
   // Create a RedisStore for Socket.IO.
   config.clientInterface.socketConfig.global.store = new RedisStore({
-    redisPub: redisClients.socketPub,
-    redisSub: redisClients.socketSub,
-    redisClient: redisClients.socketClient
+    redisPub: redisClients.pub,
+    redisSub: redisClients.sub,
+    redisClient: redisClients.other
   });
 
   // The cluster implementation is backed by Redis.
@@ -96,8 +92,8 @@ exports.start = function (clusterMemberId) {
     // The cluster has four members.
     clusterMemberIds: ["alpha", "beta", "gamma", "delta"],
     communication: {
-      publishRedisClient: redisClients.clusterPub,
-      subscribeRedisClient: redisClients.clusterSub
+      publishRedisClient: redisClients.pub,
+      subscribeRedisClient: redisClients.sub
     },
     heartbeat: {
       interval: 200,
@@ -108,15 +104,15 @@ exports.start = function (clusterMemberId) {
     },
     // The local member name is drawn from the arguments.
     localClusterMemberId: clusterMemberId,
-    redisPrefix: "thywill:draw:cluster:"
+    redisPrefix: "thywill:chat:cluster:"
   };
 
   // Set an appropriate log level for an example application.
   config.log.level = "debug";
 
   // Base paths to use when defining new resources for merged CSS and Javascript.
-  config.minifier.cssBaseClientPath = "/draw/css";
-  config.minifier.jsBaseClientPath = "/draw/js";
+  config.minifier.cssBaseClientPath = "/chat/css";
+  config.minifier.jsBaseClientPath = "/chat/js";
 
   // Use a Redis-backed ResourceManager to allow resources to be shared between
   // cluster members - not that this is important for this particular example
@@ -127,8 +123,19 @@ exports.start = function (clusterMemberId) {
       name: "redisResourceManager"
     },
     cacheSize: 100,
-    redisPrefix: "thywill:draw:resource:",
-    redisClient: redisClients.resourceManager
+    redisPrefix: "thywill:chat:resource:",
+    redisClient: redisClients.other
+  };
+
+  // A Redis implementation of a ChannelManager for keeping track of which
+  // clients are grouped together in chats.
+  config.channelManager = {
+    implementation: {
+      type: "extra",
+      name: "redisChannelManager"
+    },
+    redisPrefix: "thywill:chat:channel:",
+    redisClient: redisClients.other
   };
 
   // ------------------------------------------------------
@@ -156,14 +163,19 @@ exports.start = function (clusterMemberId) {
   });
 
   // Instantiate an application object.
-  var draw = new Draw("draw");
+  var chat = new Chat("chat", {
+    redis: {
+      client: redisClients.other,
+      prefix: "thywill:chat:application:"
+    }
+  });
 
   // ------------------------------------------------------
   // Launch Thywill.
   // ------------------------------------------------------
 
   // And off we go: launch a Thywill instance to run the the application.
-  Thywill.launch(config, draw, function (error, thywill) {
+  Thywill.launch(config, chat, function (error, thywill) {
     if (error) {
       if (error instanceof Error) {
         error = error.stack;
@@ -173,10 +185,10 @@ exports.start = function (clusterMemberId) {
     }
 
     // Protect the Redis clients from hanging if they are timed out by the server.
-    for (var key in redisClients) {
-      thywill.protectRedisClient(redisClients[key]);
+    for (var prop in redisClients) {
+      thywill.protectRedisClient(redisClients[prop]);
     }
 
-    thywill.log.info("Thywill is ready to run cluster member [" + clusterMemberId + "] for the Draw example application.");
+    thywill.log.info("Thywill is ready to run cluster member [" + clusterMemberId + "] for the Chat example application.");
   });
 };
