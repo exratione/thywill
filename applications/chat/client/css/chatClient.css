@@ -79,6 +79,12 @@ button {
   padding: 10px;
   border-bottom: 1px solid #dddddd;
 }
+.disconnect-message {
+  color: #995555;
+}
+.reconnect-message {
+  color: #559955;
+}
 .notice {
   font-size: 22px;
   letter-spacing: 1px;

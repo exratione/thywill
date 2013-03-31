@@ -73,6 +73,8 @@ p._defineBootstrapResources = function (callback) {
         applicationId: self.id,
         uiTemplateId: "chat-template-ui",
         messageTemplateId: "chat-template-message",
+        disconnectMessageTemplateId: "chat-template-disconnect-message",
+        reconnectMessageTemplateId: "chat-template-reconnect-message",
         channelTemplateId: "chat-template-channel"
       });
       // Create and store the resource.
@@ -315,6 +317,69 @@ p.checkQueue = function (localSessionId, callback) {
 };
 
 /**
+ * A session connects and has an existing channel. If this the only connection
+ * for the session, then inform the chat partner that this session has
+ * reconnected.
+ *
+ * @param {string} channelId
+ *   The channel for the chat.
+ * @param {string} sessionId
+ *   Session ID of to tell to start chatting.
+ */
+p.notifyOfReconnectionIfNecessary = function (channelId, sessionId) {
+  var self = this;
+  var sessionIds = [];
+
+  var fns = {
+    // If this session has other connections, we don't have to do anything
+    // here. But we do have to at least check that.
+    getSessionConnections: function (asyncCallback) {
+      self.thywill.clientInterface.connectionIdsForSession(sessionId, function (error, connectionIds) {
+        if (error) {
+          asyncCallback(error);
+        } else if (connectionIds.length === 1) {
+          asyncCallback();
+        } else {
+          // If no error and this is not the only connection, then finish here
+          // and do nothing - no need to notify.
+        }
+      });
+    },
+    // Get the session ID for the other client in the chat.
+    findOtherClientSessionId: function (asyncCallback) {
+      self.thywill.channelManager.getSessionIds(channelId, function (error, loadedSessionIds) {
+        if (!error) {
+          // Remove the ID of the connecting session.
+          sessionIds = loadedSessionIds.filter(function (id, index, array) {
+            return (id !== sessionId);
+          });
+        }
+        asyncCallback(error);
+      });
+    },
+    // Tell the other client session about the reconnection by this session.
+    informOtherClient: function (asyncCallback) {
+      var outgoingData = {
+        action: "reconnected"
+      };
+      sessionIds.forEach(function (id, index, array) {
+        var outgoingMessage = self.thywill.messageManager.createMessageToSession(
+          outgoingData, id, self.id
+        );
+        self.send(outgoingMessage);
+      });
+      asyncCallback();
+    }
+  };
+
+  async.series(fns, function (error) {
+    if (error) {
+      self.thywill.log.error(error);
+    }
+  });
+};
+
+/**
  * @see Application#connection
  */
 p.connection = function (connectionId, sessionId, session) {
@@ -329,11 +394,8 @@ p.connection = function (connectionId, sessionId, session) {
       self.thywill.log.debug("Chat: Client session " + sessionId + " connected, already has a chat channel: " + channelIds[0]);
       // But we have to tell the client that the chat is on.
       self.setClientToChat(sessionId, channelIds[0]);
-
-
-      // TODO: notify other side of the conversation of a reconnection.
-
-
+      // Notify other side of the conversation of a reconnection.
+      self.notifyOfReconnectionIfNecessary(channelIds[0], sessionId);
     } else {
       self.thywill.log.debug("Chat: Client session " + sessionId + " connected, needs to be given a chat channel.");
       // See if we can pair this client up with another one.
@@ -366,7 +428,7 @@ p.disconnection = function (connectionId, sessionId) {
     // here. But we do have to at least check that.
     checkSessionStillConnected: function (asyncCallback) {
       self.thywill.clientInterface.sessionIsConnected(sessionId, function (error, isConnected) {
-        if (error || !isConnected) {
+        if (error) {
           asyncCallback(error);
         } else if (!isConnected) {
           self.thywill.log.debug("Chat: Client session " + sessionId + " disconnected last connection: " + connectionId);

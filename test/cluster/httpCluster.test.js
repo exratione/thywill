@@ -21,11 +21,11 @@ config.cluster = {
   clusterMembers: {
     "alpha": {
       host: "127.0.0.1",
-      port: 20091
+      port: 20078
     },
     "beta": {
       host: "127.0.0.1",
-      port: 20092
+      port: 20079
     }
   },
   upCheck: {

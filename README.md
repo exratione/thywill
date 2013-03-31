@@ -219,6 +219,49 @@ You can also obtain all of the current connection data for all processes:
       // carefully.
     });
 
+Using Channels
+--------------
+
+Channels provide a way of persisting the fact that two or more sessions are
+grouped together. They are managed via (surprise) the optional ChannelManager
+component.
+
+You can make available a Redis-based ChannelManager for your Thywill
+application by adding the following to the main configuration object:
+
+    config.channelManager = {
+      implementation: {
+        type: "extra",
+        name: "redisChannelManager"
+      },
+      redisPrefix: "thywill:chat:channel:",
+      redisClient: redis.createClient()
+    };
+
+Adding sessions to a channel in application code is as shown below. Connections
+for these sessions will be added to the channel as subscribers there and then,
+and when they occur in the future.
+
+    var self = this;
+    var sessionIds = [sessionId1, sessionId2];
+    this.thywill.channelManager.addSessionIds(channelId, sessionIds, function (error) {
+      if (error) {
+        self.thywill.log.error(error);
+      }
+    });
+
+Publishing a message to the channel in your application code:
+
+    var applicationId = this.id;
+    var data = {
+      name: "value"
+    };
+    var message = this.thywill.messageManager.createMessageToChannel(data, channelId, applicationId);
+    this.send(message);
+
+You can see simple example of the use of channels in the Chat example
+application, found under /applications/chat/.
+
 Remote Procedure Calls
 ----------------------
 
