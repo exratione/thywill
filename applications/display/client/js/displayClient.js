@@ -99,10 +99,10 @@
       timestamp: dateFormat(Date.now(), "HH:MM:ss"),
       text: text
     });
-    // Transform into DOM nodes - which requires that trim() or jQuery will be
-    // confused by leading and trailing line feeds.
-    html = jQuery.parseHTML(html.trim());
-    jQuery(html).hide().appendTo(messages).slideDown("fast", function () {
+    // Convert to DOM. The filter("*") gets rid of newline text nodes, which
+    // cause jQuery issues.
+    html = jQuery.parseHTML(html);
+    jQuery(html).filter("*").hide().appendTo(messages).slideDown("fast", function () {
       messages.scrollTop(messages.height());
     });
   };
@@ -123,10 +123,10 @@
         connectionId: connectionId
       });
     }).join("\n");
-    // Transform into DOM nodes - which requires that trim() or jQuery will be
-    // confused by leading and trailing line feeds.
-    html = jQuery.parseHTML(html.trim());
-    jQuery(html).hide().appendTo("#" + clusterMemberId + " .connections").slideDown("fast", function () {
+    // Convert to DOM. The filter("*") gets rid of newline text nodes, which
+    // cause jQuery issues.
+    html = jQuery.parseHTML(html);
+    jQuery(html).filter("*").hide().appendTo("#" + clusterMemberId + " .connections").slideDown("fast", function () {
       connections.scrollTop(connections.height());
     });
   };

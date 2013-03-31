@@ -19,7 +19,7 @@ exports.general = function (suite) {
         suite.thywillInstances[0].channelManager.getChannelIdsForSession("no-session", this.callback);
       },
       "empty array returned": function (error, channelIds) {
-        assert.isTrue(error === null || error === undefined);
+        assert.equal(error, null);
         assert.deepEqual(channelIds, []);
       }
     }
@@ -30,7 +30,7 @@ exports.general = function (suite) {
         suite.thywillInstances[0].channelManager.getSessionIds("not-a-channel", this.callback);
       },
       "empty array returned": function (error, sessionIds) {
-        assert.isTrue(error === null || error === undefined);
+        assert.equal(error, null);
         assert.deepEqual(sessionIds, []);
       }
     }
@@ -41,7 +41,7 @@ exports.general = function (suite) {
         suite.thywillInstances[0].channelManager.addSessionIds(testChannelId, testSessionIds, this.callback);
       },
       "add successful": function (error) {
-        assert.isTrue(error === null || error === undefined);
+        assert.equal(error, null);
       }
     }
   });
@@ -51,7 +51,7 @@ exports.general = function (suite) {
         suite.thywillInstances[0].channelManager.addSessionIds(testChannelId, testSessionIds, this.callback);
       },
       "add successful": function (error) {
-        assert.isTrue(error === null || error === undefined);
+        assert.equal(error, null);
       }
     }
   });
@@ -61,7 +61,7 @@ exports.general = function (suite) {
         suite.thywillInstances[0].channelManager.getSessionIds(testChannelId, this.callback);
       },
       "correct sessions returned": function (error, sessionIds) {
-        assert.isTrue(error === null || error === undefined);
+        assert.equal(error, null);
         assert.isArray(sessionIds);
         assert.deepEqual(sessionIds.sort(), testSessionIds);
       }
@@ -73,7 +73,7 @@ exports.general = function (suite) {
         suite.thywillInstances[0].channelManager.removeSessionIds(testChannelId, testSessionIds, this.callback);
       },
       "remove successful": function (error) {
-        assert.isTrue(error === null || error === undefined);
+        assert.equal(error, null);
       }
     }
   });
@@ -83,7 +83,7 @@ exports.general = function (suite) {
         suite.thywillInstances[0].channelManager.getSessionIds(testChannelId, this.callback);
       },
       "empty array returned": function (error, sessionIds) {
-        assert.isTrue(error === null || error === undefined);
+        assert.equal(error, null);
         assert.deepEqual(sessionIds, []);
       }
     }
@@ -97,7 +97,7 @@ exports.general = function (suite) {
         });
       },
       "correct sessions returned": function (error, sessionIds) {
-        assert.isTrue(error === null || error === undefined);
+        assert.equal(error, null);
         assert.isArray(sessionIds);
         assert.deepEqual(sessionIds.sort(), testSessionIds);
       }
@@ -137,7 +137,7 @@ exports.cluster = function (suite) {
         suite.thywillInstances[1].channelManager.getSessionIds(testChannelId, this.callback);
       },
       "session IDs returned correctly": function (error, sessionIds) {
-        assert.isTrue(error === null || error === undefined);
+        assert.equal(error, null);
         assert.deepEqual(sessionIds.sort(), testSessionIds);
       }
     }
@@ -167,7 +167,7 @@ exports.cluster = function (suite) {
         suite.thywillInstances[1].channelManager.getSessionIds(testChannelId, this.callback);
       },
       "empty array returned": function (error, sessionIds) {
-        assert.isTrue(error === null || error === undefined);
+        assert.equal(error, null);
         assert.deepEqual(sessionIds, []);
       }
     }
@@ -200,7 +200,7 @@ exports.cluster = function (suite) {
         suite.thywillInstances[1].channelManager.getSessionIds(testChannelId, this.callback);
       },
       "empty array returned": function (error, sessionIds) {
-        assert.isTrue(error === null || error === undefined);
+        assert.equal(error, null);
         assert.deepEqual(sessionIds, []);
       }
     }

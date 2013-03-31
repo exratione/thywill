@@ -66,6 +66,14 @@ var manifest = {
     id: "chat-template-message",
     type: Resource.TYPES.TEMPLATE,
     weight: 0
+  },
+  // Add the Chat client channel message templaet. Note that this won't be
+  // loaded over HTTP, but rather included into the application main page.
+  "../client/template/channel.tpl": {
+    clientPath: "/chat/tpl/channel.tpl",
+    id: "chat-template-channel",
+    type: Resource.TYPES.TEMPLATE,
+    weight: 0
   }
 };
 

@@ -33,6 +33,8 @@ module.exports = {
       // root to bind to privileged ports, then running later as a lesser
       // user.
       //
+      // Not used on Windows, of course.
+      //
       // Note that if you set either of these to a numeric uid, it must be a
       // number not a numeric string - 312, not "312".
       groupId: "node",
@@ -116,6 +118,7 @@ module.exports = {
     // used as-is. See:
     // https://github.com/LearnBoost/Socket.IO/wiki/Configuring-Socket.IO
     socketClientConfig: {
+      "max reconnection attempts": 50,
       // This MUST match the value of the socketConfig.*.resource value, but
       // with the leading / dropped.
       "resource": "application/socket.io"
@@ -150,7 +153,8 @@ module.exports = {
         // This should be set in the start script.
         "store": null,
         // The transports to use. We're trying to be modern here and stick with
-        // websockets only.
+        // websockets only. This means some browsers will fail miserably - so
+        // adjust as needed for your circumstance.
         "transports": ["websocket"]
       },
       // If NODE_ENV = production, then values set here will override the

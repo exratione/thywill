@@ -152,30 +152,30 @@ p.getResource = function (clientPath, callback) {
 //-----------------------------------------------------------
 
 /**
- * Subscribe this connection to one or more channels.
+ * Subscribe one or more connections to one or more channels.
  *
- * @param {string} connectionId
- *   The connection ID.
+ * @param {string|array} connectionIds
+ *   The connection IDs to be subscribed.
  * @param {string|array} channelIds
  *   One or more channel identifiers.
  * @param {function} callback
  *   Of the form function (error).
  */
-p.subscribe = function (connectionId, channelIds, callback) {
+p.subscribe = function (connectionIds, channelIds, callback) {
   throw new Error("Not implemented.");
 };
 
 /**
- * Unsubscribe this connection one or more channels.
+ * Unsubscribe one or more connections from one or more channels.
  *
- * @param {string} connectionId
- *   The connection ID.
+ * @param {string|array} connectionIds
+ *   The connection IDs to be subscribed.
  * @param {string|array} channelIds
  *   One or more channel identifiers.
  * @param {function} callback
  *   Of the form function (error).
  */
-p.unsubscribe = function (connectionId, channelIds, callback) {
+p.unsubscribe = function (connectionIds, channelIds, callback) {
   throw new Error("Not implemented.");
 };
 

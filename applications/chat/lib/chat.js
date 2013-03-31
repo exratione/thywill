@@ -72,7 +72,8 @@ p._defineBootstrapResources = function (callback) {
       data = self.thywill.templateEngine.render(data, {
         applicationId: self.id,
         uiTemplateId: "chat-template-ui",
-        messageTemplateId: "chat-template-message"
+        messageTemplateId: "chat-template-message",
+        channelTemplateId: "chat-template-channel"
       });
       // Create and store the resource.
       var resource = self.thywill.resourceManager.createResource(data, {
@@ -126,6 +127,7 @@ p.received = function (message) {
   }
   // The client is looking for a chat partner.
   else if (data.action === "findPartner") {
+    this.thywill.log.debug("Session " + message.getSessionId() + " requests a new chat partner.");
     this.checkQueue(message.getSessionId(), function (error) {
       if (error) {
         self.thywill.log.error(error);
@@ -237,8 +239,10 @@ p.pairClientSessions = function (localSessionId, otherSessionId, callback) {
   var self = this;
   this.thywill.log.debug("Chat: Pairing " + localSessionId + " with " + otherSessionId);
 
-  // Create a channel and add these sessions to it.
-  var channelId = crypto.createHash("md5").update(localSessionId + otherSessionId).digest("hex");
+  // Create a channel and add these sessions to it. Ensure the channel name
+  // is the same whichever way around the two sessions are.
+  var str = [localSessionId, otherSessionId].sort().join();
+  var channelId = crypto.createHash("md5").update(str).digest("hex");
   this.thywill.channelManager.addSessionIds(channelId, [localSessionId, otherSessionId], function (error) {
     if (error) {
       self.thywill.log.error(error);
@@ -260,7 +264,7 @@ p.pairClientSessions = function (localSessionId, otherSessionId, callback) {
 p.setClientToChat = function (sessionId, channelId) {
   var data = {
     action: "startChat",
-    channel: channelId
+    channelId: channelId
   };
   var message = this.thywill.messageManager.createMessageToSession(data, sessionId, this.id);
   this.send(message);
@@ -358,7 +362,8 @@ p.disconnection = function (connectionId, sessionId) {
   var sessionIds = [];
 
   var fns = {
-    // If this session has other connections, we don't have to do anything here.
+    // If this session has other connections, we don't have to do anything
+    // here. But we do have to at least check that.
     checkSessionStillConnected: function (asyncCallback) {
       self.thywill.clientInterface.sessionIsConnected(sessionId, function (error, isConnected) {
         if (error || !isConnected) {
@@ -367,9 +372,9 @@ p.disconnection = function (connectionId, sessionId) {
           self.thywill.log.debug("Chat: Client session " + sessionId + " disconnected last connection: " + connectionId);
           asyncCallback();
         } else {
-          // If no error and is connected, just end here and don't continue.
-          // The user closed one of multiple browser panes and is still
-          // connected.
+          // If no error and showing as connected, just end here and don't
+          // continue. The user closed one of multiple browser panes and is
+          // still connected.
           self.thywill.log.debug("Chat: Client session " + sessionId + " disconnected one of its established connections: " + connectionId);
         }
       });
@@ -381,8 +386,8 @@ p.disconnection = function (connectionId, sessionId) {
           asyncCallback(error);
           return;
         }
-        // Only bother continuing with the async callback if this session has
-        // a channel.
+        // Only bother continuing with the async callback if this session is
+        // in a channel.
         if (channelIds.length) {
           channelId = channelIds[0];
           asyncCallback();
@@ -393,7 +398,7 @@ p.disconnection = function (connectionId, sessionId) {
     findOtherClientSessionId: function (asyncCallback) {
       self.thywill.channelManager.getSessionIds(channelId, function (error, loadedSessionIds) {
         if (!error) {
-          // Remove the ID of the session issuing the kick.
+          // Remove the ID of the disconnecting session.
           sessionIds = loadedSessionIds.filter(function (id, index, array) {
             return (id !== sessionId);
           });
@@ -401,7 +406,7 @@ p.disconnection = function (connectionId, sessionId) {
         asyncCallback(error);
       });
     },
-    // Tell the client about the disconnection.
+    // Tell the other client session about the disconnection by this session.
     informOtherClient: function (asyncCallback) {
       var outgoingData = {
         action: "disconnected"

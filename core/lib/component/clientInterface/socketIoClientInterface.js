@@ -1019,21 +1019,31 @@ p._sendToSocket = function (socketId, clientMessage) {
 /**
  * @see ClientInterface#subscribe
  */
-p.subscribe = function (connectionId, channelIds, callback) {
-  if(this._subscribeLocalSocket(connectionId, channelIds)) {
+p.subscribe = function (connectionIds, channelIds, callback) {
+  var self = this;
+  if (!Array.isArray(connectionIds)) {
+    connectionIds = [connectionIds];
+  }
+  if (!connectionIds.length) {
     callback();
     return;
   }
-  // The connection isn't local, but we know which cluster member the socket is
-  // connected to, so tell it directly.
-  for (var clusterMemberId in this.connections) {
-    if (this.connections[clusterMemberId].connections[connectionId]) {
-      this.thywill.cluster.sendTo(clusterMemberId, this.clusterTask.subscribe, {
-        connectionId: connectionId,
-        channelIds: channelIds
-      });
+
+  connectionIds.forEach(function (connectionId, index, array) {
+    if(self._subscribeLocalSocket(connectionId, channelIds)) {
+      return;
     }
-  }
+    // The connection isn't local, but we know which cluster member the socket is
+    // connected to, so tell it directly.
+    for (var clusterMemberId in self.connections) {
+      if (self.connections[clusterMemberId].connections[connectionId]) {
+        self.thywill.cluster.sendTo(clusterMemberId, self.clusterTask.subscribe, {
+          connectionId: connectionId,
+          channelIds: channelIds
+        });
+      }
+    }
+  });
   callback();
 };
 
@@ -1062,21 +1072,32 @@ p._subscribeLocalSocket = function (connectionId, channelIds) {
 /**
  * @see ClientInterface#unsubscribe
  */
-p.unsubscribe = function (connectionId, channelIds, callback) {
-  if(this._unsubscribeLocalSocket(connectionId, channelIds)) {
+p.unsubscribe = function (connectionIds, channelIds, callback) {
+  var self = this;
+  if (!Array.isArray(connectionIds)) {
+    connectionIds = [connectionIds];
+  }
+  if (!connectionIds.length) {
     callback();
     return;
   }
-  // The connection isn't local, but we know which cluster member the socket is
-  // connected to, so tell it directly.
-  for (var clusterMemberId in this.connections) {
-    if (this.connections[clusterMemberId].connections[connectionId]) {
-      this.thywill.cluster.sendTo(clusterMemberId, this.clusterTask.unsubscribe, {
-        connectionId: connectionId,
-        channelIds: channelIds
-      });
+
+  connectionIds.forEach(function (connectionId, index, array) {
+    if(self._unsubscribeLocalSocket(connectionId, channelIds)) {
+      callback();
+      return;
     }
-  }
+    // The connection isn't local, but we know which cluster member the socket is
+    // connected to, so tell it directly.
+    for (var clusterMemberId in self.connections) {
+      if (self.connections[clusterMemberId].connections[connectionId]) {
+        self.thywill.cluster.sendTo(clusterMemberId, self.clusterTask.unsubscribe, {
+          connectionId: connectionId,
+          channelIds: channelIds
+        });
+      }
+    }
+  });
   callback();
 };
 

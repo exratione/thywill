@@ -25,8 +25,8 @@
     Thywill.ApplicationInterface.call(this, applicationId);
     // For storing Handlebars.js templates.
     this.templates = {};
-    // Currently assigned chat partner connection ID.
-    this.chatPartnerConnectionId = null;
+    // Set to true when currently assigned a chat partner.
+    this.chatting = false;
   }
   Thywill.inherits(ChatApplication, Thywill.ApplicationInterface);
   var p = ChatApplication.prototype;
@@ -40,48 +40,88 @@
    */
   p.uiSetup = function () {
     var self = this;
-
     // Populate the DOM from the template.
     this.templates.uiTemplate = Handlebars.compile(jQuery("#{{{uiTemplateId}}}").html());
     this.templates.messageTemplate = Handlebars.compile(jQuery("#{{{messageTemplateId}}}").html());
+    this.templates.channelTemplate = Handlebars.compile(jQuery("#{{{channelTemplateId}}}").html());
     jQuery("body").append(this.templates.uiTemplate({
       kickButtonText: "Kick",
+      kickText: "Chat partner kicked.",
+      kickedText: "You have been kicked!",
+      newPartnerButtonText: "New Chat",
       sendButtonText: "Send",
       title: "Thywill: Chat Application",
       waitingText: "Waiting for a chat partner..."
     }));
+
+    // Attach the necessary functionality to the new chat buttons shown after
+    // kicking or being kicked. The button aren't disabled at any point, just
+    // hidden.
+    jQuery("button.new-partner").click(function () {
+      jQuery(this).parent().fadeOut("fast", function () {
+        jQuery("#waiting").fadeIn("fast", function () {
+          // Wait to send, otherwise we can get odd collisions between fade
+          // out and fade in of #waiting if the server response is fast enough.
+          self.send({
+            action: "findPartner"
+          });
+        });
+      });
+    });
   };
 
   /**
    * Disable the chat UI and set it to the waiting for chat partner
    * state.
+   *
+   * @param {string} closeCircumstance
+   *   "kicked" if the close happens because this client was kicked by the
+   *   chat parter, or "kick" if this client did the kicking.
    */
-  p.closeChatUi = function () {
-    // Remove the current chat partner.
+  p.closeChatUi = function (closeCircumstance) {
+    // Convenience function for showing the right banner message.
+    function showMessage () {
+      if (closeCircumstance === "kick") {
+        jQuery("#kick").fadeIn("fast");
+      } else if (closeCircumstance === "kicked") {
+        jQuery("#kicked").fadeIn("fast");
+      } else {
+        jQuery("#waiting").fadeIn("fast");
+      }
+    }
 
-    // TODO: display of chat partner
-
+    this.chatting = false;
     // Turn off the buttons.
     jQuery(".send-button").off("click");
     // Set the chat display back to the waiting state.
     jQuery("#chat-wrapper").removeClass("enabled");
-    jQuery("textarea").val("");
-    jQuery(".chat-message").fadeOut("fast", function () {
-      jQuery(".chat-message").remove();
-      jQuery("#waiting").fadeIn("fast");
+    jQuery("textarea").val("").prop("disabled", true);
+    var messages = jQuery(".chat-message");
+    if (messages.length) {
+      // The callback is only called if there actually are elements here, so
+      // we can't just use it all the time.
+      messages.fadeOut("fast", function () {
+        messages.remove();
+        showMessage();
+      });
+    } else {
+      showMessage();
+    }
+    // Remove display of chat channel/partner.
+    jQuery("#channel *").fadeOut("fast", function () {
+      jQuery("#channel *").remove();
     });
   };
 
   /**
    * Enable the chat UI for a new chat partner.
    *
-   * @param {string} sessionID
-   *   The session ID of the chat partner.
+   * @param {string} channelId
+   *   The channel for this chat.
    */
-  p.openChatUi = function (sessionId) {
+  p.openChatUi = function (channelId) {
     var self = this;
-
-    // TODO: display of chat partner
+    this.chatting = true;
 
     // Enable the send button.
     jQuery(".send-button").on("click", function () {
@@ -99,20 +139,30 @@
     });
 
     // Enable the kick button.
-    jQuery(".kick-button").addClass("enabled").on("click", function () {
-      // Shut off the UI.
-      self.closeChatUi();
-      // Tell the server to deliver a new chat partner.
+    jQuery(".kick-button").on("click", function () {
+      // Shut off the UI, notify the server and the chat partner.
+      self.closeChatUi("kick");
       self.send({
         action: "kick"
       });
     });
 
-    // Remove the waiting notice, enable the chat window.
-    jQuery("#waiting").fadeOut("fast");
-
+    // Remove the notices, enable the chat window.
+    jQuery(".notice").fadeOut("fast");
     // Enabled versions for the UI.
     jQuery("#chat-wrapper").addClass("enabled");
+    // Other odds and ends.
+    jQuery("textarea").prop("disabled", false);
+
+    // Add the display of channel/chat partner.
+    // Render the message HTML.
+    var rendered = this.templates.channelTemplate({
+      channelId: channelId
+    });
+    // Convert to DOM. The filter("*") gets rid of newline text nodes, which
+    // cause jQuery issues.
+    rendered = jQuery.parseHTML(rendered);
+    jQuery(rendered).filter("*").hide().appendTo("#channel").fadeIn("fast");
   };
 
   /**
@@ -122,6 +172,12 @@
    *   The text of the message.
    */
   p.displayChatMessage = function (messageText) {
+    // It's possible for a just-rightly timed message to arrive in the lag time
+    // between a user getting kicked and the system noticing that.
+    if (!this.chatting) {
+      return;
+    }
+
     // Set scroll top, or else the new message might not push down content
     // correctly.
     jQuery("#chat-output").scrollTop(0);
@@ -129,10 +185,11 @@
     var rendered = this.templates.messageTemplate({
       data: messageText
     });
-    // Convert to DOM. The trim is needed to stop jQuery complaining.
-    rendered = jQuery.parseHTML(rendered.trim());
+    // Convert to DOM. The filter("*") gets rid of newline text nodes, which
+    // cause jQuery issues.
+    rendered = jQuery.parseHTML(rendered);
     // Add the message content to the output div, and slide it in.
-    jQuery(rendered).hide().prependTo("#chat-output").slideDown();
+    jQuery(rendered).filter("*").hide().prependTo("#chat-output").slideDown();
   };
 
   /**
@@ -169,26 +226,13 @@
   p.received = function (message) {
     var data = message.getData();
 
-
-
-
-console.log(data);
-
-
-
-
-    // The data is of the form:
-    // {
-    //   action: "startChat",
-    //   // The connectionId of the client assigned as chat partner.
-    //   cid: string
-    // }
+    // Start chatting.
     if (data.action === "startChat") {
-      this.openChatUi(data.sid);
+      this.openChatUi(data.channelId);
     }
     // The other side kicked this client out of the chat.
     else if (data.action === "kicked") {
-      this.closeChatUi();
+      this.closeChatUi("kicked");
     }
     // The other side disconnected.
     else if (data.action === "disconnected") {

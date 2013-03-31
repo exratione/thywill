@@ -116,11 +116,10 @@
     var rendered = this.templates.messageTemplate({
       data: message.getData()
     });
-    // Transform into DOM nodes - which requires that trim() or jQuery will be
-    // confused by leading and trailing line feeds.
-    rendered = jQuery.parseHTML(rendered.trim());
-    // Add the message content to the output div, and slide it in.
-    jQuery(rendered).hide().prependTo("#echo-output").slideDown();
+    // Convert to DOM. The filter("*") gets rid of newline text nodes, which
+    // cause jQuery issues.
+    rendered = jQuery.parseHTML(rendered);
+    jQuery(rendered).filter("*").hide().prependTo("#echo-output").slideDown();
   };
 
   /**

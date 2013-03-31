@@ -3,6 +3,7 @@
  * RedisChannelManager class definition.
  */
 
+var async = require("async");
 var util = require("util");
 var Thywill = require("thywill");
 
@@ -119,14 +120,23 @@ p.addSessionIds = function (channelId, sessionIds, callback) {
     var thisKey = self.getKeyForChannelsBySession(sessionId);
     multi.sadd(thisKey, channelId);
   });
-  multi.exec(function (error) {
-    if (!error) {
-      // Issue out a notice to the cluster.
+
+  var fns = {
+    runRedisTransaction: function (asyncCallback) {
+      multi.exec(asyncCallback);
+    },
+    subscribeSessions: function (asyncCallback) {
+      self.subscribeSessions(channelId, sessionIds, asyncCallback);
+    },
+    issueClusterNotice: function (asyncCallback) {
       self.thywill.cluster.sendToAll(self.clusterTask.sessionsAdded, {
         channelId: channelId,
         sessionIds: sessionIds
       });
+      asyncCallback();
     }
+  };
+  async.series(fns, function (error) {
     callback(error);
   });
 };
@@ -154,14 +164,23 @@ p.removeSessionIds = function (channelId, sessionIds, callback) {
     var thisKey = self.getKeyForChannelsBySession(sessionId);
     multi.srem(thisKey, channelId);
   });
-  multi.exec(function (error) {
-    if (!error) {
-      // Issue out a notice to the cluster.
+
+  var fns = {
+    runRedisTransaction: function (asyncCallback) {
+      multi.exec(asyncCallback);
+    },
+    subscribeSessions: function (asyncCallback) {
+      self.unsubscribeSessions(channelId, sessionIds, asyncCallback);
+    },
+    issueClusterNotice: function (asyncCallback) {
       self.thywill.cluster.sendToAll(self.clusterTask.sessionsRemoved, {
         channelId: channelId,
         sessionIds: sessionIds
       });
+      asyncCallback();
     }
+  };
+  async.series(fns, function (error) {
     callback(error);
   });
 };
@@ -212,6 +231,62 @@ p.getKeyForChannelsBySession = function (sessionId) {
  */
 p.getKeyForSessionsByChannel = function (channelId) {
   return this.config.redisPrefix + "channelsessionids:" + channelId;
+};
+
+/**
+ * Subscribe the added sessions.
+ *
+ * @param {string} channelId
+ * @param {array} sessionIds
+ * @param {function} callback
+ */
+p.subscribeSessions = function (channelId, sessionIds, callback) {
+  var self = this;
+  async.forEach(sessionIds, function (sessionId, asyncCallback) {
+    self.subscribeSession(channelId, sessionId, asyncCallback);
+  }, callback);
+};
+
+/**
+ * Subscribe the added session.
+ *
+ * @param {string} channelId
+ * @param {string} sessionId
+ * @param {function} callback
+ */
+p.subscribeSession = function (channelId, sessionId, callback) {
+  var self = this;
+  this.thywill.clientInterface.connectionIdsForSession(sessionId, function (error, connectionIds) {
+    self.thywill.clientInterface.subscribe(connectionIds, channelId, callback);
+  });
+};
+
+/**
+ * Unubscribe the removed sessions.
+ *
+ * @param {string} channelId
+ * @param {array} sessionIds
+ * @param {function} callback
+ */
+p.unsubscribeSessions = function (channelId, sessionIds, callback) {
+  var self = this;
+  async.forEach(sessionIds, function (sessionId, asyncCallback) {
+    self.unsubscribeSession(channelId, sessionId, asyncCallback);
+  }, callback);
+};
+
+/**
+ * Unsubscribe the removed session.
+ *
+ * @param {string} channelId
+ * @param {string} sessionId
+ * @param {function} callback
+ */
+p.unsubscribeSession = function (channelId, sessionId, callback) {
+  var self = this;
+  this.thywill.clientInterface.connectionIdsForSession(sessionId, function (error, connectionIds) {
+    self.thywill.clientInterface.unsubscribe(connectionIds, channelId, callback);
+  });
 };
 
 /**

@@ -24,6 +24,7 @@ textarea {
   height: 40px;
   margin-right: 10px;
   padding: 10px;
+  resize: none;
   vertical-align: middle;
   width: 280px;
 }
@@ -78,13 +79,41 @@ button {
   padding: 10px;
   border-bottom: 1px solid #dddddd;
 }
-#waiting {
+.notice {
   font-size: 22px;
   letter-spacing: 1px;
   padding-top: 80px;
   text-align: center;
 }
+#kick, #kicked {
+  display: none;
+}
+button.new-partner {
+  background-color: #e5efe5;
+  box-shadow: 5px 5px 10px 0 #cccccc;
+  cursor: pointer;
+  width: 120px;
+}
+button.new-partner:hover {
+  background-color: #e9f3e9;
+  box-shadow: 2px 2px 10px 0 #cccccc;
+}
+#channel {
+  background-color: #ebebeb;
+  border: 1px solid #dddddd;
+  height: 22px;
+  padding: 5px;
+  text-align: center;
+}
+.enabled #channel {
+  background-color: #ebebf5;
+  border: 1px solid #dddddd;
+  height: 22px;
+  padding: 5px;
+  text-align: center;
+}
 #instructions {
+  margin-top: 10px;
   text-align: justify;
 }
 #status {
