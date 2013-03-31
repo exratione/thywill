@@ -39,13 +39,9 @@ exports.start = function (clusterMemberId) {
 
   // All the Redis clients that will be needed.
   var redisClients = {
-    sessionStore: redis.createClient(6379, "127.0.0.1"),
-    socketPub: redis.createClient(6379, "127.0.0.1"),
-    socketSub: redis.createClient(6379, "127.0.0.1"),
-    socketClient: redis.createClient(6379, "127.0.0.1"),
-    clusterPub: redis.createClient(6379, "127.0.0.1"),
-    clusterSub: redis.createClient(6379, "127.0.0.1"),
-    resourceManager: redis.createClient(6379, "127.0.0.1")
+    pub: redis.createClient(6379, "127.0.0.1"),
+    sub: redis.createClient(6379, "127.0.0.1"),
+    other: redis.createClient(6379, "127.0.0.1")
   };
 
   // ------------------------------------------------------
@@ -65,7 +61,7 @@ exports.start = function (clusterMemberId) {
   // sessions can be assigned to websocket connections. Since this is a
   // clustered example, we're using a Redis-backed store here.
   config.clientInterface.sessions.store = new RedisSessionStore({
-    client: redisClients.sessionStore
+    client: redisClients.other
   });
 
   // Resource minification settings.
@@ -82,9 +78,9 @@ exports.start = function (clusterMemberId) {
   config.clientInterface.socketConfig.global.resource = "/draw/socket.io";
   // Create a RedisStore for Socket.IO.
   config.clientInterface.socketConfig.global.store = new RedisStore({
-    redisPub: redisClients.socketPub,
-    redisSub: redisClients.socketSub,
-    redisClient: redisClients.socketClient
+    redisPub: redisClients.pub,
+    redisSub: redisClients.sub,
+    redisClient: redisClients.other
   });
 
   // The cluster implementation is backed by Redis.
@@ -96,8 +92,8 @@ exports.start = function (clusterMemberId) {
     // The cluster has four members.
     clusterMemberIds: ["alpha", "beta", "gamma", "delta"],
     communication: {
-      publishRedisClient: redisClients.clusterPub,
-      subscribeRedisClient: redisClients.clusterSub
+      publishRedisClient: redisClients.pub,
+      subscribeRedisClient: redisClients.sub
     },
     heartbeat: {
       interval: 200,
@@ -128,7 +124,7 @@ exports.start = function (clusterMemberId) {
     },
     cacheSize: 100,
     redisPrefix: "thywill:draw:resource:",
-    redisClient: redisClients.resourceManager
+    redisClient: redisClients.other
   };
 
   // ------------------------------------------------------

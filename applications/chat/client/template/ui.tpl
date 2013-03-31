@@ -19,7 +19,8 @@
   <div id="channel"></div>
   <div id="instructions">
     When connected you will be paired to chat with the first other client to
-    connect. To chat enter text into the upper box and hit send. The kick
+    connect. That pairing will persist through a page refresh or other
+    disconnection. To chat enter text into the upper box and hit send. The kick
     button will end the chat with the current partner.
   </div>
   <div id="status"></div>

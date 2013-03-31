@@ -259,8 +259,6 @@
   p.received = function (message) {
     var data = message.getData();
 
-console.log(data);
-
     // Start chatting.
     if (data.action === "startChat") {
       this.openChatUi(data.channelId);
