@@ -51,27 +51,35 @@ var manifest = {
     clientPath: "/chat/css/client.css",
     weight: 10
   },
-  // Add the Chat client UI template. Note that this won't be loaded over
-  // HTTP, but rather included into the application main page.
+  // Add the various templates. Note that these won't be loaded over individual
+  // HTTP requests, but rather bundled into the application main page.
+  "../client/template/channel.tpl": {
+    clientPath: "/chat/tpl/channel.tpl",
+    id: "chat-template-channel",
+    type: Resource.TYPES.TEMPLATE,
+    weight: 0
+  },
   "../client/template/ui.tpl": {
     clientPath: "/chat/tpl/ui.tpl",
     id: "chat-template-ui",
     type: Resource.TYPES.TEMPLATE,
     weight: 0
   },
-  // Add the Chat client message display template. Note that this won't be
-  // loaded over HTTP, but rather included into the application main page.
+  "../client/template/disconnectMessage.tpl": {
+    clientPath: "/chat/tpl/disconnectMessage.tpl",
+    id: "chat-template-disconnect-message",
+    type: Resource.TYPES.TEMPLATE,
+    weight: 0
+  },
   "../client/template/message.tpl": {
     clientPath: "/chat/tpl/message.tpl",
     id: "chat-template-message",
     type: Resource.TYPES.TEMPLATE,
     weight: 0
   },
-  // Add the Chat client channel message templaet. Note that this won't be
-  // loaded over HTTP, but rather included into the application main page.
-  "../client/template/channel.tpl": {
-    clientPath: "/chat/tpl/channel.tpl",
-    id: "chat-template-channel",
+  "../client/template/reconnectMessage.tpl": {
+    clientPath: "/chat/tpl/reconnectMessage.tpl",
+    id: "chat-template-reconnect-message",
     type: Resource.TYPES.TEMPLATE,
     weight: 0
   }

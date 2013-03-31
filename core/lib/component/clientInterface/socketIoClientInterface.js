@@ -244,13 +244,11 @@ p._configure = function (thywill, config, callback) {
   });
   // Connection notice from another cluster member.
   this.thywill.cluster.on(this.clusterTask.connectionTo, function (data) {
-    self._updateConnectionDataForConnection(data.clusterMemberId, data.connectionId, data.sessionId);
-    self.emit(self.events.CONNECTION_TO, data.clusterMemberId, data.connectionId, data.sessionId);
+    self._reactToConnectionTo(data.clusterMemberId, data.connectionId, data.sessionId);
   });
   // Disconnection notice from another cluster member.
   this.thywill.cluster.on(this.clusterTask.disconnectionFrom, function (data) {
-    self._updateConnectionDataForDisconnection(data.clusterMemberId, data.connectionId, data.sessionId);
-    self.emit(self.events.DISCONNECTION_FROM, data.clusterMemberId, data.connectionId, data.sessionId);
+    self._reactToDisconnectionFrom(data.clusterMemberId, data.connectionId, data.sessionId);
   });
   // Delivery of connection data from another server.
   this.thywill.cluster.on(this.clusterTask.connectionData, function (data) {
@@ -789,17 +787,10 @@ p.initializeNewSocketConnection = function (socket) {
    * it works nearly all of the time, but not all of the time.
    */
   socket.on("disconnect", function() {
-    var data = self.connectionDataFromSocket(socket);
-    // Notify all listeners that a client has disconnected.
-    self.emit(self.events.DISCONNECTION, data.connectionId, data.sessionId);
-    // Send out notices to all cluster processes.
-    self.thywill.cluster.sendToAll(self.clusterTask.disconnectionFrom, {
-      connectionId: data.connectionId,
-      sessionId: data.sessionId
-    });
+    self._reactToDisconnectionFrom(self.thywill.cluster.getLocalClusterMemberId(), data.connectionId, data.sessionId);
   });
 
-  // Socket.io connections will try to reconnect automatically if configured
+  // Socket.ioconnections will try to reconnect automatically if configured
   // to do so, and emit this event on successful reconnection.
   /*
   socket.on("reconnect", function() {
@@ -808,13 +799,9 @@ p.initializeNewSocketConnection = function (socket) {
   });
   */
 
-  // Finally, notify all listeners and other cluster processes that a new
-  // client has connected.
-  this.emit(this.events.CONNECTION, data.connectionId, data.sessionId, data.session);
-  this.thywill.cluster.sendToAll(this.clusterTask.connectionTo, {
-    connectionId: data.connectionId,
-    sessionId: data.sessionId
-  });
+  // Finally, run all the data updates and notifications of listeners and other
+  // cluster processes required for a new client connection.
+  this._reactToConnectionTo(this.thywill.cluster.getLocalClusterMemberId(), data.connectionId, data.sessionId);
 };
 
 /**
@@ -1181,7 +1168,7 @@ p.getConnectionData = function (callback) {
 };
 
 /**
- * Update the local connection data to note a connection.
+ * Update the local connection data to note a connection. Emit an event.
  *
  * @param {string} clusterMemberId
  *   The cluster member where the connection occurred.
@@ -1190,8 +1177,11 @@ p.getConnectionData = function (callback) {
  * @param {string} sessionId
  *   Unique ID of the session associated with this connection - one session
  *   might have multiple concurrent connections.
+ * @param {string} [session]
+ *   Session data - only provided for local connections.
  */
-p._updateConnectionDataForConnection = function(clusterMemberId, connectionId, sessionId) {
+p._reactToConnectionTo = function(clusterMemberId, connectionId, sessionId, session) {
+  // Update the local records.
   var data = this.connections[clusterMemberId];
   data.connections[connectionId] = Date.now();
   if (!data.sessions[sessionId]) {
@@ -1202,10 +1192,20 @@ p._updateConnectionDataForConnection = function(clusterMemberId, connectionId, s
       sessionConnections.push(connectionId);
     }
   }
+  // Emit tracking events and notify other cluster members, depending on
+  // whether this is a connection to the local process or not.
+  if (this.thywill.cluster.getLocalClusterMemberId() === clusterMemberId) {
+    this.thywill.cluster.sendToOthers(this.clusterTask.connectionTo, {
+      connectionId: connectionId,
+      sessionId: sessionId
+    });
+    this.emit(this.events.CONNECTION, connectionId, sessionId, session);
+  }
+  this.emit(this.events.CONNECTION_TO, clusterMemberId, connectionId, sessionId);
 };
 
 /**
- * Update the local connection data to note a disconnection.
+ * Update the local connection data to note a disconnection. Emit an event.
  *
  * @param {string} clusterMemberId
  *   The cluster member where the disconnection occurred.
@@ -1215,18 +1215,28 @@ p._updateConnectionDataForConnection = function(clusterMemberId, connectionId, s
  *   Unique ID of the session associated with this connection - one session
  *   might have multiple concurrent connections.
  */
-p._updateConnectionDataForDisconnection = function(clusterMemberId, connectionId, sessionId) {
+p._reactToDisconnectionFrom = function(clusterMemberId, connectionId, sessionId) {
+  // Update the local records.
   var data = this.connections[clusterMemberId];
   delete data.connections[connectionId];
   if (data.sessions[sessionId]) {
-    var sessionConnections = data.sessions[sessionId];
-    sessionConnections = data.sessions[sessionId].filter(function (element, index, array) {
+    data.sessions[sessionId] = data.sessions[sessionId].filter(function (element, index, array) {
       return (element !== connectionId);
     });
-    if (sessionConnections.length === 0) {
+    if (data.sessions[sessionId].length === 0) {
       delete data.sessions[sessionId];
     }
   }
+  // Emit tracking events and notify other cluster members, depending on
+  // whether this is a connection to the local process or not.
+  if (this.thywill.cluster.getLocalClusterMemberId() === clusterMemberId) {
+    this.thywill.cluster.sendToOthers(this.clusterTask.disconnectionFrom, {
+      connectionId: connectionId,
+      sessionId: sessionId
+    });
+    this.emit(this.events.DISCONNECTION, connectionId, sessionId);
+  }
+  this.emit(this.events.DISCONNECTION_FROM, clusterMemberId, connectionId, sessionId);
 };
 
 /**

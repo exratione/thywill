@@ -43,6 +43,8 @@
     // Populate the DOM from the template.
     this.templates.uiTemplate = Handlebars.compile(jQuery("#{{{uiTemplateId}}}").html());
     this.templates.messageTemplate = Handlebars.compile(jQuery("#{{{messageTemplateId}}}").html());
+    this.templates.disconnectMessageTemplate = Handlebars.compile(jQuery("#{{{disconnectMessageTemplateId}}}").html());
+    this.templates.reconnectMessageTemplate = Handlebars.compile(jQuery("#{{{reconnectMessageTemplateId}}}").html());
     this.templates.channelTemplate = Handlebars.compile(jQuery("#{{{channelTemplateId}}}").html());
     jQuery("body").append(this.templates.uiTemplate({
       kickButtonText: "Kick",
@@ -120,6 +122,12 @@
    *   The channel for this chat.
    */
   p.openChatUi = function (channelId) {
+    // With multiple windows, can get this notice even if already chatting. So
+    // do nothing in that case.
+    if (this.chatting) {
+      return;
+    }
+
     var self = this;
     this.chatting = true;
 
@@ -172,6 +180,35 @@
    *   The text of the message.
    */
   p.displayChatMessage = function (messageText) {
+    // Render the message HTML.
+    var rendered = this.templates.messageTemplate({
+      data: messageText
+    });
+    this.displayChatMessageHTML(rendered);
+  };
+
+  /**
+   * Display a message notice to show that the chat partner has disconnected.
+   */
+  p.displayDisconnectedMessage = function () {
+    var rendered = this.templates.disconnectMessageTemplate({});
+    this.displayChatMessageHTML(rendered);
+  };
+
+  /**
+   * Display a message notice to show that the chat partner has reconnected.
+   */
+  p.displayReconnectedMessage = function () {
+    var rendered = this.templates.reconnectMessageTemplate({});
+    this.displayChatMessageHTML(rendered);
+  };
+
+  /**
+   * Given its HTML, display a new chat message.
+   * @param {string} html
+   *   The rendered HTML contents.
+   */
+  p.displayChatMessageHTML = function (html) {
     // It's possible for a just-rightly timed message to arrive in the lag time
     // between a user getting kicked and the system noticing that.
     if (!this.chatting) {
@@ -181,15 +218,11 @@
     // Set scroll top, or else the new message might not push down content
     // correctly.
     jQuery("#chat-output").scrollTop(0);
-    // Render the message HTML.
-    var rendered = this.templates.messageTemplate({
-      data: messageText
-    });
     // Convert to DOM. The filter("*") gets rid of newline text nodes, which
     // cause jQuery issues.
-    rendered = jQuery.parseHTML(rendered);
+    html = jQuery.parseHTML(html);
     // Add the message content to the output div, and slide it in.
-    jQuery(rendered).filter("*").hide().prependTo("#chat-output").slideDown();
+    jQuery(html).filter("*").hide().prependTo("#chat-output").slideDown();
   };
 
   /**
@@ -226,6 +259,8 @@
   p.received = function (message) {
     var data = message.getData();
 
+console.log(data);
+
     // Start chatting.
     if (data.action === "startChat") {
       this.openChatUi(data.channelId);
@@ -236,15 +271,13 @@
     }
     // The other side disconnected.
     else if (data.action === "disconnected") {
-
-      // TODO: give a notice.
-      //this.closeChatUi();
+      this.displayDisconnectedMessage();
     }
-    // The data is of the form:
-    // {
-    //   action: "message",
-    //   message: string
-    // }
+    // The other side reconnected.
+    else if (data.action === "reconnected") {
+      this.displayReconnectedMessage();
+    }
+    // A message send to the chat channel.
     else if (data.action === "message") {
       this.displayChatMessage(data.message);
     }
