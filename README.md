@@ -259,7 +259,7 @@ Publishing a message to the channel in your application code:
     var message = this.thywill.messageManager.createMessageToChannel(data, channelId, applicationId);
     this.send(message);
 
-You can see simple example of the use of channels in the Chat example
+You can see simple examples of the use of channels in the Chat example
 application, found under /applications/chat/.
 
 Remote Procedure Calls
