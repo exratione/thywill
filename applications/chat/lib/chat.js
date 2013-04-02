@@ -293,7 +293,7 @@ p.checkQueue = function (localSessionId, callback) {
     // If there is a waiting session, then pair them up.
     if (otherSessionId && otherSessionId !== localSessionId) {
       // Is this session still online?
-      self.thywill.clientInterface.sessionIsConnected(otherSessionId, function (error, isConnected) {
+      self.thywill.clientTracker.sessionIsConnected(otherSessionId, function (error, isConnected) {
         if (error) {
           callback(error);
           return;
@@ -334,7 +334,7 @@ p.notifyOfReconnectionIfNecessary = function (channelId, sessionId) {
     // If this session has other connections, we don't have to do anything
     // here. But we do have to at least check that.
     getSessionConnections: function (asyncCallback) {
-      self.thywill.clientInterface.connectionIdsForSession(sessionId, function (error, connectionIds) {
+      self.thywill.clientTracker.connectionIdsForSession(sessionId, function (error, connectionIds) {
         if (error) {
           asyncCallback(error);
         } else if (connectionIds.length === 1) {
@@ -409,13 +409,6 @@ p.connection = function (connectionId, sessionId, session) {
 };
 
 /**
- * @see Application#connectionTo
- */
-p.connectionTo = function (clusterMemberId, connectionId, sessionId) {
-  // We don't need to know about connections to other servers.
-};
-
-/**
  * @see Application#disconnection
  */
 p.disconnection = function (connectionId, sessionId) {
@@ -427,7 +420,7 @@ p.disconnection = function (connectionId, sessionId) {
     // If this session has other connections, we don't have to do anything
     // here. But we do have to at least check that.
     checkSessionStillConnected: function (asyncCallback) {
-      self.thywill.clientInterface.sessionIsConnected(sessionId, function (error, isConnected) {
+      self.thywill.clientTracker.sessionIsConnected(sessionId, function (error, isConnected) {
         if (error) {
           asyncCallback(error);
         } else if (!isConnected) {
@@ -488,22 +481,6 @@ p.disconnection = function (connectionId, sessionId) {
       self.thywill.log.error(error);
     }
   });
-};
-
-/**
- * @see Application#disconnectionFrom
- */
-p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {
-  // We don't need to know about disconnections from other cluster members.
-};
-
-/**
- * @see Application#clusterMemberDown
- */
-p.clusterMemberDown = function (clusterMemberId, connectionData) {
-  // We don't do anything here; the clients will all reconnect to different processes,
-  // and the channelManager will ensure they're still subscribed and matched to the
-  // appropriate chat channel.
 };
 
 //-----------------------------------------------------------

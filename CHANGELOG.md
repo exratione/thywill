@@ -1,6 +1,14 @@
 Changelog
 =========
 
+Work in Progress
+----------------
+
+  * Removed Varnish/Stunnel frontend option.
+  * Removed client tracking functionality from ClientInterface component.
+  * Created ClientTracker component and in-memory implementation.
+  * Added rudimentary dependency declaration in component implementations.
+
 v0.0.7 - 04/01/2013
 -------------------
 

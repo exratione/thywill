@@ -140,6 +140,15 @@ exports.start = function (clusterMemberId) {
     redisClient: redisClients.resourceManager
   };
 
+  // Add a ClientTracker component so as to enable the various
+  // cross-cluster-member notices of connection, disconnection, etc.
+  config.clientTracker = {
+    implementation: {
+      type: "extra",
+      name: "inMemoryClientTracker"
+    }
+  };
+
   // ------------------------------------------------------
   // Other odds and ends.
   // ------------------------------------------------------

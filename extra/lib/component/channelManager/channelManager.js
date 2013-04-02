@@ -48,6 +48,15 @@ ChannelManager.EVENTS = {
 //-----------------------------------------------------------
 
 /**
+ * @see Component#_getDependencies
+ */
+p._getDependencies = function () {
+  return {
+    components: ["clientInterface"]
+  };
+};
+
+/**
  * Obtain all of the channel IDs that the provided session is a member
  * of.
  *

@@ -138,6 +138,14 @@ exports.start = function (clusterMemberId) {
     redisClient: redisClients.other
   };
 
+  // The RedisChannelManager requires a ClientTracker implementation.
+  config.clientTracker = {
+    implementation: {
+      type: "extra",
+      name: "inMemoryClientTracker"
+    }
+  };
+
   // ------------------------------------------------------
   // Other odds and ends.
   // ------------------------------------------------------

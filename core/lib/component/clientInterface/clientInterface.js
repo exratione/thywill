@@ -14,32 +14,21 @@ var Thywill = require("thywill");
  * @class
  * The superclass for Thywill client interfaces.
  *
- * ClientInterface implementations must emit the following events, which
- * require integration with the cluster communication mechanisms.
+ * ClientInterface implementations must emit the following events:
  *
  * Emit when a message arrives from a client.
  * clientInterface.on(clientInterface.events.FROM_CLIENT, function (message) {});
  *
- * When a cluster member goes down, emit the list of connectionIds and
- * sessionIds that were disconnected.
- * clientInterface.on(clientInterface.events.CLUSTER_MEMBER_DOWN, function (clusterMemberId, connectionData) {});
- *
- * Emit on connection of a client.
+ * Emit on connection of a client to this cluster process.
  * clientInterface.on(clientInterface.events.CONNECTION, function (connectionId, sessionId, session) {});
  *
- * Emit when a client disconnects from this or any other cluster member.
- * clientInterface.on(clientInterface.events.CONNECTION_TO, function (clusterMemberId, connectionId, sessionId) {});
- *
- * Emit on disconnection of a client.
+ * Emit on disconnection of a client from this cluster process.
  * clientInterface.on(clientInterface.events.DISCONNECTION, function (connectionId, sessionId) {});
- *
- * Emit when a client disconnects from this or any other cluster member.
- * clientInterface.on(clientInterface.events.DISCONNECTION_FROM, function (clusterMemberId, connectionId, sessionId) {});
  */
 function ClientInterface () {
   ClientInterface.super_.call(this);
   this.componentType = "clientInterface";
-  // Useful reference.
+  // Convenience reference.
   this.events = ClientInterface.EVENTS;
 }
 util.inherits(ClientInterface, Thywill.getBaseClass("Component"));
@@ -51,11 +40,29 @@ var p = ClientInterface.prototype;
 
 ClientInterface.EVENTS = {
   CONNECTION: "connection",
-  CONNECTION_TO: "connectionTo",
   DISCONNECTION: "disconnection",
-  DISCONNECTION_FROM: "disconnectionFrom",
-  CLUSTER_MEMBER_DOWN: "clusterMemberDown",
   FROM_CLIENT: "fromClient"
+};
+
+//-----------------------------------------------------------
+// Methods.
+//-----------------------------------------------------------
+
+/**
+ * @see Component#_getDependencies
+ */
+p._getDependencies = function () {
+  return {
+    components: [
+      "log",
+      "cluster",
+      "cacheManager",
+      "resourceManager",
+      "messageManager",
+      "templateEngine",
+      "minifier"
+    ]
+  };
 };
 
 //-----------------------------------------------------------
@@ -176,73 +183,6 @@ p.subscribe = function (connectionIds, channelIds, callback) {
  *   Of the form function (error).
  */
 p.unsubscribe = function (connectionIds, channelIds, callback) {
-  throw new Error("Not implemented.");
-};
-
-//-----------------------------------------------------------
-// Relating to tracking who is online.
-//-----------------------------------------------------------
-
-/**
- * Is the specified client connected to any of the cluster's server processes?
- *
- * @param {string} connectionId
- *   The connection ID.
- * @param {function} callback
- *   Of the form function (error, boolean).
- */
-p.clientIsConnected = function (connectionId, callback) {
-  throw new Error("Not implemented.");
-};
-
-/**
- * Is the specified client connected to this process?
- *
- * @param {string} connectionId
- *   The connection ID.
- * @param {function} callback
- *   Of the form function (error, boolean).
- */
-p.clientIsConnectedLocally = function (connectionId, callback) {
-  throw new Error("Not implemented.");
-};
-
-/**
- * Are any clients with the specified session connected to any of the cluster's
- * server processes?
- *
- * @param {string} sessionId
- *   The connection ID.
- * @param {function} callback
- *   Of the form function (error, boolean).
- */
-p.sessionIsConnected = function (sessionId, callback) {
-  throw new Error("Not implemented.");
-};
-
-/**
- * Obtain an array of connection IDs associated with this session.
- *
- * @param {string} sessionId
- *   The connection ID.
- * @param {function} callback
- *   Of the form function (error, connectionIds).
- */
-p.connectionIdsForSession = function (sessionId, callback) {
-  throw new Error("Not implemented.");
-};
-
-/**
- * Return a reference to a data structure for connected sessions and clients
- * for all of the cluster members.
- *
- * This data may or may not be a clone of the actual data structure used by
- * the clientInterface to keep track of who is online.
- *
- * @param {function} callback
- *   Of the form function (error, data).
- */
-p.getConnectionData = function (callback) {
   throw new Error("Not implemented.");
 };
 

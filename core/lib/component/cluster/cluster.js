@@ -67,6 +67,21 @@ Cluster.CLUSTER_MEMBER_STATUS = {
 };
 
 //-----------------------------------------------------------
+// Methods.
+//-----------------------------------------------------------
+
+/**
+ * @see Component#_getDependencies
+ */
+p._getDependencies = function () {
+  return {
+    components: [
+      "log"
+    ]
+  };
+};
+
+//-----------------------------------------------------------
 // Methods to be implemented by subclasses.
 //-----------------------------------------------------------
 

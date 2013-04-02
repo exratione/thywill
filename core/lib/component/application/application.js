@@ -179,6 +179,7 @@ p.storeBootstrapResourcesFromManifest = function (manifest, callback) {
 p._setupListeners = function (callback) {
   var self = this;
   var clientInterface = this.thywill.clientInterface;
+  var clientTracker = this.thywill.clientTracker;
 
   // The all-important listener for messages from clients.
   clientInterface.on(clientInterface.events.FROM_CLIENT, function (message) {
@@ -187,22 +188,35 @@ p._setupListeners = function (callback) {
     }
   });
 
-  // Connection and disconnection listeners.
-  clientInterface.on(clientInterface.events.CLUSTER_MEMBER_DOWN, function () {
-    self.clusterMemberDown.apply(self, arguments);
-  });
-  clientInterface.on(clientInterface.events.CONNECTION, function () {
-    self.connection.apply(self, arguments);
-  });
-  clientInterface.on(clientInterface.events.CONNECTION_TO, function () {
-    self.connectionTo.apply(self, arguments);
-  });
-  clientInterface.on(clientInterface.events.DISCONNECTION, function () {
-    self.disconnection.apply(self, arguments);
-  });
-  clientInterface.on(clientInterface.events.DISCONNECTION_FROM, function () {
-    self.disconnectionFrom.apply(self, arguments);
-  });
+  // If a clientTracker is configured, then listen to its events rather than
+  // those of the clientInterface.
+  if (clientTracker) {
+    clientTracker.on(clientTracker.events.CLUSTER_MEMBER_DOWN, function () {
+      self.clusterMemberDown.apply(self, arguments);
+    });
+    clientTracker.on(clientTracker.events.CONNECTION, function () {
+      self.connection.apply(self, arguments);
+    });
+    clientTracker.on(clientTracker.events.CONNECTION_TO, function () {
+      self.connectionTo.apply(self, arguments);
+    });
+    clientTracker.on(clientTracker.events.DISCONNECTION, function () {
+      self.disconnection.apply(self, arguments);
+    });
+    clientTracker.on(clientTracker.events.DISCONNECTION_FROM, function () {
+      self.disconnectionFrom.apply(self, arguments);
+    });
+  }
+  // Otherwise listen to the clientInterface for connection and disconnection
+  // events for the local cluster member process only.
+  else {
+    clientInterface.on(clientInterface.events.CONNECTION, function () {
+      self.connection.apply(self, arguments);
+    });
+    clientInterface.on(clientInterface.events.DISCONNECTION, function () {
+      self.disconnection.apply(self, arguments);
+    });
+  }
 
   callback();
 };
@@ -228,7 +242,7 @@ p._setupListeners = function (callback) {
  *   Of the form function (error).
  */
 p._defineBootstrapResources = function (callback) {
-  throw new Error("Not implemented.");
+  callback();
 };
 
 /**
@@ -240,7 +254,7 @@ p._defineBootstrapResources = function (callback) {
  *   Of the form function (error) {}, where error === null on success.
  */
 p._setup = function (callback) {
-  throw new Error("Not implemented.");
+  callback();
 };
 
 /**
@@ -249,9 +263,7 @@ p._setup = function (callback) {
  * @param {Message} message
  *   Instance of the Message class.
  */
-p.received = function (message) {
-  throw new Error("Not implemented.");
-};
+p.received = function (message) {};
 
 /**
  * Called when a client connects or reconnects to this cluster member process.
@@ -265,13 +277,13 @@ p.received = function (message) {
  *   The session. This will be null if the clientInterface component is
  *   configured not to use sessions.
  */
-p.connection = function (connectionId, sessionId, session) {
-  throw new Error("Not implemented.");
-};
+p.connection = function (connectionId, sessionId, session) {};
 
 /**
  * Called when a client connects or reconnects to any cluster member
  * process.
+ *
+ * Only invoked if the optional clientTracker component is configured.
  *
  * @param {string} clusterMemberId
  *   ID of the cluster member that has the new connection.
@@ -281,9 +293,7 @@ p.connection = function (connectionId, sessionId, session) {
  *   Unique ID of the session associated with this connection - one session
  *   might have multiple concurrent connections.
  */
-p.connectionTo = function (clusterMemberId, connectionId, sessionId) {
-  throw new Error("Not implemented.");
-};
+p.connectionTo = function (clusterMemberId, connectionId, sessionId) {};
 
 /**
  * Called when a client disconnects from this cluster member process.
@@ -294,12 +304,12 @@ p.connectionTo = function (clusterMemberId, connectionId, sessionId) {
  *   Unique ID of the session associated with this connection - one session
  *   might have multiple concurrent connections.
  */
-p.disconnection = function (connectionId, sessionId) {
-  throw new Error("Not implemented.");
-};
+p.disconnection = function (connectionId, sessionId) {};
 
 /**
  * Called when a client disconnects from any cluster member process.
+ *
+ * Only invoked if the optional clientTracker component is configured.
  *
  * @param {string} clusterMemberId
  *   ID of the cluster member that has the new connection.
@@ -309,9 +319,7 @@ p.disconnection = function (connectionId, sessionId) {
  *   Unique ID of the session associated with this connection - one session
  *   might have multiple concurrent connections.
  */
-p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {
-  throw new Error("Not implemented.");
-};
+p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {};
 
 /**
  * Called when on of the other cluster members fails, and thus it can be
@@ -328,15 +336,15 @@ p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {
  * The application will not get disconnectionFrom() notices for any of the
  * connectionIds provided via this method.
  *
+ * Only invoked if the optional clientTracker component is configured.
+ *
  * @param {string} clusterMemberId
  *   ID of the cluster member that failed.
  * @param {object} connectionData
  *   A copy of the connection data for the cluster member prior to its failure,
  *   listing session IDs and connection IDs.
  */
-p.clusterMemberDown = function (clusterMemberId, connectionData) {
-  throw new Error("Not implemented");
-};
+p.clusterMemberDown = function (clusterMemberId, connectionData) {};
 
 //-----------------------------------------------------------
 // Exports - Class Constructor

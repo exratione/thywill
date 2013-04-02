@@ -239,6 +239,7 @@ p.isDesignatedHandlerFor = function (clusterMemberId, callback) {
  * @see Cluster#sendTo
  */
 p.sendTo = function (clusterMemberId, taskName, data) {
+  data = data || {};
   data.taskName = taskName;
   data.clusterMemberId = this.config.localClusterMemberId;
   if (clusterMemberId === this.config.localClusterMemberId) {
@@ -252,6 +253,7 @@ p.sendTo = function (clusterMemberId, taskName, data) {
  * @see Cluster#sendToAll
  */
 p.sendToAll = function (taskName, data) {
+  data = data || {};
   data.taskName = taskName;
   data.clusterMemberId = this.config.localClusterMemberId;
   this.config.communication.publishRedisClient.publish(this.allChannel, JSON.stringify(data));
@@ -262,10 +264,10 @@ p.sendToAll = function (taskName, data) {
  */
 p.sendToOthers = function (taskName, data) {
   var self = this;
+  data = data || {};
   data.ignoreIfOriginator = true;
   this.sendToAll(taskName, data);
 };
-
 
 //-----------------------------------------------------------
 // Methods: Heartbeat process.

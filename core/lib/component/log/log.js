@@ -24,7 +24,7 @@ util.inherits(Log, Thywill.getBaseClass("Component"));
 var p = Log.prototype;
 
 //-----------------------------------------------------------
-// Methods
+// Methods to be implemented by subclasses.
 //-----------------------------------------------------------
 
 p.debug = function (message) {

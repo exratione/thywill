@@ -34,6 +34,19 @@ var p = ResourceManager.prototype;
 //-----------------------------------------------------------
 
 /**
+ * @see Component#_getDependencies
+ */
+p._getDependencies = function () {
+  return {
+    components: [
+      "log",
+      "cluster",
+      "cacheManager"
+    ]
+  };
+};
+
+/**
  * Obtain a new Resource object. The object returned in the callback function
  * is not stored.
  *

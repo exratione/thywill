@@ -15,8 +15,10 @@ var Thywill = require("thywill");
  * @class
  * A channel manager that stores channel information in Redis.
  *
- * It maintains lookup sets for each channel and each session
- * that belongs to at least one channel.
+ * It maintains lookup sets for each channel and each session that belongs to
+ * at least one channel.
+ *
+ * This implementation requires that a clientTracker implementation is used.
  *
  * TODO: mechanisms for clearing out old sessions?
  *
@@ -55,6 +57,15 @@ RedisChannelManager.CONFIG_TEMPLATE = {
 //-----------------------------------------------------------
 
 /**
+ * @see Component#_getDependencies
+ */
+p._getDependencies = function () {
+  return {
+    components: ["clientInterface", "clientTracker"]
+  };
+};
+
+/**
  * @see Component#_configure
  */
 p._configure = function (thywill, config, callback) {
@@ -63,9 +74,9 @@ p._configure = function (thywill, config, callback) {
   this.config = config;
   this.readyCallback = callback;
 
-  // Watch the clientInterface for people arriving who need to be subscribed.
-  var clientInterface = this.thywill.clientInterface;
-  clientInterface.on(clientInterface.events.CONNECTION, function (connectionId, sessionId, session) {
+  // Watch the clientTracker for people arriving who need to be subscribed.
+  var clientTracker = this.thywill.clientTracker;
+  clientTracker.on(clientTracker.events.CONNECTION, function (connectionId, sessionId, session) {
     self.subscribeNewConnection(connectionId, sessionId);
   });
 
@@ -256,7 +267,7 @@ p.subscribeSessions = function (channelId, sessionIds, callback) {
  */
 p.subscribeSession = function (channelId, sessionId, callback) {
   var self = this;
-  this.thywill.clientInterface.connectionIdsForSession(sessionId, function (error, connectionIds) {
+  this.thywill.clientTracker.connectionIdsForSession(sessionId, function (error, connectionIds) {
     self.thywill.clientInterface.subscribe(connectionIds, channelId, callback);
   });
 };
@@ -284,7 +295,7 @@ p.unsubscribeSessions = function (channelId, sessionIds, callback) {
  */
 p.unsubscribeSession = function (channelId, sessionId, callback) {
   var self = this;
-  this.thywill.clientInterface.connectionIdsForSession(sessionId, function (error, connectionIds) {
+  this.thywill.clientTracker.connectionIdsForSession(sessionId, function (error, connectionIds) {
     self.thywill.clientInterface.unsubscribe(connectionIds, channelId, callback);
   });
 };

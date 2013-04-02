@@ -21,13 +21,15 @@ var Message = require("../messageManager/message");
 
 /**
  * @class
- * A web browser client interface built on top of Socket.IO: see
+ * A web browser client interface built on top of Socket.IO. See
  * http://socket.io/ for details.
  *
- * This manages the server side of a single page web application:
+ * This manages the server side of a single page web application that uses
+ * websockets as means of passing messages back and forth between server and
+ * client. It does the following:
  *
- * - setting up the resources delivered to the client on the initial page load.
- * - passing messages back and forth via Socket.IO.
+ * 1) Set up the Resources delivered to the client on the initial page load.
+ * 2) Deliver messages between client and server via websockets.
  */
 function SocketIoClientInterface () {
   SocketIoClientInterface.super_.call(this);
@@ -177,15 +179,11 @@ SocketIoClientInterface.CONFIG_TEMPLATE = {
 // -----------------------------------------------------------
 
 /**
- * The clientInterface component is the last to be configured, so it has access
- * to fully configured instances of all the other components and their data.
+ * @see Component#_configure
  *
- * @param {Thywill} thywill
- *   A Thywill instance.
- * @param {Object} config
- *   An object representation of the configuration for this component.
- * @param {function} [callback]
- *   Of the form function (error) {}, where error === null on success.
+ * The clientInterface component is the last core component to be configured,
+ * and so it has access to fully configured instances of all the other core
+ * components and their data.
  */
 p._configure = function (thywill, config, callback) {
   var self = this;
@@ -195,73 +193,16 @@ p._configure = function (thywill, config, callback) {
   this.config.baseClientPathRegExp = new RegExp("^" + this.config.baseClientPath.replace("/", "\\/") + "\\/?");
 
   // -----------------------------------------------------------------
-  // Data structures for keeping track of who is online.
-  // -----------------------------------------------------------------
-
-  this.connections = {};
-  this.thywill.cluster.getClusterMemberIds().forEach(function (clusterMemberId, index, array) {
-    self.connections[clusterMemberId] = {
-      connections: {},
-      sessions: {}
-    };
-  });
-
-  // -----------------------------------------------------------------
   // Cluster configuration: communication between processes.
   // -----------------------------------------------------------------
 
-  // Task names, those used internally by this clientInterface implementation.
+  // Task names used internally by this clientInterface implementation.
   this.clusterTask = {
-    // Delivery of all connected client data for a specific process.
-    connectionData: "thywill:clientInterface:connectedData",
-    // Request for all connected client data for a specific process.
-    connectionDataRequest: "thywill:clientInterface:connectedDataRequest",
-    // Client connection notice from another cluster member.
-    connectionTo: "thywill:clientInterface:connectionTo",
-    // Client disconnection notice from another cluster member.
-    disconnectionFrom: "thywill:clientInterface:disconnectionFrom",
     // Request to subscribe a client if they exist locally.
     subscribe: "thywill:clientInterface:subscribeClient",
     // Request to unsubscribe a client if they exist locally.
     unsubscribe: "thywill:clientInterface:unsubscribeClient"
   };
-
-  // A cluster member fails and goes down. Emit the connection data, then clear it.
-  this.thywill.cluster.on(this.thywill.cluster.eventNames.CLUSTER_MEMBER_DOWN, function (data) {
-    var connections = self.connections[data.clusterMemberId].connections;
-    var sessions = self.connections[data.clusterMemberId].sessions;
-    self.emit(self.events.CLUSTER_MEMBER_DOWN, data.clusterMemberId, {
-      connections: connections,
-      sessions: sessions
-    });
-    self._clearConnectionDataForClusterMember(data.clusterMemberId);
-  });
-  // A cluster member comes back up. Either it was down, or the heartbeat
-  // mechanism messed up and it was up all along. Make sure we have an up to
-  // date set of connection data either way.
-  this.thywill.cluster.on(this.thywill.cluster.eventNames.CLUSTER_MEMBER_UP, function (data) {
-    self.thywill.cluster.sendTo(data.clusterMemberId, self.clusterTask.connectionDataRequest, {});
-  });
-  // Connection notice from another cluster member.
-  this.thywill.cluster.on(this.clusterTask.connectionTo, function (data) {
-    self._reactToConnectionTo(data.clusterMemberId, data.connectionId, data.sessionId);
-  });
-  // Disconnection notice from another cluster member.
-  this.thywill.cluster.on(this.clusterTask.disconnectionFrom, function (data) {
-    self._reactToDisconnectionFrom(data.clusterMemberId, data.connectionId, data.sessionId);
-  });
-  // Delivery of connection data from another server.
-  this.thywill.cluster.on(this.clusterTask.connectionData, function (data) {
-    self.thywill.log.debug("SocketIoClientInterface: delivery of connection data from: " + data.clusterMemberId);
-    self._updateAllConnectionDataForClusterMember(data.clusterMemberId, data.connections);
-  });
-  // Request for connection data from another server.
-  this.thywill.cluster.on(this.clusterTask.connectionDataRequest, function (data) {
-    self.thywill.log.debug("SocketIoClientInterface: request for connection data from: " + data.clusterMemberId);
-    self.thywill.cluster.sendTo(data.clusterMemberId, self.clusterTask.connectionData, {
-      connections: self.connections[self.thywill.cluster.getLocalClusterMemberId()]
-    });
-  });
   // Subscribe a connectionId if it exists locally.
   this.thywill.cluster.on(this.clusterTask.subscribe, function (data) {
     self._subscribeLocalSocket(data.connectionId, data.channelIds);
@@ -272,15 +213,8 @@ p._configure = function (thywill, config, callback) {
   });
 
   // -----------------------------------------------------------------
-  // Final steps of configuration.
+  // Finish up configuration.
   // -----------------------------------------------------------------
-
-  // When Thywill launches, after this._setup() is done:
-  this.thywill.on("thywill.ready", function () {
-    // Request an update on who is connected from all other cluster members, so
-    // as to bring data up to date in the case where a cluster member falls over.
-    self.thywill.cluster.sendToOthers(self.clusterTask.connectionDataRequest, {});
-  });
 
   // Set ready status.
   this.readyCallback = callback;
@@ -288,7 +222,8 @@ p._configure = function (thywill, config, callback) {
 };
 
 /**
- * Start the client interface running:
+ * Start the client interface running. This is the final function called during
+ * the Thywill launch, once everything else is in place and ready.
  *
  * 1) If using Express, set up a middleware to ensure that Resources will be
  * served via Express regardless of the present or future state of routes and
@@ -299,8 +234,8 @@ p._configure = function (thywill, config, callback) {
  *
  * 3) Set up Socket.IO on the server instance.
  *
- * @param {Function} [callback]
- *   Of the form function (error) {}, where error === null on success.
+ * @param {Function} callback
+ *   Of the form function (error).
  */
 p._startup = function (callback) {
   var self = this;
@@ -787,7 +722,7 @@ p.initializeNewSocketConnection = function (socket) {
    * it works nearly all of the time, but not all of the time.
    */
   socket.on("disconnect", function() {
-    self._reactToDisconnectionFrom(self.thywill.cluster.getLocalClusterMemberId(), data.connectionId, data.sessionId);
+    self.emit(self.events.DISCONNECTION, data.connectionId, data.sessionId);
   });
 
   // Socket.ioconnections will try to reconnect automatically if configured
@@ -799,9 +734,8 @@ p.initializeNewSocketConnection = function (socket) {
   });
   */
 
-  // Finally, run all the data updates and notifications of listeners and other
-  // cluster processes required for a new client connection.
-  this._reactToConnectionTo(this.thywill.cluster.getLocalClusterMemberId(), data.connectionId, data.sessionId);
+  // Finally, emit a notice.
+  this.emit(this.events.CONNECTION, data.connectionId, data.sessionId, data.session);
 };
 
 /**
@@ -960,17 +894,20 @@ p.send = function (message) {
   }
   // Is this going out to all the connections for a specific session?
   else if (sessionId && !socketId) {
-    // Look through the connection data, get a list of connectionIds/socketIds.
-    var connectionsToSendTo = [];
-    for (var clusterMemberId in this.connections) {
-      var sessionConnections = this.connections[clusterMemberId].sessions[sessionId];
-      if(Array.isArray(sessionConnections)) {
-        connectionsToSendTo = connectionsToSendTo.concat(sessionConnections);
-      }
+    // ClientTracker functionality is required to send to a session, as we
+    // need to determine all of the associated connections.
+    if (!this.thywill.clientTracker) {
+      this.thywill.log.error(new Error("Sending a message to all the connections for a session requires a clientTracker component."));
+      return;
     }
-    // Then send to each of them.
-    connectionsToSendTo.forEach(function (thisSocketId, index, array) {
-      self._sendToSocket(thisSocketId, clientMessage);
+    this.thywill.clientTracker.connectionIdsForSession(sessionId, function (error, connectionIds) {
+      if (error) {
+        self.thywill.log.error(error);
+      } else {
+        connectionIds.forEach(function (thisSocketId, index, array) {
+          self._sendToSocket(thisSocketId, clientMessage);
+        });
+      }
     });
   }
   // Otherwise the message is destined for a single client connection, so send
@@ -1108,169 +1045,6 @@ p._unsubscribeLocalSocket = function (connectionId, channelIds) {
   } else {
     return false;
   }
-};
-
-//-----------------------------------------------------------
-// Methods relating to tracking who is online.
-//-----------------------------------------------------------
-
-/**
- * @see ClientInterface#clientIsConnected
- */
-p.clientIsConnected = function (connectionId, callback) {
-  var self = this;
-  var connected = Object.keys(this.connections).some(function (clusterMemberId, index, array) {
-    return self.connections[clusterMemberId].connections[connectionId];
-  });
-  callback (null, connected);
-};
-
-/**
- * @see ClientInterface#clientIsConnectedLocally
- */
-p.clientIsConnectedLocally = function (connectionId, callback) {
-  var clusterMemberId = this.thywill.cluster.getLocalClusterMemberId();
-  var connected = (this.connections[clusterMemberId].connections[connectionId] !== undefined);
-  callback (null, connected);
-};
-
-/**
- * @see ClientInterface#sessionIsConnected
- */
-p.sessionIsConnected = function (sessionId, callback) {
-  var self = this;
-  var connected = Object.keys(this.connections).some(function (clusterMemberId, index, array) {
-    return self.connections[clusterMemberId].sessions[sessionId];
-  });
-  callback (null, connected);
-};
-
-/**
- * @see ClientInterface#connectionIdsForSession
- */
-p.connectionIdsForSession = function (sessionId, callback) {
-  var self = this;
-  var connectionIds = [];
-  var connected = Object.keys(this.connections).forEach(function (clusterMemberId, index, array) {
-    var ids = self.connections[clusterMemberId].sessions[sessionId];
-    if (ids) {
-      connectionIds = connectionIds.concat(ids);
-    }
-  });
-  callback (null, connectionIds);
-};
-
-/**
- * @see ClientInterface#getConnectionData
- */
-p.getConnectionData = function (callback) {
-  callback(null, this.connections);
-};
-
-/**
- * Update the local connection data to note a connection. Emit an event.
- *
- * @param {string} clusterMemberId
- *   The cluster member where the connection occurred.
- * @param {string} connectionId
- *   Unique ID of the connection.
- * @param {string} sessionId
- *   Unique ID of the session associated with this connection - one session
- *   might have multiple concurrent connections.
- * @param {string} [session]
- *   Session data - only provided for local connections.
- */
-p._reactToConnectionTo = function(clusterMemberId, connectionId, sessionId, session) {
-  // Update the local records.
-  var data = this.connections[clusterMemberId];
-  data.connections[connectionId] = Date.now();
-  if (!data.sessions[sessionId]) {
-    data.sessions[sessionId] = [connectionId];
-  } else {
-    var sessionConnections = data.sessions[sessionId];
-    if (sessionConnections.indexOf(connectionId) === -1) {
-      sessionConnections.push(connectionId);
-    }
-  }
-  // Emit tracking events and notify other cluster members, depending on
-  // whether this is a connection to the local process or not.
-  if (this.thywill.cluster.getLocalClusterMemberId() === clusterMemberId) {
-    this.thywill.cluster.sendToOthers(this.clusterTask.connectionTo, {
-      connectionId: connectionId,
-      sessionId: sessionId
-    });
-    this.emit(this.events.CONNECTION, connectionId, sessionId, session);
-  }
-  this.emit(this.events.CONNECTION_TO, clusterMemberId, connectionId, sessionId);
-};
-
-/**
- * Update the local connection data to note a disconnection. Emit an event.
- *
- * @param {string} clusterMemberId
- *   The cluster member where the disconnection occurred.
- * @param {string} connectionId
- *   Unique ID of the connection.
- * @param {string} sessionId
- *   Unique ID of the session associated with this connection - one session
- *   might have multiple concurrent connections.
- */
-p._reactToDisconnectionFrom = function(clusterMemberId, connectionId, sessionId) {
-  // Update the local records.
-  var data = this.connections[clusterMemberId];
-  delete data.connections[connectionId];
-  if (data.sessions[sessionId]) {
-    data.sessions[sessionId] = data.sessions[sessionId].filter(function (element, index, array) {
-      return (element !== connectionId);
-    });
-    if (data.sessions[sessionId].length === 0) {
-      delete data.sessions[sessionId];
-    }
-  }
-  // Emit tracking events and notify other cluster members, depending on
-  // whether this is a connection to the local process or not.
-  if (this.thywill.cluster.getLocalClusterMemberId() === clusterMemberId) {
-    this.thywill.cluster.sendToOthers(this.clusterTask.disconnectionFrom, {
-      connectionId: connectionId,
-      sessionId: sessionId
-    });
-    this.emit(this.events.DISCONNECTION, connectionId, sessionId);
-  }
-  this.emit(this.events.DISCONNECTION_FROM, clusterMemberId, connectionId, sessionId);
-};
-
-/**
- * Given all the connection data for a specific cluster member process, make it
- * the local copy of record for that cluster member process.
- *
- * On startup, processes request all the data from other processes, so as to
- * restore the local copy after a crash and restart situation.
- *
- * @param {string} clusterMemberId
- *   The cluster member whose data it is.
- * @param {object} data
- *   The connection data for this cluster member.
- */
-p._updateAllConnectionDataForClusterMember = function (clusterMemberId, data) {
-  this.connections[clusterMemberId] = data;
-};
-
-/**
- * This is called when another cluster member fails, to clear out its
- * connection data since all of the connected clients will now be
- * disconnected.
- *
- * @param {string} clusterMemberId
- *   The cluster member whose data it is.
- */
-p._clearConnectionDataForClusterMember = function (clusterMemberId) {
-  // Important that we replace the object at the top, rather than the
-  // sessions and connections properties, as the original connections and
-  // sessions items will be passed on and used to update applications.
-  this.connections[clusterMemberId] = {
-    connections: {},
-    sessions: {}
-  };
 };
 
 // -----------------------------------------------------------

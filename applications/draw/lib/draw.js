@@ -128,35 +128,11 @@ p.connection = function (connectionId, sessionId, session) {
 };
 
 /**
- * @see Application#connectionTo
- */
-p.connectionTo = function (clusterMemberId, connectionId, sessionId) {
-  // Do nothing; while this is a clustered example, it doesn't need to
-  // know about user connections on other processes.
-};
-
-/**
  * @see Application#disconnection
  */
 p.disconnection = function (connectionId, sessionId) {
   // Do nothing except log it.
   this.thywill.log.debug("Draw: Client disconnected: " + connectionId);
-};
-
-/**
- * @see Application#disconnectionFrom
- */
-p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {
-  // Do nothing; while this is a clustered example, it doesn't need to
-  // know about user disconnections on other processes.
-};
-
-/**
- * @see Application#clusterMemberDown
- */
-p.clusterMemberDown = function (clusterMemberId, connectionData) {
-  // Do nothing; while this is a clustered example, it doesn't need to
-  // know about user disconnections on other processes.
 };
 
 //-----------------------------------------------------------
