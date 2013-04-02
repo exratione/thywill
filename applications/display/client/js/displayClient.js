@@ -117,6 +117,10 @@
    */
   p.displayConnections = function (clusterMemberId, connectionIds) {
     var self = this;
+    // Filter out any already shown.
+    connectionIds = connectionIds.filter(function (connectionId, index, array) {
+      return (jQuery("#" + connectionId).length === 0);
+    });
     var connections = jQuery("#" + clusterMemberId + " .connections");
     var html = connectionIds.map(function (connectionId, index, array) {
       return self.templates.connectionTemplate({

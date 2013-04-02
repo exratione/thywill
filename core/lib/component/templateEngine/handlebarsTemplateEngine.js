@@ -44,6 +44,18 @@ HandlebarsTemplateEngine.CONFIG_TEMPLATE = {
 //-----------------------------------------------------------
 
 /**
+ * @see Component#_getDependencies
+ */
+p._getDependencies = function () {
+  return {
+    components: [
+      "log",
+      "cacheManager"
+    ]
+  };
+};
+
+/**
  * @see Component#_configure
  */
 p._configure = function (thywill, config, callback) {

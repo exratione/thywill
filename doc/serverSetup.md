@@ -3,21 +3,10 @@ Thywill Server Setup for Ubuntu 12.04
 
 This document outlines the setup and configuration of a Thywill server on
 Ubuntu, in which Nginx and Node.js act as backend servers to provide static
-and dynamic content respectively. There are two options for frontend servers:
-
-1) Stunnel and Varnish
-
-  * All content is served over SSL
-  * Stunnel decrypts HTTPS traffic and passes HTTP traffic to Varnish
-  * Varnish manages distribution of traffic between Node.js and Nginx backends
-
-2) HAProxy
+and dynamic content respectively, while HAProxy is the frontend:
 
   * All content is served over SSL
   * HAProxy decrypts HTTPS traffic and passes HTTP traffic to Node.js and Nginx
-
-In either case the backend setup is the same:
-
   * Nginx serves static files for Thywill
   * Nginx can also be used to serve an unrelated website
   * Each Thywill application runs as a separate Node.js backend process
@@ -191,82 +180,8 @@ This will create these files:
 
 That third is just the first two concatenated together.
 
-Frontend Option 1: Stunnel and Varnish
-======================================
-
-The following arrangement of server processes is used:
-
-  * Stunnel on port 443
-  * Varnish on port 80
-  * Nginx on port 8080
-  * Thywill Node.js applications on ports 10080+
-
-Prior to version 1.3, Nginx cannot pass websocket traffic as a proxy, so
-Varnish is the frontend proxy. It passes websocket traffic and other relevant
-URLs directly to the appropriate Node.js backends, and remaining traffic to
-Nginx.
-
-Varnish doesn't handle SSL traffic, so Stunnel is used to terminate HTTPS
-requests and pass them on as HTTP requests to Varnish. It is possible to
-distinguish between HTTP connections proxied by Stunnel and HTTP connections
-arriving directly from a client: Varnish redirects all such direct HTTP
-connections to HTTPS.
-
-Set Up Stunnel
---------------
-
-Varnish cannot manage SSL traffic, so Stunnel is used to field HTTPS traffic.
-Install Stunnel as a package:
-
-    apt-get install stunnel
-
-Next set up the Stunnel configuration file as required. An example configuration
-is provided in:
-
-    /serverConfig/stunnel/thywill-stunnel4.conf
-
-Copy this into the /etc/stunnel/ directory (each separate *.conf file there
-will be used to launch a separate Stunnel process when the Stunnel service
-starts). Note that this is probably not going to be suitable for production
-use, or for anything other than running the Thywill example applications.
-
-Make sure that the certificate path in the configuration file is correct. If
-using your own certificate rather than the snakeoil certificate, it will no
-doubt have to be changed.
-
-Lastly you will have to edit /etc/default/stunnel4 to set the following line,
-otherwise the process will not start.
-
-    # Change to one to enable stunnel automatic startup
-    ENABLED=1
-
-Set Up Varnish
---------------
-
-Install Varnish as a package:
-
-    apt-get install varnish
-
-Next, set up the configuration as required for your server scenario. A default
-configuration suitable for any of the example applications is provided in:
-
-    /serverConfig/varnish/thywill-default.vcl
-
-Copy the contents into your Varnish configuration file /etc/varnish/default.vcl.
-Note that this configuration is far from suitable for production use - it is an
-example only, and omits most of the useful things that Varnish can do.
-
-Now alter these lines in /etc/default/varnish to tell Varnish to run on port 80
-rather than the default 6081:
-
-    DAEMON_OPTS="-a :80 \
-      -T localhost:6082 \
-      -f /etc/varnish/default.vcl \
-      -S /etc/varnish/secret \
-      -s malloc,256m"
-
-Frontend Option 2: HAProxy
-==========================
+Frontend: HAProxy
+=================
 
 The following arrangement of server processes is used:
 

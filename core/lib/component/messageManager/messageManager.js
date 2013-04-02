@@ -38,6 +38,17 @@ var p = MessageManager.prototype;
 //-----------------------------------------------------------
 
 /**
+ * @see Component#_getDependencies
+ */
+p._getDependencies = function () {
+  return {
+    components: [
+      "log"
+    ]
+  };
+};
+
+/**
  * Obtain a client Message instance corresponding to the provided ServerMessage
  * instance.
  *

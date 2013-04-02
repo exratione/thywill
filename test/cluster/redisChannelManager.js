@@ -20,6 +20,13 @@ config.channelManager = {
   redisPrefix: "test:thywill:channel:",
   redisClient: null
 };
+// A RedisChannelManager requires that a ClientTracker component also be used.
+config.clientTracker = {
+  implementation: {
+    type: "extra",
+    name: "inMemoryClientTracker"
+  }
+};
 
 // Obtain a test suit that launches Thywill.
 var suite = tools.createVowsSuiteForCluster("Cluster: channelManager/redisChannelManager", {

@@ -21,9 +21,26 @@ function Minifier() {
 util.inherits(Minifier, Thywill.getBaseClass("Component"));
 var p = Minifier.prototype;
 
+
 //-----------------------------------------------------------
-// Methods
+// Methods.
 //-----------------------------------------------------------
+
+/**
+ * @see Component#_getDependencies
+ */
+p._getDependencies = function () {
+  return {
+    components: [
+      "log",
+      "cluster",
+      "cacheManager",
+      "resourceManager",
+      "messageManager",
+      "templateEngine"
+    ]
+  };
+};
 
 /**
  * Check a Resource instance to see if it is already declaring itself minified.

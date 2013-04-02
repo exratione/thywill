@@ -169,34 +169,41 @@ Keeping Track of Current Connections
 ------------------------------------
 
 A server-side Application instance is notified whenever a client connects or
-disconnects, even if this happens in other processes in a cluster:
+disconnects to the local process:
 
     // Invoked whenever a client connects to this process.
     Application.prototype.connection = function (connectionId, sessionId, session) {};
-    // Invoked whenever a client connects to any process in the cluster.
-    Application.prototype.connectionTo = function (clusterMemberId, connectionId, sessionId) {};
     // Invoked whenever a client disconnects from this process.
     Application.prototype.disconnection = function (connectionId, sessionId) {};
+
+If the optional ClientTracker component is added to the main Thywill
+configuration, and if the Cluster implementation allows for communication
+between cluster members, then an Application will also be notified whenever a
+client connects or disconnects to any process in the cluster:
+
+    // Invoked whenever a client connects to any process in the cluster.
+    Application.prototype.connectionTo = function (clusterMemberId, connectionId, sessionId) {};
     // Invoked whenever a client disconnects from any process in the cluster.
     Application.prototype.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {};
 
-There's also a notification for any mass disconnection resulting from server
-process crash or restart. Bear in mind that lot of thought can go into exactly
-what should be done by the application under that circumstance and best
-practice absolutely depends on the nature of that application:
+If using a ClientTracker, there is also a notification for any mass
+disconnection resulting from server process crash or restart. Bear in mind that
+a lot of thought can go into exactly what should be done by the application
+under that circumstance and best practice absolutely depends on the nature of
+that application:
 
     // Invoked when a cluster member process fails, thus disconnecting all its
-    // clients - who will immediately be trying to reconnect to other cluster
+    // clients - which will immediately be trying to reconnect to other cluster
     // members.
     Application.prototype.clusterMemberDown = function (clusterMemberId, connectionData) {};
 
-The default core ClientInterface implementation keeps track of connected
+The default InMemoryClientTracker implementation keeps track of connected
 clients, even in a clustered backend. In application code, for example, you
 can call this method:
 
     // isConnected will be true if the client is connected to any of the
     // cluster processes.
-    this.thywill.clientInterface.clientIsConnected(connectionId, function (error, isConnected) {
+    this.thywill.clientTracker.clientIsConnected(connectionId, function (error, isConnected) {
       if (isConnected) {
         console.log(connectionId + " is connected.");
       }
@@ -206,7 +213,7 @@ The same thing works for sessions:
 
     // isConnected will be true if this session has one or more clients
     // connected to any of the cluster processes.
-    this.thywill.clientInterface.sessionIsConnected(sessionId, function (error, isConnected) {
+    this.thywill.clientTracker.sessionIsConnected(sessionId, function (error, isConnected) {
       if (isConnected) {
         console.log(sessionId + " is connected.");
       }
@@ -214,7 +221,7 @@ The same thing works for sessions:
 
 You can also obtain all of the current connection data for all processes:
 
-    this.thywill.clientInterface.getConnectionData(function (error, data) {
+    this.thywill.clientTracker.getConnectionData(function (error, data) {
       // The data object may be a reference to locally used data, so treat it
       // carefully.
     });
@@ -229,6 +236,7 @@ component.
 You can make available a Redis-based ChannelManager for your Thywill
 application by adding the following to the main configuration object:
 
+    // Configuration for the ChannelManager implementation.
     config.channelManager = {
       implementation: {
         type: "extra",
@@ -237,6 +245,15 @@ application by adding the following to the main configuration object:
       redisPrefix: "thywill:chat:channel:",
       redisClient: redis.createClient()
     };
+    // A RedisChannelManager requires that a ClientTracker component also be
+    // used.
+    config.clientTracker = {
+      implementation: {
+        type: "extra",
+        name: "inMemoryClientTracker"
+      }
+    };
+
 
 Adding sessions to a channel in application code is as shown below. Connections
 for these sessions will be added to the channel as subscribers there and then,

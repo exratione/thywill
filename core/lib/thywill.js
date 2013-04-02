@@ -3,11 +3,12 @@
  * Thywill class definition, the main controlling class for Thywill.
  */
 
-var exec = require('child_process').exec;
+var exec = require("child_process").exec;
 var fs = require("fs");
 var util = require("util");
 var async = require("async");
 var http = require("http");
+var toposort = require("toposort");
 
 var Component = require("./component/component");
 
@@ -25,18 +26,7 @@ var Component = require("./component/component");
 function Thywill() {
   Thywill.super_.call(this);
   this.componentType = "thywill";
-  this.server = null;
-
-  // Components.
   this.applications = {};
-  this.cacheManager = null;
-  this.clientInterface = null;
-  this.cluster = null;
-  this.log = null;
-  this.messageManager = null;
-  this.minifier = null;
-  this.resourceManager = null;
-  this.templateEngine = null;
 }
 util.inherits(Thywill, Component);
 var p = Thywill.prototype;
@@ -411,25 +401,70 @@ p._convertUserIdAndGroupId = function (callback) {
 };
 
 /**
+ * Is this configuration object a component definition?
+ *
+ * @param {object} componentDefinition
+ * @return {boolean}
+ *   True if this is a component definition.
+ */
+p._isComponentDefinition = function (componentDefinition) {
+  try {
+    if (typeof componentDefinition.implementation.type === "string") {
+      return true;
+    } else {
+      return false;
+    }
+  } catch (e) {
+    return false;
+  }
+};
+
+/**
+ * Components may or may not be included in the configuration, and have
+ * dependences declared in their class constructors.
+ *
+ * This function checks the existence of dependencies and orders the
+ * component names.
+ *
+ * @param {array} componentNames
+ *   The core and extra component names.
+ * @return {array}
+ *   The component names sorted for dependencies.
+ */
+p._checkDependenciesAndSortComponentNames = function (componentNames) {
+  var self = this;
+  var dependencyMap = [];
+  componentNames.forEach(function (name, index, array) {
+    // Will throw for missing component.
+    var Constructor = self._loadComponentConstructor(name);
+    var instance = new Constructor();
+    var dependencies = instance._getDependencies();
+    if (dependencies && Array.isArray(dependencies.components)) {
+      dependencies.components.forEach(function (dependency, index, array) {
+        if (componentNames.indexOf(dependency) === -1) {
+          throw new Error("Dependency " + dependency + " for component " + name + " is not present as a configured component.");
+        }
+        dependencyMap.push([name, dependency]);
+      });
+    }
+  });
+  // Sort things. This will throw for circular dependencies.
+  return toposort(dependencyMap).reverse();
+};
+
+/**
  * Initialize the components and register applications in the necessary order.
  * Later components may thereby make use of earlier ones in their
  * initialization. The order is:
  *
- * log
- * cluster
- * cacheManager
- * resourceManager
- * messageManager
- * templateEngine
- * minifier
- * clientInterface  - which needs to know about all the resources
+ * /core components
  * /extra components
- * applications     - which set various resources
+ * applications
  *
  * @param {Application[]} passedApplications
  *   Array of object instances of classes derived from Application.
  * @param {Function} callback
- *   Of the form function (error), where error === null on success.
+ *   Of the form function (error).
  */
 p._initializeComponents = function (passedApplications, callback) {
   var self = this;
@@ -437,38 +472,25 @@ p._initializeComponents = function (passedApplications, callback) {
   // end via async.series().
   var fns = [];
 
-  // Core components have to be initialized in this order.
-  var coreComponentNames = [
-    "log",
-    "cluster",
-    "cacheManager",
-    "resourceManager",
-    "messageManager",
-    "templateEngine",
-    "minifier",
-    "clientInterface"
-  ];
-
-  // Are any additional non-core components defined in the configuration?
-  var extraComponentNames = Object.keys(this.config).filter(function (name, index, array) {
-    if (name === "thywill" || coreComponentNames.indexOf(name) !== -1) {
+  // Get all the defined components from the configuration.
+  var componentNames = Object.keys(this.config).filter(function (name, index, array) {
+    if (name === "thywill") {
       return false;
     }
-    // See if this has looks like a component definition.
-    try {
-      if (typeof self.config[name].implementation.type === "string") {
-        return true;
-      } else {
-        return false;
-      }
-    } catch (e) {
-      return false;
-    }
+    // See if this looks like a component definition.
+    return self._isComponentDefinition(self.config[name]);
   });
+  // Sort the components into the right order based on their dependencies.
+  // Also check to see that dependencies are present.
+  try {
+    componentNames = this._checkDependenciesAndSortComponentNames(componentNames);
+  } catch (error) {
+    callback(error);
+    return;
+  }
 
-  // The list of all components to be initialized.
-  var componentNames = coreComponentNames.concat(extraComponentNames);
-  // Add a component initialization function to the array.
+  // Add a component initialization function to the array, which will walk
+  // through the components and set them up in turn.
   var initializeComponents = function (asyncCallback) {
     async.forEachSeries(componentNames, function (name, innerAsyncCallback) {
       self._initializeComponent(name, innerAsyncCallback);
@@ -551,96 +573,102 @@ p._initializeComponent = function (componentType, callback) {
 
   // If there is no instance configured, then set it up. But do we have the
   // necessary configuration?
-  if (!this.config[componentType] || typeof this.config[componentType].implementation !== "object") {
-    callback(new Error("Missing " + componentType + " component definition in configuration."));
+  if (!this._isComponentDefinition(this.config[componentType])) {
+    callback(new Error("Missing or invalid " + componentType + " component definition in configuration."));
     return;
   }
 
-  // There are three types of definition, core, extra, and require. Core looks like:
-  //
-  // implementation: {
-  //   type: "core",
-  //   name: "someImplementationName"
-  // }
-  //
-  // Extra looks like:
-  //
-  // implementation: {
-  //   type: "extra",
-  //   name: "someImplementationName"
-  // }
-  //
-  // Require looks like this:
-  //
-  // implementation: {
-  //   type: "require",
-  //   path: "some package name or path/to/desired/implementation",
-  //   property: "optionalProperty"
-  // }
-  //
-  var implementation = this.config[componentType].implementation,
-      ComponentConstructor,
-      componentPath;
+  var ComponentConstructor;
+  try {
+    ComponentConstructor = this._loadComponentConstructor(componentType);
+  } catch (error) {
+    callback(error);
+    return;
+  }
+  this[componentType] = new ComponentConstructor();
+  // Check the configuration: this will throw errors, unlike most of
+  // thywill's setup.
+  this[componentType]._checkConfiguration(this.config[componentType]);
+  // Note that the returned instance may not yet be finished with its
+  // configuration. When the component is done and ready for use, it will emit
+  // an event and the callback function will be invoked.
+  this[componentType]._configure(this, this.config[componentType], callback);
+};
+
+/**
+ * Given an implementation object, load the constructor.
+ *
+ * There are three types of definition, core, extra, and require:
+ *
+ * implementation: {
+ *   type: "core",
+ *   name: "someImplementationName"
+ * }
+ *
+ * implementation: {
+ *   type: "extra",
+ *   name: "someImplementationName"
+ * }
+ *
+ * implementation: {
+ *   type: "require",
+ *   path: "some package name or path/to/desired/implementation",
+ *   property: "optionalProperty"
+ * }
+ *
+ * @param {string} componentType
+ *   The type name of the component, e.g. "resourceManager".
+ * @param {object} implementation
+ *   The implementation description.
+ * @return {function}
+ *   The component class constructor.
+ */
+p._loadComponentConstructor = function (componentType) {
+  var implementation = this.config[componentType].implementation;
+  var componentPath;
+  var ComponentConstructor;
   // Loading a constructor for a core component implementation.
   if (implementation.type === "core") {
     componentPath = "./component/" + componentType + "/" + implementation.name;
     try {
-      require.resolve(componentPath);
+      ComponentConstructor = require(componentPath);
     } catch (e) {
-      callback(new Error("Unsupported core component implementation '" + implementation.name + "' of type '" + componentType + "'"));
-      return;
+      throw new Error("Unsupported core component implementation '" + implementation.name + "' of type '" + componentType + "'");
     }
-    ComponentConstructor = require(componentPath);
   }
   // Loading a constructor for an extra component implementation.
   else if (implementation.type === "extra") {
     componentPath = "../../extra/lib/component/" + componentType + "/" + implementation.name;
     try {
-      require.resolve(componentPath);
+      ComponentConstructor = require(componentPath);
     } catch (e) {
-      callback(new Error("Unsupported extra component implementation '" + implementation.name + "' of type '" + componentType + "'"));
-      return;
+      throw new Error("Unsupported extra component implementation '" + implementation.name + "' of type '" + componentType + "'");
     }
-    ComponentConstructor = require(componentPath);
   }
   // Loading a constructor for a component implementation provided by another package.
   else if (implementation.type === "require") {
     try {
-      require.resolve(implementation.path);
+      // Optionally, the constructor is in a property of this package export.
+      if (implementation.property) {
+        ComponentConstructor = (require(implementation.path))[implementation.property];
+      } else {
+        ComponentConstructor = require(implementation.path);
+      }
     } catch (e) {
-      callback(new Error("Missing require component implementation '" + implementation.path + "' of type '" + componentType + "'"));
-      return;
-    }
-    // Optionally, the constructor is in a property of this package export.
-    var exported = require(implementation.path);
-    if (implementation.property) {
-      ComponentConstructor = exported[implementation.property];
-    } else {
-      ComponentConstructor = exported;
+      throw new Error("Missing require component implementation '" + implementation.path + "' of type '" + componentType + "'");
     }
   }
+  // Not a valid type of implementation declaration.
   else {
-    callback(new Error("Invalid implementation type '" + implementation.type + "' for " + componentType + " component definition."));
-    return;
+    throw new Error("Invalid implementation type '" + implementation.type + "' for " + componentType + " component definition.");
   }
 
   // Did we get a function? I hope so.
   if (typeof ComponentConstructor !== "function") {
-    callback(new Error("Component implementation definition for " + componentType + " did not yield a constructor function."));
-    return;
+    throw new Error("Component implementation definition for " + componentType + " did not yield a constructor function.");
   }
 
-  // Now create the component, finally.
-  this[componentType] = new ComponentConstructor();
-
-  // Check the configuration: this will throw errors, unlike most of
-  // thywill's setup.
-  this[componentType]._checkConfiguration(this.config[componentType]);
-
-  // Note that the returned instance may not yet be finished with its
-  // configuration. When the component is done and ready for use, it will emit
-  // an event and the callback function will be invoked.
-  this[componentType]._configure(this, this.config[componentType], callback);
+  return ComponentConstructor;
 };
 
 //-----------------------------------------------------------

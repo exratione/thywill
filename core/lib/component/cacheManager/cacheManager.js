@@ -22,6 +22,19 @@ util.inherits(CacheManager, Thywill.getBaseClass("Component"));
 var p = CacheManager.prototype;
 
 //-----------------------------------------------------------
+// Methods.
+//-----------------------------------------------------------
+
+/**
+ * @see Component#_getDependencies
+ */
+p._getDependencies = function () {
+  return {
+    components: ["log", "cluster"]
+  };
+};
+
+//-----------------------------------------------------------
 // Methods to be implemented by subclasses.
 //-----------------------------------------------------------
 

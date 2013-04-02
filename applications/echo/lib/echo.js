@@ -100,7 +100,7 @@ p.received = function (message) {
 /**
  * @see Application#connection
  *
- * Note that since this application is configured to use no sessions,
+ * Note that since this application is not configured to use sessions,
  * session === null and sessionId === connectionId.
  */
 p.connection = function (connectionId, sessionId, session) {
@@ -109,35 +109,14 @@ p.connection = function (connectionId, sessionId, session) {
 };
 
 /**
- * @see Application#connectionTo
- */
-p.connectionTo = function (clusterMemberId, connectionId, sessionId) {
-  // Do nothing, since this isn't a clustered example application.
-};
-
-/**
  * @see Application#disconnection
  *
- * Note that since this application is configured to use no sessions,
- * session === null and sessionId === connectionId.
+ * Note that since this application is not configured to use sessions,
+ * sessionId === connectionId.
  */
 p.disconnection = function (connectionId, sessionId) {
   // Do nothing except log it.
   this.thywill.log.debug("Echo: Client disconnected: " + connectionId);
-};
-
-/**
- * @see Application#disconnectionFrom
- */
-p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {
-  // Do nothing, since this isn't a clustered example application.
-};
-
-/**
- * @see Application#clusterMemberDown
- */
-p.clusterMemberDown = function (clusterMemberId, connectionData) {
-  // Do nothing, since this isn't a clustered example application.
 };
 
 //-----------------------------------------------------------

@@ -98,11 +98,11 @@ p._setup = function (callback) {
     self.sendText(data.clusterMemberId + " is up.");
   });
 
-  // Listen in on socketIoClientInterface-specific cluster events.
-  this.thywill.cluster.on(this.thywill.clientInterface.clusterTask.connectionData, function (data) {
+  // Listen in on clientTracker-specific cluster events.
+  this.thywill.cluster.on(this.thywill.clientTracker.clusterTask.connectionData, function (data) {
     self.sendText("Connection data delivered from " + data.clusterMemberId);
   });
-  this.thywill.cluster.on(this.thywill.clientInterface.clusterTask.connectionDataRequest, function (data) {
+  this.thywill.cluster.on(this.thywill.clientTracker.clusterTask.connectionDataRequest, function (data) {
     self.sendText("Request for connection data from " + data.clusterMemberId);
   });
 
@@ -151,7 +151,7 @@ p.sendConnectionNotice = function (connectionId) {
  */
 p.sendConnectionList = function (connectionId) {
   var self = this;
-  this.thywill.clientInterface.getConnectionData(function (error, data) {
+  this.thywill.clientTracker.getConnectionData(function (error, data) {
     if (error) {
       self.thywill.log.error(error);
       return;
@@ -209,8 +209,8 @@ p.connection = function (connectionId, sessionId, session) {
     if (error) {
       self.thywill.log.error(error);
     }
-    self.sendConnectionNotice(connectionId);
     self.sendConnectionList(connectionId);
+    self.sendConnectionNotice(connectionId);
   });
 };
 

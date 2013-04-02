@@ -246,6 +246,25 @@ p._configure = function (thywill, config, callback) {
   this._announceReady(this.NO_ERRORS);
 };
 
+/**
+ * Return a description of the dependencies for this class. This has the form:
+ *
+ * {
+ *   components: [clientInterface, minifier, ...]
+ * }
+ *
+ * Component dependencies define order of instantiation on launch: this class
+ * must be instantiated later than all of the others.
+ *
+ * @return {object}
+ *   The dependencies description.
+ */
+p._getDependencies = function () {
+  return {
+    components: []
+  };
+};
+
 //-----------------------------------------------------------
 // Exports - Class Constructor
 //-----------------------------------------------------------

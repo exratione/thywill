@@ -83,6 +83,7 @@ p.isDesignatedHandlerFor = function (clusterMemberId, callback) {
  * @see Cluster#sendTo
  */
 p.sendTo = function (clusterMemberId, taskName, data) {
+  data = data || {};
   if (clusterMemberId === this.config.localClusterMemberId) {
     data.taskName = taskName;
     data.clusterMemberId = this.config.localClusterMemberId;
@@ -94,9 +95,7 @@ p.sendTo = function (clusterMemberId, taskName, data) {
  * @see Cluster#sendToAll
  */
 p.sendToAll = function (taskName, data) {
-  data.taskName = taskName;
-  data.clusterMemberId = this.config.localClusterMemberId;
-  this.emit(taskName, data);
+  this.sendTo(this.config.localClusterMemberId, taskName, data);
 };
 
 /**
