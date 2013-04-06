@@ -148,7 +148,7 @@ easy:
 Receiving Messages at the Server
 --------------------------------
 
-A server Application class must implement the recievedFromConnection() method,
+A server Application class must implement the receivedFromClient() method,
 as it is invoked whenever a message arrives from a client:
 
     // Client is an instance of the Client class.
@@ -236,7 +236,7 @@ example, on application setup listen on the cluster for specific events:
       callback();
     };
 
-Then anywhere in application class method code that event can be triggered in
+Then anywhere in application class method code you can trigger that event in
 other cluster processes:
 
     // Task data is any object.
@@ -253,8 +253,8 @@ other cluster processes:
 Keeping Track of Current Connections
 ------------------------------------
 
-A server-side Application instance is notified whenever a client connects or
-disconnects to the local process:
+By default, a server-side Application instance is notified whenever a client
+connects to or disconnects from the local process:
 
     // Invoked whenever a client connects to this process.
     Application.prototype.connection = function (client) {};
@@ -263,23 +263,20 @@ disconnects to the local process:
 
 If the optional ClientTracker component is added to the main Thywill
 configuration, and if the Cluster implementation allows for communication
-between cluster members, then an Application will also be notified whenever a
-client connects or disconnects to any process in the cluster:
+between cluster members, then by default an Application will also be notified
+whenever a client connects to or disconnects from any process in the cluster:
 
     // Invoked whenever a client connects to any process in the cluster.
     Application.prototype.connectionTo = function (clusterMemberId, client) {};
     // Invoked whenever a client disconnects from any process in the cluster.
     Application.prototype.disconnectionFrom = function (clusterMemberId, client) {};
 
-If using a ClientTracker, there is also a notification for any mass
-disconnection resulting from server process crash or restart. Bear in mind that
-a lot of thought can go into exactly what should be done by the application
-under that circumstance and best practice absolutely depends on the nature of
-that application:
+If using a ClientTracker, the default notifications also include one for any
+mass disconnection resulting from server process crash or restart:
 
     // Invoked when a cluster member process fails, thus disconnecting all its
     // clients - which will immediately be trying to reconnect to other cluster
-    // members.
+    // members, probably even before this function is called.
     Application.prototype.clusterMemberDown = function (clusterMemberId, connectionData) {};
 
 The default InMemoryClientTracker implementation keeps track of connected
@@ -298,7 +295,7 @@ The same thing works for sessions:
 
     // isConnected will be true if this session has one or more clients
     // connected to any of the cluster processes.
-    this.thywill.clientTracker.clientSessionIsConnected(client, function (error, isConnected) {
+    this.thywill.clientTracker.clientSessionIsConnected(sessionId, function (error, isConnected) {
       if (isConnected) {
         console.log(sessionId + " is connected.");
       }
@@ -339,10 +336,10 @@ application by adding the following to the main configuration object:
       }
     };
 
-
-Adding sessions to a channel in application class method code is as shown
-below. Connections for these sessions will be added to the channel as
-subscribers there and then, and when they occur in the future.
+Adding sessions to a channel in Application class method code is illustrated
+below. All connections for these sessions will be added to the channel as
+subscribers there and then, and whenever new connections are made by those
+sessions in the future.
 
     var self = this;
     var sessionIds = [sessionId1, sessionId2];
@@ -352,14 +349,15 @@ subscribers there and then, and when they occur in the future.
       }
     });
 
-Publishing a message to the channel in any application class method code:
+Publishing a message to the channel in any application class method code is
+easy:
 
     this.sendToChannel(channelId, {
       name: "value";
     });
 
-You can see simple examples of the use of channels in the Chat example
-application, found under /applications/chat/.
+You can see simple use of channels in the Chat example application, found
+under /applications/chat/.
 
 Remote Procedure Calls
 ----------------------
@@ -406,7 +404,8 @@ Then to make a remote procedure call from the client:
       console.log(result);
     });
 
-See the Calculations example application for a simple demonstration.
+See the Calculations example application for a simple demonstration, found
+under /applications/calculations/.
 
 A Work in Progress
 ------------------
