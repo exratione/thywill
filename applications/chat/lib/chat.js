@@ -214,7 +214,7 @@ p.unpairClientSessionsViaKick = function (sessionId, callback) {
         action: "kicked"
       };
       sessionIds.forEach(function (id, index, array) {
-        self.sendToConnection(id, outgoingData);
+        self.sendToSession(id, outgoingData);
       });
     }
   };

@@ -112,12 +112,12 @@ p._configure = function (thywill, config, callback) {
   });
   // Delivery of connection data from another server.
   this.thywill.cluster.on(this.clusterTask.connectionData, function (data) {
-    self.thywill.log.debug("SocketIoClientInterface: delivery of connection data from: " + data.clusterMemberId);
+    self.thywill.log.debug("InMemoryClientTracker: delivery of connection data from: " + data.clusterMemberId);
     self._updateAllConnectionDataForClusterMember(data.clusterMemberId, data.connections);
   });
   // Request for connection data from another server.
   this.thywill.cluster.on(this.clusterTask.connectionDataRequest, function (data) {
-    self.thywill.log.debug("SocketIoClientInterface: request for connection data from: " + data.clusterMemberId);
+    self.thywill.log.debug("InMemoryClientTracker: request for connection data from: " + data.clusterMemberId);
     self.thywill.cluster.sendTo(data.clusterMemberId, self.clusterTask.connectionData, {
       connections: self.connections[localClusterMemberId]
     });
@@ -230,7 +230,9 @@ p._reactToConnectionTo = function(clusterMemberId, client) {
   // Emit tracking events and notify other cluster members, depending on
   // whether this is a connection to the local process or not.
   if (this.thywill.cluster.getLocalClusterMemberId() === clusterMemberId) {
-    this.thywill.cluster.sendToOthers(this.clusterTask.connectionTo, client.toData());
+    this.thywill.cluster.sendToOthers(this.clusterTask.connectionTo, {
+      client: client.toData()
+    });
     this.emit(this.events.CONNECTION, client);
   }
   this.emit(this.events.CONNECTION_TO, clusterMemberId, client);
@@ -265,7 +267,9 @@ p._reactToDisconnectionFrom = function(clusterMemberId, client) {
   // Emit tracking events and notify other cluster members, depending on
   // whether this is a connection to the local process or not.
   if (this.thywill.cluster.getLocalClusterMemberId() === clusterMemberId) {
-    this.thywill.cluster.sendToOthers(this.clusterTask.disconnectionFrom, client.toData());
+    this.thywill.cluster.sendToOthers(this.clusterTask.disconnectionFrom, {
+      client: client.toData()
+    });
     this.emit(this.events.DISCONNECTION, client);
   }
   this.emit(this.events.DISCONNECTION_FROM, clusterMemberId, client);
