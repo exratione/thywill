@@ -32,8 +32,8 @@ Thywill.inherits(Thywill.SocketIoServerInterface, Thywill.ServerInterface);
  *
  * @see Thywill.ServerInterface#send
  */
-Thywill.SocketIoServerInterface.prototype.sendMessage = function (message) {
-  Thywill.socket.emit("fromClient", message);
+Thywill.SocketIoServerInterface.prototype.sendMessage = function (applicationId, message) {
+  Thywill.socket.emit("fromClient", applicationId, message);
 };
 
 Thywill.SocketIoServerInterface.prototype.setupConnection = function () {
@@ -74,8 +74,8 @@ Thywill.SocketIoServerInterface.prototype.setupConnection = function () {
   });
 
   // Message received from the server.
-  Thywill.socket.on("toClient", function (message) {
-    self.received(message);
+  Thywill.socket.on("toClient", function (applicationId, message) {
+    self.received(applicationId, message);
   });
 
   // Client manages to reconnect after disconnection.

@@ -92,7 +92,7 @@ p._setup = function (callback) {
 /**
  * @see Application#receive
  */
-p.received = function (message) {
+p.receivedFromClient = function (client, message) {
   // Nothing doing here - all of the functionality of this example works via
   // the RPC framework provided by the RpcCapableApplication class.
 };
@@ -100,23 +100,23 @@ p.received = function (message) {
 /**
  * @see Application#connection
  *
- * Note that since this application is configured to use no sessions,
- * session === null and sessionId === connectionId.
+ * Note that since this application is not configured to use sessions,
+ * client.session == undefined and client.sessionId === client.connectionId.
  */
-p.connection = function (connectionId, sessionId, session) {
+p.connection = function (client) {
   // Do nothing except log it.
-  this.thywill.log.debug("Calculations: Client connected: " + connectionId);
+  this.thywill.log.debug("Calculations: Client connected: " + client.getConnectionId());
 };
 
 /**
  * @see Application#disconnection
  *
- * Note that since this application is configured to use no sessions,
- * session === null and sessionId === connectionId.
+ * Note that since this application is not configured to use sessions,
+ * client.session == undefined and client.sessionId === client.connectionId.
  */
-p.disconnection = function (connectionId, sessionId) {
+p.disconnection = function (client) {
   // Do nothing except log it.
-  this.thywill.log.debug("Calculations: Client disconnected: " + connectionId);
+  this.thywill.log.debug("Calculations: Client disconnected: " + client.getConnectionId());
 };
 
 //-----------------------------------------------------------

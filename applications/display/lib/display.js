@@ -116,7 +116,7 @@ p._setup = function (callback) {
 /**
  * @see Application#receive
  */
-p.received = function (message) {
+p.receivedFromClient = function (client, message) {
   // Not used in this application - the clients are passive listeners.
 };
 
@@ -164,8 +164,7 @@ p.sendConnectionList = function (connectionId) {
       type: "connectionList",
       connections: connections
     };
-    var message = self.thywill.messageManager.createMessage(messageData, connectionId, self.id);
-    self.send(message);
+    self.sendToConnection(connectionId, messageData);
   });
 };
 
@@ -189,20 +188,20 @@ p.sendDisconnectionNotice = function (connectionId) {
  */
 p.publish = function (data) {
   data.clusterMemberId = this.thywill.cluster.getLocalClusterMemberId();
-  var message = this.thywill.messageManager.createServerMessageToChannel(data, this.channelId, this.id);
-  this.send(message);
+  this.sendToChannel(this.channelId, data);
 };
 
 /**
  * @see Application#connection
  */
-p.connection = function (connectionId, sessionId, session) {
+p.connection = function (client) {
   var self = this;
+  var connectionId = client.getConnectionId();
   this.thywill.log.debug("Display: Client connected: " + connectionId);
   var fns = {
     // Every client is subscribed to the same channel, used to broadcast updates.
     subscribe: function (asyncCallback) {
-      self.thywill.clientInterface.subscribe(connectionId, self.channelId, asyncCallback);
+      self.subscribe(client, self.channelId, asyncCallback);
     }
   };
   async.series(fns, function (error) {
@@ -217,17 +216,17 @@ p.connection = function (connectionId, sessionId, session) {
 /**
  * @see Application#connectionTo
  */
-p.connectionTo = function (clusterMemberId, connectionId, sessionId) {
+p.connectionTo = function (clusterMemberId, client) {
   if (clusterMemberId !== this.thywill.cluster.getLocalClusterMemberId()) {
-    this.sendText(connectionId + " connected to " + clusterMemberId + ".");
+    this.sendText(client.getConnectionId() + " connected to " + clusterMemberId + ".");
   }
 };
 
 /**
  * @see Application#disconnection
  */
-p.disconnection = function (connectionId, sessionId) {
-  // Do nothing except log it.
+p.disconnection = function (client) {
+  var connectionId = client.getConnectionId();
   this.thywill.log.debug("Display: Client disconnected: " + connectionId);
   this.sendDisconnectionNotice(connectionId);
 };
@@ -235,9 +234,9 @@ p.disconnection = function (connectionId, sessionId) {
 /**
  * @see Application#disconnectionFrom
  */
-p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {
+p.disconnectionFrom = function (clusterMemberId, client) {
   if (clusterMemberId !== this.thywill.cluster.getLocalClusterMemberId()) {
-    this.sendText(connectionId + " disconnected from " + clusterMemberId + ".");
+    this.sendText(client.getConnectionId() + " disconnected from " + clusterMemberId + ".");
   }
 };
 
@@ -257,12 +256,11 @@ p.clusterMemberDown = function (clusterMemberId, connectionData) {
     if (isDesignatedHandler) {
       var connections = {};
       connections[clusterMemberId] = Object.keys(connectionData.connections);
-      var messageData = {
+      var data = {
         type: "disconnectionList",
         connections: connections
       };
-      var message = self.thywill.messageManager.createServerMessageToChannel(messageData, self.channelId, self.id);
-      self.send(message);
+      self.sendToChannel(self.channelId, data);
     }
   });
 };

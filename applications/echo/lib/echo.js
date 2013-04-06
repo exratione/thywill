@@ -17,10 +17,8 @@ var bootstrapManifest = require("./bootstrapManifest");
 
 /**
  * @class
- * A trivial example application.
- *
- * This application provides a UI for the client to enter messages, and echoes
- * back all entered messages with the same content.
+ * This trivial example application provides a UI for the client to enter
+ * messages and echoes back all entered messages with the same content.
  */
 function Echo (id) {
   Echo.super_.call(this, id);
@@ -29,7 +27,7 @@ util.inherits(Echo, Thywill.getBaseClass("Application"));
 var p = Echo.prototype;
 
 //-----------------------------------------------------------
-// Initialization
+// Methods: initialization.
 //-----------------------------------------------------------
 
 /**
@@ -80,43 +78,38 @@ p._setup = function (callback) {
 };
 
 //-----------------------------------------------------------
-// Methods
+// Methods: other.
 //-----------------------------------------------------------
 
 /**
- * @see Application#receive
+ * @see Application#receivedFromClient
  */
-p.received = function (message) {
-  this.thywill.log.debug("Echo.receive(): Message for echoing: " + message);
-  // If the message came from a client connection, react by sending the same
-  // data right back to where it came from.
-  var messageManager = this.thywill.messageManager;
-  if (message.getOrigin() === messageManager.origins.CLIENT) {
-    var echoMessage = this.thywill.messageManager.createReplyMessage(message.getData(), message);
-    this.send(echoMessage);
-  }
+p.receivedFromClient = function (client, message) {
+  this.thywill.log.debug("Echo.receivedFromClient(): Message for echoing: " + message);
+  // Sending the same data back to whence it came.
+  this.sendToConnection(client, message);
 };
 
 /**
  * @see Application#connection
  *
  * Note that since this application is not configured to use sessions,
- * session === null and sessionId === connectionId.
+ * client.session == undefined and client.sessionId === client.connectionId.
  */
-p.connection = function (connectionId, sessionId, session) {
+p.connection = function (client) {
   // Do nothing except log it.
-  this.thywill.log.debug("Echo: Client connected: " + connectionId);
+  this.thywill.log.debug("Echo: Client connected: " + client.getConnectionId());
 };
 
 /**
  * @see Application#disconnection
  *
  * Note that since this application is not configured to use sessions,
- * sessionId === connectionId.
+ * client.session == undefined and client.sessionId === client.connectionId.
  */
-p.disconnection = function (connectionId, sessionId) {
+p.disconnection = function (client) {
   // Do nothing except log it.
-  this.thywill.log.debug("Echo: Client disconnected: " + connectionId);
+  this.thywill.log.debug("Echo: Client disconnected: " + client.getConnectionId());
 };
 
 //-----------------------------------------------------------

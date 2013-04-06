@@ -84,35 +84,8 @@ module.exports = {
     // /applications/echo/service/start.js
     // /applications/shapes/service/start.js
     server: {
-      // An Express instance. Optional unless Express sessions are being used.
-      // If an Express server is provided, it will be used to serve content.
-      app: null,
       // An http.Server instance.
       server: null
-    },
-    // Session management configuration. If sessions are being used, we want
-    // access to them for Socket.IO connections.
-    //
-    // You will probably want to use Express sessions with Socket.IO for any
-    // reasonable application. Configure that as follows:
-    //
-    // session: {
-    //   type: "express",
-    //   // Set the following values in the application start.js file, as that
-    //   // is where Express is set up.
-    //   // The session store instance.
-    //   store: null,
-    //   // The cookie key and secret there as well.
-    //   cookieKey: null,
-    //   cookieSecret: null
-    // }
-    //
-    // See /applications/shapes/service/start.js for an example.
-    //
-    // The default is for no session management. Not useful for much beyond
-    // demonstration applications.
-    sessions: {
-      type: "none"
     },
     // Configuration to apply to the Socket.IO client on setup. This is
     // used as-is. See:
@@ -202,18 +175,6 @@ module.exports = {
     // The minimum log level to be logged by this implementation. Lesser log
     // levels are ignored. The log levels are, in order, [debug, warn, error].
     level: "debug"
-  },
-
-  // The messageManager is a factory for creating messages, objects to
-  // represent data passed back and forth between client and server.
-  messageManager: {
-    // We specify use of the base implementation, which does absolutely
-    // nothing beyond creating fairly plain Javascript objects for use as
-    // messages.
-    implementation: {
-      type: "core",
-      name: "messageManager"
-    }
   },
 
   // The minifer component manages minification and merging of CSS and

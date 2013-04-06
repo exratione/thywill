@@ -48,21 +48,22 @@ exports.start = function (clusterMemberId) {
   // Adapt the base configuration for this example.
   // ------------------------------------------------------
 
+  // Use the Express implementation.
+  config.clientInterface.implementation.name = "socketIoExpressClientInterface";
   // An example application should have its own base path and Socket.IO
   // namespace.
   config.clientInterface.baseClientPath = "/chat";
   config.clientInterface.namespace = "/chat";
-  // We're using sessions, managed via Express.
-  config.clientInterface.sessions.type = "express";
   // Thywill needs access to the session cookie secret and key.
-  config.clientInterface.sessions.cookieSecret = "some long random string";
-  config.clientInterface.sessions.cookieKey = "sid";
-  // Create a session store, and set it in the Thywill config so that Express
-  // sessions can be assigned to websocket connections. Since this is a
-  // clustered example, we're using a Redis-backed store here.
-  config.clientInterface.sessions.store = new RedisSessionStore({
-    client: redisClients.other
-  });
+  config.clientInterface.sessions = {
+    cookieSecret: "some long random string",
+    cookieKey: "sid",
+    // Create a session store. Since this is a clustered example, use a
+    // Redis-backed store.
+    store: new RedisSessionStore({
+      client: redisClients.other
+    })
+  };
 
   // Resource minification settings.
   config.clientInterface.minifyCss = false;

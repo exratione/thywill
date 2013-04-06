@@ -133,7 +133,9 @@
       cb: data.hasCallback,
       args: data.args
     };
-    this.send(sendData, Thywill.Message.TYPES.RPC);
+    var message = new Thywill.Message(sendData);
+    message.setType(Thywill.Message.TYPES.RPC);
+    this.send(message);
   };
 
   /**

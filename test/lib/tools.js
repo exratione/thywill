@@ -66,18 +66,12 @@ exports.setupConfig = function (baseConfig, options) {
   var port = config.thywill.ports[options.localClusterMemberId];
 
   // Are we using Express or not?
-  if (options.useExpress) {
+  if (config.clientInterface.implementation.name === "socketIoExpressClientInterface") {
     // Create servers.
     var app = express();
     config.clientInterface.server.app = app;
     var server = http.createServer(app).listen(port);
     config.clientInterface.server.server = server;
-
-    // We're using sessions, managed via Express.
-    config.clientInterface.sessions.type = "express";
-    // Thywill needs access to the session cookie secret and key.
-    config.clientInterface.sessions.cookieSecret = "some long random string";
-    config.clientInterface.sessions.cookieKey = "sid";
     // Create a session store.
     if (options.useRedis) {
       config.clientInterface.sessions.store = new RedisSessionStore({

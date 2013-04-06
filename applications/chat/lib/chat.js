@@ -105,7 +105,7 @@ p._setup = function (callback) {
 /**
  * @see Application#receive
  */
-p.received = function (message) {
+p.receivedFromClient = function (client, message) {
   var self = this;
   var data = message.getData();
 
@@ -116,12 +116,12 @@ p.received = function (message) {
   //   message: string
   // }
   if (data.action === "message") {
-    this.publishMessageToCurrentChannel(message);
+    this.publishMessageToCurrentChannel(client, message);
   }
   // This user kicked the current chat partner.
   else if (data.action === "kick") {
-    this.thywill.log.debug("Session " + message.getSessionId() + " kicked its chat partner.");
-    this.unpairClientSessionsViaKick(message.getSessionId(), function (error) {
+    this.thywill.log.debug("Session " + client.getSessionId() + " kicked its chat partner.");
+    this.unpairClientSessionsViaKick(client.getSessionId(), function (error) {
       if (error) {
         self.thywill.log.error(error);
       }
@@ -129,8 +129,8 @@ p.received = function (message) {
   }
   // The client is looking for a chat partner.
   else if (data.action === "findPartner") {
-    this.thywill.log.debug("Session " + message.getSessionId() + " requests a new chat partner.");
-    this.checkQueue(message.getSessionId(), function (error) {
+    this.thywill.log.debug("Session " + client.getSessionId() + " requests a new chat partner.");
+    this.checkQueue(client.getSessionId(), function (error) {
       if (error) {
         self.thywill.log.error(error);
       }
@@ -142,11 +142,12 @@ p.received = function (message) {
  * Publish the contents of this message to the channel that the client is
  * subscribed to - i.e. sent it to the paired user in the channel.
  *
- * @param {ServerMessage} message
+ * @param {Client} client
+ * @param {Message} message
  */
-p.publishMessageToCurrentChannel = function (message) {
+p.publishMessageToCurrentChannel = function (client, message) {
   var self = this;
-  this.thywill.channelManager.getChannelIdsForSession(message.getSessionId(), function (error, channelIds) {
+  this.thywill.channelManager.getChannelIdsForSession(client.getSessionId(), function (error, channelIds) {
     if (error) {
       self.thywill.log(error);
       return;
@@ -154,13 +155,10 @@ p.publishMessageToCurrentChannel = function (message) {
 
     // Should only be one channel we're sending to here.
     if (channelIds.length) {
-      var outgoingData = {
+      self.sendToChannel(channelIds[0], {
         action: "message",
         message: message.getData().message
-      };
-      var messageManager = self.thywill.messageManager;
-      var outgoingMessage = messageManager.createMessageToChannel(outgoingData, channelIds[0], self.id);
-      self.send(outgoingMessage);
+      });
     }
   });
 };
@@ -216,10 +214,7 @@ p.unpairClientSessionsViaKick = function (sessionId, callback) {
         action: "kicked"
       };
       sessionIds.forEach(function (id, index, array) {
-        var outgoingMessage = self.thywill.messageManager.createMessageToSession(
-          outgoingData, id, self.id
-        );
-        self.send(outgoingMessage);
+        self.sendToConnection(id, outgoingData);
       });
     }
   };
@@ -264,12 +259,10 @@ p.pairClientSessions = function (localSessionId, otherSessionId, callback) {
  *   The channel for the chat.
  */
 p.setClientToChat = function (sessionId, channelId) {
-  var data = {
+  this.sendToSession(sessionId, {
     action: "startChat",
     channelId: channelId
-  };
-  var message = this.thywill.messageManager.createMessageToSession(data, sessionId, this.id);
-  this.send(message);
+  });
 };
 
 /**
@@ -293,7 +286,7 @@ p.checkQueue = function (localSessionId, callback) {
     // If there is a waiting session, then pair them up.
     if (otherSessionId && otherSessionId !== localSessionId) {
       // Is this session still online?
-      self.thywill.clientTracker.sessionIsConnected(otherSessionId, function (error, isConnected) {
+      self.thywill.clientTracker.clientSessionIsConnected(otherSessionId, function (error, isConnected) {
         if (error) {
           callback(error);
           return;
@@ -363,10 +356,7 @@ p.notifyOfReconnectionIfNecessary = function (channelId, sessionId) {
         action: "reconnected"
       };
       sessionIds.forEach(function (id, index, array) {
-        var outgoingMessage = self.thywill.messageManager.createMessageToSession(
-          outgoingData, id, self.id
-        );
-        self.send(outgoingMessage);
+        self.sendToConnection(id, outgoingData);
       });
       asyncCallback();
     }
@@ -382,8 +372,9 @@ p.notifyOfReconnectionIfNecessary = function (channelId, sessionId) {
 /**
  * @see Application#connection
  */
-p.connection = function (connectionId, sessionId, session) {
+p.connection = function (client) {
   var self = this;
+  var sessionId = client.getSessionId();
   // Check to see if this client is already set up with a chat channel.
   this.thywill.channelManager.getChannelIdsForSession(sessionId, function (error, channelIds) {
     if (error) {
@@ -411,16 +402,18 @@ p.connection = function (connectionId, sessionId, session) {
 /**
  * @see Application#disconnection
  */
-p.disconnection = function (connectionId, sessionId) {
+p.disconnection = function (client) {
   var self = this;
   var channelId;
   var sessionIds = [];
+  var sessionId = client.getSessionId();
+  var connectionId = client.getConnectionId();
 
   var fns = {
     // If this session has other connections, we don't have to do anything
     // here. But we do have to at least check that.
     checkSessionStillConnected: function (asyncCallback) {
-      self.thywill.clientTracker.sessionIsConnected(sessionId, function (error, isConnected) {
+      self.thywill.clientTracker.clientSessionIsConnected(client, function (error, isConnected) {
         if (error) {
           asyncCallback(error);
         } else if (!isConnected) {
@@ -467,10 +460,7 @@ p.disconnection = function (connectionId, sessionId) {
         action: "disconnected"
       };
       sessionIds.forEach(function (id, index, array) {
-        var outgoingMessage = self.thywill.messageManager.createMessageToSession(
-          outgoingData, id, self.id
-        );
-        self.send(outgoingMessage);
+        self.sendToConnection(id, outgoingData);
       });
       asyncCallback();
     }

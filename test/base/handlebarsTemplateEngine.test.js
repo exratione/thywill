@@ -22,7 +22,6 @@ config.templateEngine = {
 var suite = tools.createVowsSuite("Base: templateEngine/handlebarsTemplateEngine", {
   config: config,
   applications: null,
-  useExpress: false,
   useRedis: false
 });
 tools.addBatches(suite, "handlebarsTemplateEngine", "general");

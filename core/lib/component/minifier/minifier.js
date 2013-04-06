@@ -36,7 +36,6 @@ p._getDependencies = function () {
       "cluster",
       "cacheManager",
       "resourceManager",
-      "messageManager",
       "templateEngine"
     ]
   };
