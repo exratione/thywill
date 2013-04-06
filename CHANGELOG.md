@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Work in Progress
-----------------
+v0.0.8 - 04/06/2013
+-------------------
 
   * Removed Varnish/Stunnel frontend option.
   * Removed client tracking functionality from ClientInterface component.
