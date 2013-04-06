@@ -143,7 +143,6 @@ Thywill.getBaseClass = (function () {
         case "ClientInterface":
         case "Cluster":
         case "Log":
-        case "MessageManager":
         case "Minifier":
         case "ResourceManager":
         case "TemplateEngine":
@@ -153,8 +152,11 @@ Thywill.getBaseClass = (function () {
         case "Cache":
           baseClasses[className] = require("./component/cacheManager/cache");
           break;
+        case "Client":
+          baseClasses[className] = require("./component/clientInterface/client");
+          break;
         case "Message":
-          baseClasses[className] = require("./component/messageManager/message");
+          baseClasses[className] = require("./component/clientInterface/message");
           break;
         case "Resource":
           baseClasses[className] = require("./component/resourceManager/resource");

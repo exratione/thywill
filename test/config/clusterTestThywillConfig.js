@@ -36,9 +36,17 @@ config.cluster = {
   redisPrefix: "test:thywill:cluster:"
 };
 
+// Use the Express implementation.
+config.clientInterface.implementation.name = "socketIoExpressClientInterface";
 // Set the http.Server instance and Express in the start script, not here.
 config.clientInterface.server.app = null;
 config.clientInterface.server.server = null;
+config.clientInterface.sessions = {
+  cookieSecret: "some long random string",
+  cookieKey: "sid",
+  // Will be set in the start script.
+  store: undefined
+};
 // Set the Socket.IO store instance in the start script as well.
 config.clientInterface.socketConfig.global.store = null;
 

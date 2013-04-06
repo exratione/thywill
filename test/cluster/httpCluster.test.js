@@ -42,7 +42,6 @@ config.cluster = {
 var suite = tools.createVowsSuiteForCluster("Cluster: cluster/redisCluster", {
   config: config,
   applications: null,
-  useExpress: true,
   useRedis: true
 });
 tools.addBatches(suite, "cluster", "cluster");

@@ -38,46 +38,78 @@ util.inherits(Application, Thywill.getBaseClass("Component"));
 var p = Application.prototype;
 
 //-----------------------------------------------------------
-// Methods: sending
+// Methods: sending messages and channels.
 //-----------------------------------------------------------
 
 /**
  * Send a message, usually to one specific client.
  *
- * @param {ServerMessage} message
- *   Instance of the ServerMessage class.
+ * @param {Client|string} client
+ *   Client instance or connection ID that will recieve the message.
+ * @param {mixed|Message} message
+ *   The message data.
  */
-p.send = function (message) {
-  this.thywill.clientInterface.send(message);
+p.sendToConnection = function (client, message) {
+  this.thywill.clientInterface.sendToConnection(this.id, client, message);
 };
 
 /**
- * A shortcut way of sending a message with default addressing and other
- * metadata. It goes to the client side of this application.
+ * Send a message to all the active connections associated with a session. This
+ * can only be used if a clientTracker component is configured.
  *
- * @param {mixed} data
- *   The data to be passed to the client.
- * @param {string} connectionId
- *   The ID of the client connection to send to.
- * @param {string} [type]
- *   Optionally, set the message type.
+ * @param {Client|string} client
+ *   Client instance or session ID that will recieve the message.
+ * @param {mixed|Message} message
+ *   The message data.
  */
-p.sendTo = function (data, connectionId, type) {
-  var messageManager = this.thywill.messageManager;
-  var message = messageManager.createMessage(data);
-  message.setConnectionId(connectionId);
-  message.setFromApplication(this.id);
-  message.setToApplication(this.id);
-  message.setDestination(messageManager.destinations.CLIENT);
-  message.setOrigin(messageManager.origins.SERVER);
-  if (type) {
-    message.setType(type);
-  }
-  this.send(message);
+p.sendToSession = function (client, message) {
+  this.thywill.clientInterface.sendToSession(this.id, client, message);
+};
+
+/**
+ * Send a message to all the active connections subscribed to a channel.
+ *
+ * @param {string} channelId
+ *   Unique ID for the channel that will recieve the message.
+ * @param {mixed|Message} message
+ *   The message data.
+ * @param {Client|string|array} [excludeClients]
+ *   Client instances or connection IDs to exclude from the broadcast.
+ */
+p.sendToChannel = function (channelId, message, excludeClients) {
+  this.thywill.clientInterface.sendToChannel(this.id, channelId, message, excludeClients);
+};
+
+/**
+ * Subscribe one or more connections to one or more channels.
+ *
+ * @param {Client|string|array} connectionIds
+ *   The Clients instances or connection IDs to be subscribed.
+ * @param {string|array} channelIds
+ *   One or more channel identifiers.
+ * @param {function} callback
+ *   Of the form function (error).
+ */
+p.subscribe = function (clients, channelIds, callback) {
+  this.thywill.clientInterface.subscribe(clients, channelIds, callback);
+};
+
+/**
+ * Unsubscribe one or more connections from one or more channels.
+ *
+ * @param {Client|string|array} connectionIds
+ *   The Clients instances or connection IDs to be unsubscribed.
+ * @param {string|array} channelIds
+ *   One or more channel identifiers.
+ * @param {function} callback
+ *   Of the form function (error).
+ */
+p.unsubscribe = function (clients, channelIds, callback) {
+  this.thywill.clientInterface.unsubscribe(clients, channelIds, callback);
 };
 
 //-----------------------------------------------------------
-// Methods: resources
+// Methods: resources.
 //-----------------------------------------------------------
 
 /**
@@ -182,9 +214,9 @@ p._setupListeners = function (callback) {
   var clientTracker = this.thywill.clientTracker;
 
   // The all-important listener for messages from clients.
-  clientInterface.on(clientInterface.events.FROM_CLIENT, function (message) {
-    if (message.getToApplication() === self.id) {
-      self.received(message);
+  clientInterface.on(clientInterface.events.FROM_CLIENT, function (client, applicationId, message) {
+    if (applicationId === self.id) {
+      self.receivedFromClient(client, message);
     }
   });
 
@@ -260,24 +292,23 @@ p._setup = function (callback) {
 /**
  * Called when a message is received from a client.
  *
+ * @param {Client} client
+ *   Client instance.
  * @param {Message} message
  *   Instance of the Message class.
  */
-p.received = function (message) {};
+p.receivedFromClient = function (client, message) {};
 
 /**
  * Called when a client connects or reconnects to this cluster member process.
  *
- * @param {string} connectionId
- *   Unique ID of the connection.
- * @param {string} sessionId
- *   Unique ID of the session associated with this connection - one session
- *   might have multiple concurrent connections.
+ * @param {Client} client
+ *   Client instance.
  * @param {Object} session
  *   The session. This will be null if the clientInterface component is
  *   configured not to use sessions.
  */
-p.connection = function (connectionId, sessionId, session) {};
+p.connection = function (client, session) {};
 
 /**
  * Called when a client connects or reconnects to any cluster member
@@ -287,24 +318,18 @@ p.connection = function (connectionId, sessionId, session) {};
  *
  * @param {string} clusterMemberId
  *   ID of the cluster member that has the new connection.
- * @param {string} connectionId
- *   Unique ID of the connection.
- * @param {string} sessionId
- *   Unique ID of the session associated with this connection - one session
- *   might have multiple concurrent connections.
+ * @param {Client} client
+ *   Client instance.
  */
-p.connectionTo = function (clusterMemberId, connectionId, sessionId) {};
+p.connectionTo = function (clusterMemberId, client) {};
 
 /**
  * Called when a client disconnects from this cluster member process.
  *
- * @param {string} connectionId
- *   Unique ID of the connection.
- * @param {string} sessionId
- *   Unique ID of the session associated with this connection - one session
- *   might have multiple concurrent connections.
+ * @param {Client} client
+ *   Client instance.
  */
-p.disconnection = function (connectionId, sessionId) {};
+p.disconnection = function (client) {};
 
 /**
  * Called when a client disconnects from any cluster member process.
@@ -313,13 +338,10 @@ p.disconnection = function (connectionId, sessionId) {};
  *
  * @param {string} clusterMemberId
  *   ID of the cluster member that has the new connection.
- * @param {string} connectionId
- *   Unique ID of the connection.
- * @param {string} sessionId
- *   Unique ID of the session associated with this connection - one session
- *   might have multiple concurrent connections.
+ * @param {Client} client
+ *   Client instance.
  */
-p.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {};
+p.disconnectionFrom = function (clusterMemberId, client) {};
 
 /**
  * Called when on of the other cluster members fails, and thus it can be

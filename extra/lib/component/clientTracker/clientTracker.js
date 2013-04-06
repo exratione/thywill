@@ -23,16 +23,16 @@ var Thywill = require("thywill");
  * clientTracker.on(clientTracker.events.CLUSTER_MEMBER_DOWN, function (clusterMemberId, connectionData) {});
  *
  * Emit on connection of a client to this cluster member.
- * clientTracker.on(clientTracker.events.CONNECTION, function (connectionId, sessionId, session) {});
+ * clientTracker.on(clientTracker.events.CONNECTION, function (client, session) {});
  *
  * Emit when a client disconnects from this or any other cluster member.
- * clientTracker.on(clientTracker.events.CONNECTION_TO, function (clusterMemberId, connectionId, sessionId) {});
+ * clientTracker.on(clientTracker.events.CONNECTION_TO, function (clusterMemberId, client {});
  *
  * Emit on disconnection of a client to this cluster member.
- * clientTracker.on(clientTracker.events.DISCONNECTION, function (connectionId, sessionId) {});
+ * clientTracker.on(clientTracker.events.DISCONNECTION, function (client) {});
  *
  * Emit when a client disconnects from this or any other cluster member.
- * clientTracker.on(clientTracker.events.DISCONNECTION_FROM, function (clusterMemberId, connectionId, sessionId) {});
+ * clientTracker.on(clientTracker.events.DISCONNECTION_FROM, function (clusterMemberId, client) {});
  */
 function ClientTracker() {
   ClientTracker.super_.call(this);
@@ -71,24 +71,24 @@ p._getDependencies = function () {
 /**
  * Is the specified client connected to any of the cluster's server processes?
  *
- * @param {string} connectionId
- *   The connection ID.
+ * @param {Client|string} client
+ *   A Client instance or connection ID.
  * @param {function} callback
  *   Of the form function (error, boolean).
  */
-p.clientIsConnected = function (connectionId, callback) {
+p.clientIsConnected = function (client, callback) {
   throw new Error("Not implemented.");
 };
 
 /**
  * Is the specified client connected to this process?
  *
- * @param {string} connectionId
- *   The connection ID.
+ * @param {Client|string} client
+ *   A Client instance or connection ID.
  * @param {function} callback
  *   Of the form function (error, boolean).
  */
-p.clientIsConnectedLocally = function (connectionId, callback) {
+p.clientIsConnectedLocally = function (client, callback) {
   throw new Error("Not implemented.");
 };
 
@@ -96,12 +96,12 @@ p.clientIsConnectedLocally = function (connectionId, callback) {
  * Are any clients with the specified session connected to any of the cluster's
  * server processes?
  *
- * @param {string} sessionId
- *   The connection ID.
+ * @param {Client|string} client
+ *   A Client instance or session ID.
  * @param {function} callback
  *   Of the form function (error, boolean).
  */
-p.sessionIsConnected = function (sessionId, callback) {
+p.clientSessionIsConnected = function (client, callback) {
   throw new Error("Not implemented.");
 };
 

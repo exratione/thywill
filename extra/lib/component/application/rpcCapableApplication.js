@@ -5,6 +5,7 @@
 
 var util = require("util");
 var Thywill = require("thywill");
+var Message = Thywill.getBaseClass("Message");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -31,19 +32,19 @@ function RpcCapableApplication (id) {
 
   // Hijack the RPC messages to process them here.
   var prototype = this.constructor.prototype;
-  if (!prototype._received) {
+  if (!prototype._receivedFromClient) {
     // this.received should be the right overridden function for this
     // instance.
-    prototype._received = this.received;
+    prototype._receivedFromClient = this.receivedFromClient;
 
     /**
      * @see Application#receive
      */
-    prototype.received = function (message) {
-      if (message.getType() === this.thywill.messageManager.types.RPC) {
-        this.rpc(message);
+    prototype.receivedFromClient = function (client, message) {
+      if (message.getType() === Message.TYPES.RPC) {
+        this.rpc(client, message);
       } else {
-        this._received(message);
+        this._receivedFromClient(client, message);
       }
     };
   }
@@ -69,25 +70,28 @@ RpcCapableApplication.RPC_ERRORS = {
  * A remote procedure call has arrived. Check permissions, invoke the
  * function if it exists and permissions exist, then return a response.
  *
+ * @param {Client} client
+ *   Client instance.
  * @param {Message} message
  *   The message containing the RPC data.
  */
-p.rpc = function (message) {
+p.rpc = function (client, message) {
   var self = this;
   var data = message.getData();
   var replyData = {
     id: data.id,
     cbArgs: []
   };
-  var replyMessage = this.thywill.messageManager.createReplyMessage(replyData, message);
+  var replyMessage = new Message(replyData);
+  replyMessage.setType(Message.TYPES.RPC);
 
   // Does this client connection have permissions for this specified name.
   // Note that bad names will give a no permissions error rather than a no
   // function error - this stops information leaking on what's in the server
   // code structure.
-  if (!this.rpcPermissionCheck(data.name, message.getConnectionId())) {
+  if (!this.rpcPermissionCheck(data.name, client.getConnectionId())) {
     replyData.cbArgs.push(this.rpcErrors.NO_PERMISSION);
-    this.send(replyMessage);
+    this.sendToConnection(client, replyMessage);
     return;
   }
 
@@ -96,7 +100,7 @@ p.rpc = function (message) {
   var functionData = this.getRpcFunctionAndContext(data.name);
   if (!functionData.fn) {
     replyData.cbArgs.push(this.rpcErrors.NO_FUNCTION);
-    this.send(replyMessage);
+    this.sendToConnection(client, replyMessage);
     return;
   }
 
@@ -108,7 +112,7 @@ p.rpc = function (message) {
       for (var index = 0, length = arguments.length; index < length; index++) {
         replyData.cbArgs.push(arguments[index]);
       }
-      self.send(replyMessage);
+      self.sendToConnection(client, replyMessage);
     });
     functionData.fn.apply(functionData.context, args);
   } else {
@@ -119,7 +123,7 @@ p.rpc = function (message) {
     } catch (error) {
       replyData.cbArgs.push(error.message);
     }
-    this.send(replyMessage);
+    this.sendToConnection(client, replyMessage);
   }
 };
 

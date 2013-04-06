@@ -24,7 +24,6 @@ var bootstrapManifest = require("./bootstrapManifest");
  */
 function Draw (id) {
   Draw.super_.call(this, id);
-
   // The channel used to broadcast draw data.
   this.channelId = "draw";
 }
@@ -73,22 +72,14 @@ p._defineBootstrapResources = function (callback) {
   async.series(fns, callback);
 };
 
-/**
- * @see Application#_setup
- */
-p._setup = function (callback) {
-  // No setup is needed here, since this is a very simple example application.
-  callback();
-};
-
 //-----------------------------------------------------------
 // Methods
 //-----------------------------------------------------------
 
 /**
- * @see Application#receive
+ * @see Application#receivedFromClient
  */
-p.received = function (message) {
+p.receivedFromClient = function (client, message) {
   // Data for a created path from paper.js.
   var data = message.getData();
 
@@ -102,25 +93,17 @@ p.received = function (message) {
 
   // Create a broadcast message to send the data for this path to all connected
   // clients except the one that sent this message.
-  var messageManager = this.thywill.messageManager;
-  var broadcastMessage = messageManager.createMessage(data);
-  broadcastMessage.setChannelId(this.channelId);
-  broadcastMessage.setConnectionId(message.getConnectionId());
-  broadcastMessage.setFromApplication(this.id);
-  broadcastMessage.setToApplication(this.id);
-  broadcastMessage.setOrigin(messageManager.origins.SERVER);
-  broadcastMessage.setDestination(messageManager.destinations.CLIENT);
-  this.send(broadcastMessage);
+  this.sendToChannel(this.channelId, data, [client]);
 };
 
 /**
  * @see Application#connection
  */
-p.connection = function (connectionId, sessionId, session) {
+p.connection = function (client) {
   var self = this;
-  this.thywill.log.debug("Draw: Client connected: " + connectionId);
+  this.thywill.log.debug("Draw: Client connected: " + client.getConnectionId());
   // Every client is subscribed to the same channel, used to broadcast updates.
-  this.thywill.clientInterface.subscribe(connectionId, this.channelId, function (error) {
+  this.subscribe(client, this.channelId, function (error) {
     if (error) {
       self.thywill.log.error(error);
     }
@@ -130,9 +113,9 @@ p.connection = function (connectionId, sessionId, session) {
 /**
  * @see Application#disconnection
  */
-p.disconnection = function (connectionId, sessionId) {
+p.disconnection = function (client) {
   // Do nothing except log it.
-  this.thywill.log.debug("Draw: Client disconnected: " + connectionId);
+  this.thywill.log.debug("Draw: Client disconnected: " + client.getConnectionId());
 };
 
 //-----------------------------------------------------------

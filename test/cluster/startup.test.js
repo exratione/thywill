@@ -14,7 +14,6 @@ var config = clone(clusterConfig);
 var suite = tools.createVowsSuiteForCluster("Cluster: Startup Thywill", {
   config: config,
   applications: null,
-  useExpress: true,
   useRedis: true
 });
 

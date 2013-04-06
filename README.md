@@ -65,12 +65,97 @@ A Thywill application implements the necessary server and client interfaces to:
   * Add Javascript, CSS, and other resources to be loaded by a client
 
 The example applications found under /applications demonstrate how this is
-accomplished by extending the Application class on the server and the
-ApplicationInterface class on the client.
+accomplished by:
+
+  * Inheriting from the Application class on the server
+  * Inheriting from the ApplicationInterface class on the client
+  * Writing a suitable main Thywill configuration file
+  * Writing templates and CSS that define the user interface
+  * Defining the manifest of resources for initial delivery to the client
+  * Cloning and customizing a launch script
 
 Beyond this minimum, a Thywill application can contain any arbitrary code. It
 does its thing, while Thywill manages the message transport between server and
 client.
+
+Sending Messages From Server to Client
+--------------------------------------
+
+In an Application class method, a message can be sent to a specific client
+connection as follows:
+
+    MyApplication.prototype.sendSomething = function (connectionId) {
+      this.sendToConnection(connectionId, {
+        // Data sent with the message goes here.
+      });
+    }
+
+If you have a ClientTracker component enabled (see below), then you can also
+send to all the connections associated with a particular session:
+
+    MyApplication.prototype.sendSomething = function (sessionId) {
+      this.sendToSession(sessionId, {
+        // Data sent with the message goes here.
+      });
+    }
+
+You can also subscribe connections to a channel and publish messages to that
+channel:
+
+    MyApplication.prototype.sendSomething = function (connectionId) {
+      var channelId = "someChannel";
+      this.subscribe(connectionId, channelId, function (error) {
+        if (error) {
+          this.thywill.log.error(error);
+        } else {
+          // Send a message to everyone in the channel.
+          this.sendToChannel(channelId, {
+            // Data sent with the message goes here.
+          });
+        }
+      });
+    }
+
+The connection will remain in the channel until unsubscribed or disconnected.
+To persist subscriptions past a single connection, you must use the
+ChannelManager component described in its own section below. That allows for
+subscribing sessions to channels, such that each new connection associated with
+the session is auto-subscribed.
+
+Receiving Messages at the Client
+--------------------------------
+
+A child class of ApplicationInterface on the client side must implement the
+received() method, as this is invoked whenever a message arrives from the
+server:
+
+    // Message is an instance of Thywill.Message.
+    MyApplicationInterface.prototype.received = function (message) {
+      // This obtains the data sent from the server.
+      var data = message.getData();
+    };
+
+Sending Messages From the Client
+--------------------------------
+
+Sending a message back to the server Application implementation is just as
+easy:
+
+    MyApplicationInterface.prototype.sendSomething = function (data) {
+      this.send(data);
+    };
+
+Receiving Messages at the Server
+--------------------------------
+
+A server Application class must implement the recievedFromConnection() method,
+as it is invoked whenever a message arrives from a client:
+
+    // Client is an instance of the Client class.
+    // Message is an instance of the Message class.
+    MyApplication.prototype.receivedFromClient = function (client, message) {
+      // Do something here.
+    };
 
 Clustering
 ----------
@@ -151,8 +236,8 @@ example, on application setup listen on the cluster for specific events:
       callback();
     };
 
-Then anywhere in application code that event can be triggered in other cluster
-processes:
+Then anywhere in application class method code that event can be triggered in
+other cluster processes:
 
     // Task data is any object.
     var taskData = {
@@ -172,9 +257,9 @@ A server-side Application instance is notified whenever a client connects or
 disconnects to the local process:
 
     // Invoked whenever a client connects to this process.
-    Application.prototype.connection = function (connectionId, sessionId, session) {};
+    Application.prototype.connection = function (client) {};
     // Invoked whenever a client disconnects from this process.
-    Application.prototype.disconnection = function (connectionId, sessionId) {};
+    Application.prototype.disconnection = function (client) {};
 
 If the optional ClientTracker component is added to the main Thywill
 configuration, and if the Cluster implementation allows for communication
@@ -182,9 +267,9 @@ between cluster members, then an Application will also be notified whenever a
 client connects or disconnects to any process in the cluster:
 
     // Invoked whenever a client connects to any process in the cluster.
-    Application.prototype.connectionTo = function (clusterMemberId, connectionId, sessionId) {};
+    Application.prototype.connectionTo = function (clusterMemberId, client) {};
     // Invoked whenever a client disconnects from any process in the cluster.
-    Application.prototype.disconnectionFrom = function (clusterMemberId, connectionId, sessionId) {};
+    Application.prototype.disconnectionFrom = function (clusterMemberId, client) {};
 
 If using a ClientTracker, there is also a notification for any mass
 disconnection resulting from server process crash or restart. Bear in mind that
@@ -203,7 +288,7 @@ can call this method:
 
     // isConnected will be true if the client is connected to any of the
     // cluster processes.
-    this.thywill.clientTracker.clientIsConnected(connectionId, function (error, isConnected) {
+    this.thywill.clientTracker.clientIsConnected(client, function (error, isConnected) {
       if (isConnected) {
         console.log(connectionId + " is connected.");
       }
@@ -213,7 +298,7 @@ The same thing works for sessions:
 
     // isConnected will be true if this session has one or more clients
     // connected to any of the cluster processes.
-    this.thywill.clientTracker.sessionIsConnected(sessionId, function (error, isConnected) {
+    this.thywill.clientTracker.clientSessionIsConnected(client, function (error, isConnected) {
       if (isConnected) {
         console.log(sessionId + " is connected.");
       }
@@ -255,9 +340,9 @@ application by adding the following to the main configuration object:
     };
 
 
-Adding sessions to a channel in application code is as shown below. Connections
-for these sessions will be added to the channel as subscribers there and then,
-and when they occur in the future.
+Adding sessions to a channel in application class method code is as shown
+below. Connections for these sessions will be added to the channel as
+subscribers there and then, and when they occur in the future.
 
     var self = this;
     var sessionIds = [sessionId1, sessionId2];
@@ -267,14 +352,11 @@ and when they occur in the future.
       }
     });
 
-Publishing a message to the channel in your application code:
+Publishing a message to the channel in any application class method code:
 
-    var applicationId = this.id;
-    var data = {
-      name: "value"
-    };
-    var message = this.thywill.messageManager.createMessageToChannel(data, channelId, applicationId);
-    this.send(message);
+    this.sendToChannel(channelId, {
+      name: "value";
+    });
 
 You can see simple examples of the use of channels in the Chat example
 application, found under /applications/chat/.

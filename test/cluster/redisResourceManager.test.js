@@ -16,7 +16,6 @@ var config = clone(clusterConfig);
 var suite = tools.createVowsSuiteForCluster("Cluster: resourceManager/redisResourceManager", {
   config: config,
   applications: null,
-  useExpress: true,
   useRedis: true
 });
 tools.addBatches(suite, "resourceManager", "general");

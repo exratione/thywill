@@ -17,13 +17,13 @@ var Thywill = require("thywill");
  * ClientInterface implementations must emit the following events:
  *
  * Emit when a message arrives from a client.
- * clientInterface.on(clientInterface.events.FROM_CLIENT, function (message) {});
+ * clientInterface.on(clientInterface.events.FROM_CLIENT, function (client, applicationId, message) {});
  *
  * Emit on connection of a client to this cluster process.
- * clientInterface.on(clientInterface.events.CONNECTION, function (connectionId, sessionId, session) {});
+ * clientInterface.on(clientInterface.events.CONNECTION, function (client) {});
  *
  * Emit on disconnection of a client from this cluster process.
- * clientInterface.on(clientInterface.events.DISCONNECTION, function (connectionId, sessionId) {});
+ * clientInterface.on(clientInterface.events.DISCONNECTION, function (client) {});
  */
 function ClientInterface () {
   ClientInterface.super_.call(this);
@@ -58,7 +58,6 @@ p._getDependencies = function () {
       "cluster",
       "cacheManager",
       "resourceManager",
-      "messageManager",
       "templateEngine",
       "minifier"
     ]
@@ -80,21 +79,106 @@ p._startup = function (callback) {
   throw new Error("Not implemented.");
 };
 
+//-----------------------------------------------------------
+// Relating to sending messages and channels.
+//-----------------------------------------------------------
+
 /**
- * Send a message out to either:
+ * Send a message, usually to one specific client.
  *
- * - A client connection.
- * - All the client connections for a session.
- * - A channel with many subscribed connections.
- *
- * Which of these options is used depends on the ServerMessage metadata.
- * See the MessageManager component for convenience methods to create
- * ServerMessage instances with the appropriate addressing metadata.
- *
- * @param {ServerMessage} message
- *   A ServerMessage instance.
+ * @param {string} applicationId
+ *   Application that the message is associated with.
+ * @param {Client|string} client
+ *   Client instance or connection ID that will receive the message.
+ * @param {mixed|Message} message
+ *   The message data.
  */
-p.send = function (message) {
+p.sendToConnection = function (applicationId, client, message) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * Send a message to all the active connections associated with a session. This
+ * can only be used if a clientTracker component is configured.
+ *
+ * @param {string} applicationId
+ *   Application that the message is associated with.
+ * @param {Client|string} client
+ *   Client instance or session ID that will receive the message.
+ * @param {mixed|Message} message
+ *   The message data.
+ */
+p.sendToSession = function (applicationId, client, message) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * Send a message to all the active connections subscribed to a channel.
+ *
+ * @param {string} applicationId
+ *   Application that the message is associated with.
+ * @param {string} channelId
+ *   Unique ID for the channel that will receive the message.
+ * @param {mixed|Message} message
+ *   The message data.
+ * @param {Client|string|array} [excludeClients]
+ *   Client instances or connection IDs to exclude from the broadcast.
+ */
+p.sendToChannel = function (applicationId, channelId, message, excludeClients) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * Subscribe one or more connections to one or more channels.
+ *
+ * @param {Client|string|array} clients
+ *   The Client instances or connection IDs to be subscribed.
+ * @param {string|array} channelIds
+ *   One or more channel identifiers.
+ * @param {function} callback
+ *   Of the form function (error).
+ */
+p.subscribe = function (clients, channelIds, callback) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * Unsubscribe one or more connections from one or more channels.
+ *
+ * @param {Client|string|array} clients
+ *   The Client instances or connection IDs to be subscribed.
+ * @param {string|array} channelIds
+ *   One or more channel identifiers.
+ * @param {function} callback
+ *   Of the form function (error).
+ */
+p.unsubscribe = function (clients, channelIds, callback) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * If set to use sessions, load the session for this client.
+ *
+ * @param {Client|string} client
+ *   Client instance or session ID.
+ * @param {function} callback
+ *   Of the form function (error, session).
+ */
+p.loadSession = function (client, callback) {
+  throw new Error("Not implemented.");
+};
+
+/**
+ * If set to use sessions, store the session for this client.
+ *
+ * @param {Client|string} client
+ *   Client instance or session ID.
+ * @param {mixed} session
+ *   A session instance.
+ * @param {function} callback
+ *   Of the form function (error).
+ */
+p.storeSession = function (client, session, callback) {
   throw new Error("Not implemented.");
 };
 
@@ -151,38 +235,6 @@ p.storeResource = function (resource, callback) {
  *   be returned.
  */
 p.getResource = function (clientPath, callback) {
-  throw new Error("Not implemented.");
-};
-
-//-----------------------------------------------------------
-// Relating to publish / subscribe.
-//-----------------------------------------------------------
-
-/**
- * Subscribe one or more connections to one or more channels.
- *
- * @param {string|array} connectionIds
- *   The connection IDs to be subscribed.
- * @param {string|array} channelIds
- *   One or more channel identifiers.
- * @param {function} callback
- *   Of the form function (error).
- */
-p.subscribe = function (connectionIds, channelIds, callback) {
-  throw new Error("Not implemented.");
-};
-
-/**
- * Unsubscribe one or more connections from one or more channels.
- *
- * @param {string|array} connectionIds
- *   The connection IDs to be subscribed.
- * @param {string|array} channelIds
- *   One or more channel identifiers.
- * @param {function} callback
- *   Of the form function (error).
- */
-p.unsubscribe = function (connectionIds, channelIds, callback) {
   throw new Error("Not implemented.");
 };
 

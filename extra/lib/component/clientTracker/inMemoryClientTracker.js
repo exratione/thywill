@@ -5,6 +5,7 @@
 
 var util = require("util");
 var Thywill = require("thywill");
+var Client = Thywill.getBaseClass("Client");
 
 //-----------------------------------------------------------
 // Class Definition
@@ -60,11 +61,11 @@ p._configure = function (thywill, config, callback) {
 
   var clientInterface = this.thywill.clientInterface;
   var localClusterMemberId = this.thywill.cluster.getLocalClusterMemberId();
-  clientInterface.on(clientInterface.events.CONNECTION, function (connectionId, sessionId, session) {
-    self._reactToConnectionTo(localClusterMemberId, connectionId, sessionId);
+  clientInterface.on(clientInterface.events.CONNECTION, function (client) {
+    self._reactToConnectionTo(localClusterMemberId, client);
   });
-  clientInterface.on(clientInterface.events.DISCONNECTION, function (connectionId, sessionId, session) {
-    self._reactToDisconnectionFrom(localClusterMemberId, connectionId, sessionId);
+  clientInterface.on(clientInterface.events.DISCONNECTION, function (client) {
+    self._reactToDisconnectionFrom(localClusterMemberId, client);
   });
 
   // -----------------------------------------------------------------
@@ -101,11 +102,13 @@ p._configure = function (thywill, config, callback) {
   });
   // Connection notice from another cluster member.
   this.thywill.cluster.on(this.clusterTask.connectionTo, function (data) {
-    self._reactToConnectionTo(data.clusterMemberId, data.connectionId, data.sessionId);
+    var client = new Client(data.client);
+    self._reactToConnectionTo(data.clusterMemberId, client);
   });
   // Disconnection notice from another cluster member.
   this.thywill.cluster.on(this.clusterTask.disconnectionFrom, function (data) {
-    self._reactToDisconnectionFrom(data.clusterMemberId, data.connectionId, data.sessionId);
+    var client = new Client(data.client);
+    self._reactToDisconnectionFrom(data.clusterMemberId, client);
   });
   // Delivery of connection data from another server.
   this.thywill.cluster.on(this.clusterTask.connectionData, function (data) {
@@ -143,8 +146,9 @@ p._configure = function (thywill, config, callback) {
 /**
  * @see ClientTracker#clientIsConnected
  */
-p.clientIsConnected = function (connectionId, callback) {
+p.clientIsConnected = function (client, callback) {
   var self = this;
+  var connectionId = this._clientOrConnectionIdToConnectionId(client);
   var connected = Object.keys(this.connections).some(function (clusterMemberId, index, array) {
     return self.connections[clusterMemberId].connections[connectionId];
   });
@@ -154,7 +158,8 @@ p.clientIsConnected = function (connectionId, callback) {
 /**
  * @see ClientTracker#clientIsConnectedLocally
  */
-p.clientIsConnectedLocally = function (connectionId, callback) {
+p.clientIsConnectedLocally = function (client, callback) {
+  var connectionId = this._clientOrConnectionIdToConnectionId(client);
   var clusterMemberId = this.thywill.cluster.getLocalClusterMemberId();
   var connected = (this.connections[clusterMemberId].connections[connectionId] !== undefined);
   callback (this.NO_ERRORS, connected);
@@ -163,8 +168,9 @@ p.clientIsConnectedLocally = function (connectionId, callback) {
 /**
  * @see ClientTracker#sessionIsConnected
  */
-p.sessionIsConnected = function (sessionId, callback) {
+p.clientSessionIsConnected = function (client, callback) {
   var self = this;
+  var sessionId = this._clientOrSessionIdToSessionId(client);
   var connected = Object.keys(this.connections).some(function (clusterMemberId, index, array) {
     return self.connections[clusterMemberId].sessions[sessionId];
   });
@@ -206,7 +212,10 @@ p.getConnectionData = function (callback) {
  * @param {string} [session]
  *   Session data - only provided for local connections.
  */
-p._reactToConnectionTo = function(clusterMemberId, connectionId, sessionId, session) {
+p._reactToConnectionTo = function(clusterMemberId, client) {
+  var connectionId = client.connectionId;
+  var sessionId = client.sessionId;
+
   // Update the local records.
   var data = this.connections[clusterMemberId];
   data.connections[connectionId] = Date.now();
@@ -221,13 +230,10 @@ p._reactToConnectionTo = function(clusterMemberId, connectionId, sessionId, sess
   // Emit tracking events and notify other cluster members, depending on
   // whether this is a connection to the local process or not.
   if (this.thywill.cluster.getLocalClusterMemberId() === clusterMemberId) {
-    this.thywill.cluster.sendToOthers(this.clusterTask.connectionTo, {
-      connectionId: connectionId,
-      sessionId: sessionId
-    });
-    this.emit(this.events.CONNECTION, connectionId, sessionId, session);
+    this.thywill.cluster.sendToOthers(this.clusterTask.connectionTo, client.toData());
+    this.emit(this.events.CONNECTION, client);
   }
-  this.emit(this.events.CONNECTION_TO, clusterMemberId, connectionId, sessionId);
+  this.emit(this.events.CONNECTION_TO, clusterMemberId, client);
 };
 
 /**
@@ -241,7 +247,10 @@ p._reactToConnectionTo = function(clusterMemberId, connectionId, sessionId, sess
  *   Unique ID of the session associated with this connection - one session
  *   might have multiple concurrent connections.
  */
-p._reactToDisconnectionFrom = function(clusterMemberId, connectionId, sessionId) {
+p._reactToDisconnectionFrom = function(clusterMemberId, client) {
+  var connectionId = client.connectionId;
+  var sessionId = client.sessionId;
+
   // Update the local records.
   var data = this.connections[clusterMemberId];
   delete data.connections[connectionId];
@@ -256,13 +265,10 @@ p._reactToDisconnectionFrom = function(clusterMemberId, connectionId, sessionId)
   // Emit tracking events and notify other cluster members, depending on
   // whether this is a connection to the local process or not.
   if (this.thywill.cluster.getLocalClusterMemberId() === clusterMemberId) {
-    this.thywill.cluster.sendToOthers(this.clusterTask.disconnectionFrom, {
-      connectionId: connectionId,
-      sessionId: sessionId
-    });
-    this.emit(this.events.DISCONNECTION, connectionId, sessionId);
+    this.thywill.cluster.sendToOthers(this.clusterTask.disconnectionFrom, client.toData());
+    this.emit(this.events.DISCONNECTION, client);
   }
-  this.emit(this.events.DISCONNECTION_FROM, clusterMemberId, connectionId, sessionId);
+  this.emit(this.events.DISCONNECTION_FROM, clusterMemberId, client);
 };
 
 /**
@@ -298,6 +304,35 @@ p._clearConnectionDataForClusterMember = function (clusterMemberId) {
     sessions: {}
   };
 };
+
+/**
+ * Return a connection ID if given a Client instance or a connection ID.
+ *
+ * @param {Client|string} clientOrConnectionId
+ *   Client instance or connection ID.
+ */
+p._clientOrConnectionIdToConnectionId = function (clientOrConnectionId) {
+  if (clientOrConnectionId instanceof Client) {
+    return clientOrConnectionId.getSessionId();
+  } else {
+    return clientOrConnectionId;
+  }
+};
+
+/**
+ * Return a session ID if given a Client instance or a session Id.
+ *
+ * @param {Client|string} clientOrSessionId
+ *   Client instance or session ID.
+ */
+p._clientOrSessionIdToSessionId = function (clientOrSessionId) {
+  if (clientOrSessionId instanceof Client) {
+    return clientOrSessionId.getSessionId();
+  } else {
+    return clientOrSessionId;
+  }
+};
+
 
 //-----------------------------------------------------------
 // Exports - Class Constructor

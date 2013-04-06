@@ -8,6 +8,9 @@ Work in Progress
   * Removed client tracking functionality from ClientInterface component.
   * Created ClientTracker component and in-memory implementation.
   * Added rudimentary dependency declaration in component implementations.
+  * Removed the MessageManager and refactored sending interface for simplicity.
+  * Replaced connection ID and session ID parameters with Client instances.
+  * Refactored SocketIoClientInterface to create SocketIoExpressClientInterface.
 
 v0.0.7 - 04/01/2013
 -------------------

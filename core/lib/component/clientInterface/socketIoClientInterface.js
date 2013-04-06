@@ -5,7 +5,6 @@
 
 var util = require("util");
 var fs = require("fs");
-var crypto = require("crypto");
 var urlHelpers = require("url");
 var pathHelpers = require("path");
 var async = require("async");
@@ -13,7 +12,8 @@ var handlebars = require("handlebars");
 var io = require("socket.io");
 var send = require("send");
 var Thywill = require("thywill");
-var Message = require("../messageManager/message");
+var Message = require("./message");
+var Client = require("./client");
 
 // -----------------------------------------------------------
 // Class Definition
@@ -30,14 +30,14 @@ var Message = require("../messageManager/message");
  *
  * 1) Set up the Resources delivered to the client on the initial page load.
  * 2) Deliver messages between client and server via websockets.
+ *
+ * This implementation does not provide sessions; client information uses
+ * connection IDs as session IDs and includes no session instance.
  */
 function SocketIoClientInterface () {
   SocketIoClientInterface.super_.call(this);
   this.socketFactory = null;
   this.bootstrapResourceClientPaths = [];
-
-  // Convenience reference.
-  this.SESSION_TYPE = SocketIoClientInterface.SESSION_TYPE;
 }
 util.inherits(SocketIoClientInterface, Thywill.getBaseClass("ClientInterface"));
 var p = SocketIoClientInterface.prototype;
@@ -45,11 +45,6 @@ var p = SocketIoClientInterface.prototype;
 // -----------------------------------------------------------
 // "Static" parameters
 // -----------------------------------------------------------
-
-SocketIoClientInterface.SESSION_TYPE = {
-  NONE: "none",
-  EXPRESS: "express"
-};
 
 SocketIoClientInterface.CONFIG_TEMPLATE = {
   baseClientPath: {
@@ -88,52 +83,11 @@ SocketIoClientInterface.CONFIG_TEMPLATE = {
     }
   },
   server: {
-    app: {
-      _configInfo: {
-        description: "An Express application instance.",
-        types: "function",
-        required: false
-      }
-    },
     server: {
       _configInfo: {
         description: "An http.Server instance.",
         types: "object",
         required: true
-      }
-    }
-  },
-  sessions: {
-    type: {
-      _configInfo: {
-        description: "The type of session management being used.",
-        types: "string",
-        allowedValues: [
-          SocketIoClientInterface.SESSION_TYPE.NONE,
-          SocketIoClientInterface.SESSION_TYPE.EXPRESS
-        ],
-        required: true
-      }
-    },
-    store: {
-      _configInfo: {
-        description: "For Express sessions: the session store instance.",
-        types: "object",
-        required: false
-      }
-    },
-    cookieKey: {
-      _configInfo: {
-        description: "For Express sessions: The name used for session cookies.",
-        types: "string",
-        required: false
-      }
-    },
-    cookieSecret: {
-      _configInfo: {
-        description: "For Express sessions: The secret value used for session cookies.",
-        types: "string",
-        required: false
       }
     }
   },
@@ -225,44 +179,25 @@ p._configure = function (thywill, config, callback) {
  * Start the client interface running. This is the final function called during
  * the Thywill launch, once everything else is in place and ready.
  *
- * 1) If using Express, set up a middleware to ensure that Resources will be
- * served via Express regardless of the present or future state of routes and
- * middleware.
- *
- * 2) If not using Express, set up a suitable listener on the server instance
- * to serve Resources.
- *
- * 3) Set up Socket.IO on the server instance.
- *
  * @param {Function} callback
  *   Of the form function (error).
  */
 p._startup = function (callback) {
+  this._setHttpServerToServeResources();
+  this._initializeSocketIo();
+  this._setupBootstrapResources(callback);
+};
+
+/**
+ * Assemble all of the bootstrap resources to be delivered to the client on the
+ * first page load.
+ *
+ * @param {Function} callback
+ *   Of the form function (error).
+ */
+p._setupBootstrapResources = function (callback) {
   var self = this;
   var resourceManager = this.thywill.resourceManager;
-
-  // --------------------------------------------------------------------------
-  // Set up the http.Server or Express if present.
-  // --------------------------------------------------------------------------
-
-  if (this.config.server.app) {
-    this._setExpressToServeResources();
-  } else {
-    this._setHttpServerToServeResources();
-  }
-
-  // --------------------------------------------------------------------------
-  // Set up Socket.IO.
-  // --------------------------------------------------------------------------
-
-  this._initializeSocketIo();
-  if (this.config.sessions.type === this.SESSION_TYPE.EXPRESS) {
-    this._attachExpressSessionsToSockets();
-  }
-
-  // --------------------------------------------------------------------------
-  // Set up the bootstrap resources for Thywill main page requests.
-  // --------------------------------------------------------------------------
 
   // Set up an array of functions to be executed in series that will build the
   // array of bootstrap resources needed for the main Thywill page.
@@ -464,113 +399,37 @@ p._startup = function (callback) {
 p._setHttpServerToServeResources = function () {
   var self = this;
 
-  // Grab the listeners on the server object:
+  // Remove all existing listeners from the server, while keeping a copy of
+  // them.
   this.serverListeners = this.config.server.server.listeners("request").splice(0);
+
+  /**
+   * Helper function - send the request on to other listeners.
+   */
+  function passToOtherListeners (req, res) {
+    self.serverListeners.forEach(function (listener, index, array) {
+      listener.call(self.config.server.server, req, res);
+    });
+  }
 
   // Set our own listener to manage resource requests.
   this.config.server.server.on("request", function (req, res) {
     // Is this request in the right base path?
-    var handled = false;
-    if (req.url.match(self.config.baseClientPathRegExp)) {
-      // But do we have a resource for this?
-      var requestData = urlHelpers.parse(req.url);
-      self.getResource(requestData.pathname, function (error, resource) {
-        // If there's an error or a resource, handle it.
-        if (error || resource) {
-          handled = true;
-          self.handleResourceRequest(req, res, null, error, resource);
-          return;
-        }
-      });
-    }
-    // Otherwise pass it to the other listeners.
-    if (!handled) {
-      self.serverListeners.forEach(function (listener, index, array) {
-        listener.call(self.config.server.server, req, res);
-      });
-    }
-  });
-};
-
-/**
- * Add middleware to Express to ensure that it will serve Resources regardless
- * of current or future addition of routes or middleware.
- *
- * This involves being a little devious.
- */
-p._setExpressToServeResources = function () {
-  var self = this;
-  var express = require("express");
-
-  // This middleware essentially performs the action of a route. This is a way
-  // to ensure that Thywill routes will run no matter the order in which
-  // routes or middleware are added.
-  var middleware = function (req, res, next) {
-    // Is this request in the right base path?
-    if (req.path.match(self.config.baseClientPathRegExp)) {
-      // But do we have a resource for this?
-      self.getResource(req.path, function (error, resource) {
-        // If there's an error or a resource, handle it.
-        if (error || resource) {
-          self.handleResourceRequest(req, res, next, error, resource);
-        } else {
-          // Otherwise, onwards and let Express take over.
-          next();
-        }
-      });
-    } else {
-      // Otherwise, onwards and let Express take over.
-      next();
-    }
-  };
-
-  // Add the middleware.
-  middleware.isThywill = true;
-  this.config.server.app.use(middleware);
-
-  /**
-   * Put the Thywill middleware in the right place in the Express stack,
-   * which should be last before the router. At the time this is called,
-   * the router middleware may or may not have been added, and other
-   * middleware may also later be added.
-   */
-  function positionMiddleware () {
-    // The stack wil be at least length 1, as the Thywill middleware has been put there
-    // before this function is called.
-    var desiredIndex = self.config.server.app.stack.length - 1;
-    // Get the index of the router. Should be last, but if we can add
-    // middleware out of sequence, so can other people.
-    for (var index = 0; index < self.config.server.app.stack.length; index++) {
-      // TODO: a less sketchy way of identifying the router middleware.
-      if (self.config.server.app.stack[index].handle === self.config.server.app._router.middleware) {
-        // If the router middleware is added, then routes have been
-        // added, and thus no more middleware will be added.
-        clearInterval(positionMiddlewareIntervalId);
-        desiredIndex = index;
-        break;
-      }
-    }
-
-    // If it is already in the right place, then we're good.
-    if(self.config.server.app.stack[desiredIndex].handle.isThywill) {
+    if (!req.url.match(self.config.baseClientPathRegExp)) {
+      passToOtherListeners(req, res);
       return;
     }
-
-    // Otherwise, remove from the present position.
-    var stackItem;
-    self.config.server.app.stack = self.config.server.app.stack.filter(function (element, index, array) {
-      if (element.handle.isThywill) {
-        stackItem = element;
+    // But do we have a resource for this?
+    var requestData = urlHelpers.parse(req.url);
+    self.getResource(requestData.pathname, function (error, resource) {
+      // If there's an error or a resource, handle it.
+      if (error || resource) {
+        self.handleResourceRequest(req, res, error, resource);
+      } else {
+        passToOtherListeners(req, res);
       }
-      return !element.handle.isThywill;
     });
-
-    // Insert it into the relevant place.
-    self.config.server.app.stack.splice(desiredIndex, 0, stackItem);
-  }
-  // This will run until the Router middleware is added, which happens
-  // when the first route is set.
-  var positionMiddlewareIntervalId = setInterval(positionMiddleware, 100);
+  });
 };
 
 /**
@@ -623,57 +482,6 @@ p._initializeSocketIo = function () {
   });
 };
 
-/**
- * This is how we attach Express sessions to the sockets. The result is that
- * socket.handshake.session holds the session, and socket.handshake.sessionId
- * has the session ID.
- *
- * This code was adapted from:
- * https://github.com/alphapeter/socket.io-express
- */
-p._attachExpressSessionsToSockets = function () {
-  var self = this;
-  var express = require("express");
-  var cookieParser = express.cookieParser(this.config.sessions.cookieSecret);
-  // We're using the authorization hook, but there is no authorizing going on
-  // here - we're only attaching the session to the socket handshake.
-  this.socketFactory.set("authorization", function (data, callback) {
-    if (data && data.headers && data.headers.cookie) {
-      cookieParser(data, {}, function (error) {
-        if (error) {
-          self.thywill.debug(error);
-          callback("COOKIE_PARSE_ERROR", false);
-          return;
-        }
-
-        var sessionId = data.signedCookies[self.config.sessions.cookieKey];
-        self.config.sessions.store.get(sessionId, function (error, session) {
-          // Add the sessionId. This will show up in
-          // socket.handshake.sessionId.
-          //
-          // It's useful to set the ID and session separately because of
-          // those fun times when you have an ID but no session - it makes
-          // debugging that much easier.
-          data.sessionId = sessionId;
-          if (error) {
-            self.thywill.debug(error);
-            callback("ERROR", false);
-          } else if (!session) {
-            callback("NO_SESSION", false);
-          } else {
-            // Add the session. This will show up in
-            // socket.handshake.session.
-            data.session = session;
-            callback(null, true);
-          }
-        });
-      });
-    } else {
-      callback("NO_COOKIE", false);
-    }
-  });
-};
-
 // -----------------------------------------------------------
 // Connection and serving data methods
 // -----------------------------------------------------------
@@ -690,7 +498,6 @@ p._attachExpressSessionsToSockets = function () {
  */
 p.initializeNewSocketConnection = function (socket) {
   var self = this;
-  var messageManager = self.thywill.messageManager;
   var data = this.connectionDataFromSocket(socket);
 
   // If we're sending via pub/sub, then sign this socket up for its own channel.
@@ -701,19 +508,22 @@ p.initializeNewSocketConnection = function (socket) {
   /**
    * A message arrives and the raw data object from Socket.IO code is passed in.
    */
-  socket.on("fromClient", function (rawMessage) {
-    var message = messageManager.convertClientMessageToServerMessage(rawMessage);
-    message.setConnectionId(data.connectionId);
-    message.setSessionId(data.sessionId);
-    // Sort out origin and destination - always from client, to server.
-    message.setOrigin(messageManager.origins.CLIENT);
-    message.setDestination(messageManager.destinations.SERVER);
-
+  socket.on("fromClient", function (applicationId, rawMessage) {
+    if (!applicationId || !rawMessage || typeof rawMessage !== "object") {
+      self.thywill.log.debug("Invalid message emit arguments from connection: " + data.connectionId + " for application " + applicationId + " with contents: " + JSON.stringify(arguments));
+      return;
+    }
+    var message = new Message(rawMessage.data, rawMessage._);
     // If valid now, send it onward.
     if (message.isValid()) {
-      self.emit(self.events.FROM_CLIENT, message);
+      // Don't pass the session from the data, as it'll be out of date.
+      var client = new Client({
+        connectionId: data.connectionId,
+        sessionId: data.sessionId
+      });
+      self.emit(self.events.FROM_CLIENT, client, applicationId, message);
     } else {
-      self.thywill.log.debug("Empty or broken message received from connection: " + data.connectionId + " with contents: " + JSON.stringify(rawMessage));
+      self.thywill.log.debug("Empty or broken message received from connection: " + data.connectionId + " for application " + applicationId + " with contents: " + JSON.stringify(rawMessage));
     }
   });
 
@@ -722,7 +532,12 @@ p.initializeNewSocketConnection = function (socket) {
    * it works nearly all of the time, but not all of the time.
    */
   socket.on("disconnect", function() {
-    self.emit(self.events.DISCONNECTION, data.connectionId, data.sessionId);
+    // Don't pass the session from the data, as it'll be out of date.
+    var client = new Client({
+      connectionId: data.connectionId,
+      sessionId: data.sessionId
+    });
+    self.emit(self.events.DISCONNECTION, client);
   });
 
   // Socket.ioconnections will try to reconnect automatically if configured
@@ -735,79 +550,48 @@ p.initializeNewSocketConnection = function (socket) {
   */
 
   // Finally, emit a notice.
-  this.emit(this.events.CONNECTION, data.connectionId, data.sessionId, data.session);
+  this.emit(this.events.CONNECTION, new Client(data));
 };
 
 /**
- * Extract the session data we're going to be using from the socket.
+ * Extract the connection data we're going to be using from the socket.
  *
  * @param {Object} socket
  *   A socket.
  * @param {Object}
- *   Of the form {connectionId: string, sessionId: string, session: object}.
- *   Either sessionId or session can be undefined under some circumstances,
- *   so check.
  */
 p.connectionDataFromSocket = function (socket) {
   var data = {
     connectionId: socket.id,
-    sessionId: undefined,
+    // Use the socket ID as a sessionID. As remarked elsewhere, not very
+    // useful for anything other than example code, as it will change if
+    // the socket disconnects and then reconnects.
+    sessionId: socket.id,
     session: undefined
   };
-  switch (this.config.sessions.type) {
-    case this.SESSION_TYPE.NONE:
-      // Use the socket ID as a sessionID. As remarked elsewhere, not very
-      // useful for anything other than example code, as it will change if
-      // the socket disconnects and then reconnects.
-      data.sessionId = socket.id;
-      break;
-    case this.SESSION_TYPE.EXPRESS:
-      if (socket.handshake) {
-        data.sessionId = socket.handshake.sessionId;
-        data.session = socket.handshake.session;
-      }
-      break;
-  }
   return data;
 };
 
 /**
- * Handle a request with http.Server or Express.
+ * Handle a request.
  *
  * @param {Object} req
  *   Request object from the server.
  * @param {Object} res
  *   Response object from the server.
- * @param {function} next
- *   If using Express, this is a function. Otherwise null.
  * @param {mixed} error
  *   Any error resulting from finding the resource.
  * @param {Resource} resource
  *   The resource to server up.
  */
-p.handleResourceRequest = function (req, res, next, error, resource) {
+p.handleResourceRequest = function (req, res, error, resource) {
   var self = this;
 
-  /**
-   * Helper function to send a 500 message.
-   *
-   * TODO: better error responses, actual HTML would be nice.
-   */
-  var send500 = function (error) {
-    if (next) {
-      next(error);
-    } else {
-      self.thywill.log.error(error);
-      res.statusCode = 500;
-      res.end("Error loading resource.");
-    }
-  };
-
   if (error) {
-    send500(error);
+    this._send500ResourceResponse(req, res, error);
     return;
   } else if (!resource) {
-    send500(new Error("Missing resource."));
+    this._send500ResourceResponse(req, res, new Error("Missing resource."));
     return;
   }
 
@@ -816,11 +600,7 @@ p.handleResourceRequest = function (req, res, next, error, resource) {
     // TODO: Using the buffer length is only going to be correct if people
     // always use right-sized buffers for the content they contain.
     res.setHeader("Content-Length", resource.buffer.length);
-    if (res.send) {
-      res.send(resource.buffer);
-    } else {
-      res.end(resource.buffer);
-    }
+    res.end(resource.buffer);
   } else if (resource.isPiped()) {
     res.setHeader("Content-Type", resource.type);
     // Define an error handler.
@@ -839,121 +619,123 @@ p.handleResourceRequest = function (req, res, next, error, resource) {
       .pipe(res);
   } else {
     // This resource is probably not set up correctly. It should either have
-    // data in memory, be set up to be piped, or be served by another process
-    // per resource.servedBy - in the latter case we shouldn't even be in
-    // this function.
-    send500(new Error("Resource incorrectly configured: " + req.path));
+    // data in memory or be set up to be piped.
+    this._send500ResourceResponse(req, res, new Error("Resource incorrectly configured: " + req.path));
   }
 };
 
 /**
- * @see ClientInterface#send
- */
-p.send = function (message) {
-  if (!message.isValid()) {
-    this.thywill.log.warn(new Error("Invalid Message: " + message));
-    return;
-  }
-
-  // Is this a message for the server rather than the client? It's always
-  // possible we'll have server applications talking to each other this
-  // way.
-  var messageManager = this.thywill.messageManager;
-  var destination = message.getDestination();
-  if (destination === messageManager.destinations.SERVER) {
-    this.received(message);
-    return;
-  }
-
-  var self = this;
-  var channelId = message.getChannelId();
-  var sessionId = message.getSessionId();
-  var socketId = message.getConnectionId();
-  // Strip the message down to what's to be sent to the client.
-  var clientMessage = messageManager.convertServerMessageToClientMessage(message);
-
-  // If there is a channel ID set, then publish message to the specified
-  // channel.
-  if (channelId) {
-    // If there is a connection ID, then this channel message originates from
-    // a connection, and that connection should not get a copy.
-    if (socketId) {
-      // Using except() is the same as setting the broadcast flag on a socket
-      // instance when emitting - for this use case, where we want to avoid
-      // sending to the message originator. But it will work even for clustered
-      // processes using a Redis store: the socket instance for socketId might
-      // not be available in this instance, as the client might be connected to
-      // another of the clustered Node.js processes.
-      this.socketFactory.of(this.config.namespace).to(channelId).except(socketId).emit("toClient", clientMessage);
-    }
-    // This channel message doesn't originate from a client connection, so
-    // send it to all channel subscribers.
-    else {
-      this.socketFactory.of(this.config.namespace).to(channelId).emit("toClient", clientMessage);
-    }
-  }
-  // Is this going out to all the connections for a specific session?
-  else if (sessionId && !socketId) {
-    // ClientTracker functionality is required to send to a session, as we
-    // need to determine all of the associated connections.
-    if (!this.thywill.clientTracker) {
-      this.thywill.log.error(new Error("Sending a message to all the connections for a session requires a clientTracker component."));
-      return;
-    }
-    this.thywill.clientTracker.connectionIdsForSession(sessionId, function (error, connectionIds) {
-      if (error) {
-        self.thywill.log.error(error);
-      } else {
-        connectionIds.forEach(function (thisSocketId, index, array) {
-          self._sendToSocket(thisSocketId, clientMessage);
-        });
-      }
-    });
-  }
-  // Otherwise the message is destined for a single client connection, so send
-  // it out through the pertinent socket instance.
-  else {
-    this._sendToSocket(socketId, clientMessage);
-  }
-};
-
-/**
- * Send a Message instance to a specific socket. A convenience function.
+ * Send a 500 error response down to the client when a resource is requested.
  *
- * @param {string} socketId
- *   ID of the socket to send to.
- * @param {Message} clientMessage
- *   The message instance to be sent.
+ * @param {Object} req
+ *   Request object from the server.
+ * @param {Object} res
+ *   Response object from the server.
+ * @param {mixed} error
+ *   The error.
  */
-p._sendToSocket = function (socketId, clientMessage) {
+p._send500ResourceResponse = function (req, res, error) {
+  // TODO: better error responses, actual HTML would be nice.
+  this.thywill.log.error(error);
+  res.statusCode = 500;
+  res.end("Error loading resource.");
+};
+
+/**
+ * @see ClientInterface#sendToClient
+ */
+p.sendToConnection = function (applicationId, client, message) {
   // If there are multiple Node processes in the backend and the application
   // is structured such that process A may want to send a message to a socket
   // connected to process B, then usePubSubForSending must be set true so
   // that messages can be published to the individual connection's channel.
-  var destinationSocket = this.socketFactory.of(this.config.namespace).socket(socketId);
+  var connectionId = this._clientOrConnectionIdToConnectionId(client);
+  message = this._wrapAsMessage(message);
+  var destinationSocket = this.socketFactory.of(this.config.namespace).socket(connectionId);
   if (destinationSocket) {
-    destinationSocket.emit("toClient", clientMessage);
+    destinationSocket.emit("toClient", applicationId, message);
   } else if (this.config.usePubSubForSending) {
-    this.socketFactory.of(this.config.namespace).to(socketId).emit("toClient", clientMessage);
+    this.socketFactory.of(this.config.namespace).to(connectionId).emit("toClient", applicationId, message);
   } else {
-    this.thywill.log.debug("No socket connected to this process with id: " + socketId);
+    this.thywill.log.debug("No socket connected to this process with id: " + connectionId);
   }
+};
+
+/**
+ * @see ClientInterface#sendToSession
+ */
+p.sendToSession = function (applicationId, client, message) {
+  // ClientTracker functionality is required to send to a session, as we
+  // need to determine all of the associated connections.
+  if (!this.thywill.clientTracker) {
+    this.thywill.log.error(new Error("Sending a message to all the connections for a session requires a clientTracker component."));
+    return;
+  }
+  var sessionId = this._clientOrSessionIdToSessionId(client);
+  message = this._wrapAsMessage(message);
+  var self = this;
+  this.thywill.clientTracker.connectionIdsForSession(sessionId, function (error, connectionIds) {
+    if (error) {
+      self.thywill.log.error(error);
+    } else {
+      connectionIds.forEach(function (connectionId, index, array) {
+        self.sendToConnection(applicationId, connectionId, message);
+      });
+    }
+  });
+};
+
+/**
+ * @see ClientInterface#sendToChannel
+ */
+p.sendToChannel = function (applicationId, channelId, message, excludeClients) {
+  var self = this;
+  message = this._wrapAsMessage(message);
+  var s = this.socketFactory.of(this.config.namespace).to(channelId);
+  if (excludeClients) {
+    if (!Array.isArray(excludeClients)) {
+      excludeClients = [excludeClients];
+    }
+    excludeClients.forEach(function (client, index, array) {
+      // Using except() is the same as setting the broadcast flag on a socket
+      // instance when emitting. It will work even for clustered processes
+      // using a Redis store: the socket instance for socketId might not be
+      // available in this instance, as the client might be connected to
+      // another of the clustered Node.js processes.
+      s = s.except(self._clientOrConnectionIdToConnectionId(client));
+    });
+  }
+  s.emit("toClient", applicationId, message);
+};
+
+/**
+ * Ensure message data is wrapped in a Message instance.
+ *
+ * @param {mixed|Message} message
+ *   The message data.
+ */
+p._wrapAsMessage = function (message) {
+  if (!(message instanceof Message)) {
+    message = new Message(message);
+  }
+  return message;
 };
 
 /**
  * @see ClientInterface#subscribe
  */
-p.subscribe = function (connectionIds, channelIds, callback) {
+p.subscribe = function (clients, channelIds, callback) {
   var self = this;
-  if (!Array.isArray(connectionIds)) {
-    connectionIds = [connectionIds];
+  if (!Array.isArray(clients)) {
+    clients = [clients];
   }
-  if (!connectionIds.length) {
+  if (!clients.length) {
     callback();
     return;
   }
 
-  connectionIds.forEach(function (connectionId, index, array) {
+  clients.forEach(function (client, index, array) {
+    var connectionId = self._clientOrConnectionIdToConnectionId(client);
     if(self._subscribeLocalSocket(connectionId, channelIds)) {
       return;
     }
@@ -996,17 +778,18 @@ p._subscribeLocalSocket = function (connectionId, channelIds) {
 /**
  * @see ClientInterface#unsubscribe
  */
-p.unsubscribe = function (connectionIds, channelIds, callback) {
+p.unsubscribe = function (clients, channelIds, callback) {
   var self = this;
-  if (!Array.isArray(connectionIds)) {
-    connectionIds = [connectionIds];
+  if (!Array.isArray(clients)) {
+    clients = [clients];
   }
-  if (!connectionIds.length) {
+  if (!clients.length) {
     callback();
     return;
   }
 
-  connectionIds.forEach(function (connectionId, index, array) {
+  clients.forEach(function (client, index, array) {
+    var connectionId = self._clientOrConnectionIdToConnectionId(client);
     if(self._unsubscribeLocalSocket(connectionId, channelIds)) {
       callback();
       return;
@@ -1047,6 +830,22 @@ p._unsubscribeLocalSocket = function (connectionId, channelIds) {
   }
 };
 
+/**
+ * @see ClientInterface#loadSession
+ */
+p.loadSession = function (client, callback) {
+  // Not using sessions.
+  callback();
+};
+
+/**
+ * @see ClientInterface#storeSession
+ */
+p.storeSession = function (client, session, callback) {
+  // Not using sessions.
+  callback();
+};
+
 // -----------------------------------------------------------
 // Resource methods
 // -----------------------------------------------------------
@@ -1083,19 +882,7 @@ p.getBootstrapResources = function (callback) {
  */
 p.storeResource = function (resource, callback) {
   var self = this;
-  this.thywill.resourceManager.store(resource.clientPath, resource, function (error, storedResource) {
-    if (!error) {
-      // If we have an Express application, then serve content that way.
-      //
-      // If we are using Express sessions, then client resources have to be
-      // served via Express, so as to appropriately populate the session
-      // before the websocket connection occurs.
-      if (self.config.server.app) {
-        self.serveResourceViaExpress(self.config.sessions.app, resource);
-      }
-    }
-    callback (error, storedResource);
-  });
+  this.thywill.resourceManager.store(resource.clientPath, resource, callback);
 };
 
 /**
@@ -1106,54 +893,36 @@ p.getResource = function (clientPath, callback) {
 };
 
 // -----------------------------------------------------------
-// Express utility methods
-// -----------------------------------------------------------
-
-/**
- * Generate a route for Express to serve this resource
- *
- * @param {Resource} resource
- *   A resource.
- * @return {function}
- *   A suitable route function for Express to use to serve the provided resource.
- */
-p.generateExpressRoute = function (resource) {
-  return function (req, res, next) {
-    if (resource.isInMemory()) {
-      res.setHeader("Content-Type", resource.type);
-      // TODO: Using the buffer length is only going to be correct if people
-      // always use right-sized buffers for the content they contain.
-      res.setHeader("Content-Length", resource.buffer.length);
-      res.send(resource.buffer);
-    } else if (resource.isPiped()) {
-      res.setHeader("Content-Type", resource.type);
-      res.sendFile(resource.filePath, {
-        // TODO maxage configuration?
-        maxAge: 0
-      }, function (error) {
-        next(error);
-      });
-    } else {
-      next(new Error("Invalid resource."));
-    }
-  };
-};
-
-/**
- * Tell Express to serve this resource.
- *
- * @param {Object} app
- *   An Express application.
- * @param {Resource} resource
- *   A resource.
- */
-p.serveResourceViaExpress = function (app, resource) {
-  this.config.server.app.all(resource.clientPath, this.generateExpressRoute(resource));
-};
-
-// -----------------------------------------------------------
 // Other utility methods
 // -----------------------------------------------------------
+
+/**
+ * Return a connection ID if given a Client instance or a connection ID.
+ *
+ * @param {Client|string} clientOrConnectionId
+ *   Client instance or connection ID.
+ */
+p._clientOrConnectionIdToConnectionId = function (clientOrConnectionId) {
+  if (clientOrConnectionId instanceof Client) {
+    return clientOrConnectionId.getConnectionId();
+  } else {
+    return clientOrConnectionId;
+  }
+};
+
+/**
+ * Return a session ID if given a Client instance or a session Id.
+ *
+ * @param {Client|string} clientOrSessionId
+ *   Client instance or session ID.
+ */
+p._clientOrSessionIdToSessionId = function (clientOrSessionId) {
+  if (clientOrSessionId instanceof Client) {
+    return clientOrSessionId.getSessionId();
+  } else {
+    return clientOrSessionId;
+  }
+};
 
 /**
  * Given a class definition, create Javascript code for it. This is used to
