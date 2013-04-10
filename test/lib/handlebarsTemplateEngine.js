@@ -6,7 +6,7 @@
 var assert = require("assert");
 
 /**
- * Add general tests for the HandlebarsTemplateEngine to the suite.
+ * Add general tests for the HandlebarsTemplateEngine class to the suite.
  */
 exports.general = function (suite) {
   suite.addBatch({

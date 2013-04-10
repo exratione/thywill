@@ -2,7 +2,7 @@
   "name" : "thywill",
   "description": "A Node.js framework for single page web applications based on asynchronous messaging.",
   "keywords": ["asynchronous", "message", "framework"],
-  "version": "0.0.8",
+  "version": "0.0.9",
   "homepage": "https://github.com/exratione/thywill",
   "author": "Reason <reason@exratione.com>",
   "engines": {
@@ -21,13 +21,14 @@
     "redis": "*",
     "request": "*",
     "send": "*",
-    "socket.io": "0.x.x",
-    "socket.io-client": "0.x.x",
+    "socket.io": "0.9.x",
+    "socket.io-client": "0.9.x",
     "toposort": "*",
     "uglify-js": "1.x.x"
   },
   "devDependencies": {
-    "vows": "*"
+    "vows": "*",
+    "work-already": "*"
   },
   "scripts": {
     "test": "vows test/base/* --isolate --spec"

@@ -17,8 +17,8 @@ that file, replacing the paths and servers as necessary:
     # than the directory rather than its contents will be copied.
     export DEPLOY_SOURCE_DIR=/cygdrive/c/code/thywill.js/
     export DEPLOY_DEST_DIR=/home/node/thywill.js
-    export DEPLOY_SERVER=my.server.com
-    export DEPLOY_ACCOUNT=reason
+    export DEPLOY_SERVER=example.com
+    export DEPLOY_ACCOUNT=node
     export DEPLOY_KEY=/path/to/ssh/key
 
 DEPLOY_KEY is optional. If not present, login will be via entering a password.

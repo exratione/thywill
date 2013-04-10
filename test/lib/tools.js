@@ -3,10 +3,10 @@
  * Various utility functions for testing Thywill.
  */
 
+var http = require("http");
 var vows = require("vows");
 var assert = require("assert");
 var clone = require("clone");
-var http = require("http");
 var express = require("express");
 var redis = require("redis");
 var MemoryStore = require("socket.io/lib/stores/memory");
@@ -143,37 +143,27 @@ exports.setupConfig = function (baseConfig, options) {
  *   The various options.
  */
 exports.addThywillLaunchBatch = function (suite, options) {
-  if (!options.applications) {
-    options.applications = [];
+  suite.applications = options.applications || [];
+  if (!Array.isArray(suite.applications)) {
+    suite.applications = [suite.applications];
   }
-  if (!suite.thywillInstances) {
-    suite.thywillInstances = [];
-  }
-
-  var batchName;
-  if (options.useExpress) {
-    batchName = "launch Thywill with Express and sessions";
-  } else {
-    batchName = "launch Thywill with http.Server and no sessions";
-  }
+  suite.thywillInstances = suite.thywillInstances || [];
 
   // Config should have only clonable things in it - no class instances, etc.
   var config = exports.setupConfig(options.config, options);
 
-  var batch = {};
-  var batchDefinition = {
-    topic: function () {
-      Thywill.launch(config, options.applications, this.callback);
-    },
-    "successful launch": function (error, thywill) {
-      assert.isNull(error);
-      suite.thywillInstances.push(thywill);
-      assert.isTrue(suite.thywillInstances[0] instanceof Thywill);
+  suite.addBatch({
+    "Launch Thywill": {
+      topic: function () {
+        Thywill.launch(config, options.applications, this.callback);
+      },
+      "successful launch": function (error, thywill) {
+        assert.isNull(error);
+        suite.thywillInstances.push(thywill);
+        assert.isTrue(suite.thywillInstances[0] instanceof Thywill);
+      }
     }
-  };
-
-  batch[batchName] = batchDefinition;
-  suite.addBatch(batch);
+  });
 };
 
 /**
@@ -187,8 +177,6 @@ exports.addThywillLaunchBatch = function (suite, options) {
  *   applications: Application|Application[]
  *   // Optionally name the local cluster member.
  *   localClusterMemberId: string
- *   // If true use Express rather than a plain http.Server instance.
- *   useExpress: boolean
  *   // If true then Redis implementations are used.
  *   useRedis: boolean
  * }
@@ -203,7 +191,7 @@ exports.addThywillLaunchBatch = function (suite, options) {
 exports.createVowsSuite = function (name, options) {
   // Set up the test suite and return it.
   var suite = vows.describe(name);
-  options.localClusterMemberId = "alpha";
+  options.localClusterMemberId = options.localClusterMemberId || "alpha";
   exports.addThywillLaunchBatch(suite, options);
   return suite;
 };
