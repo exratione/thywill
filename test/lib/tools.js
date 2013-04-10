@@ -9,6 +9,7 @@ var assert = require("assert");
 var clone = require("clone");
 var express = require("express");
 var redis = require("redis");
+var Client = require("work-already").Client;
 var MemoryStore = require("socket.io/lib/stores/memory");
 var RedisStore = require("socket.io/lib/stores/redis");
 var RedisSessionStore = require("connect-redis")(express);
@@ -161,6 +162,72 @@ exports.addThywillLaunchBatch = function (suite, options) {
         assert.isNull(error);
         suite.thywillInstances.push(thywill);
         assert.isTrue(suite.thywillInstances[0] instanceof Thywill);
+      }
+    }
+  });
+};
+
+/**
+ * Create a work-already package client and connect it to one of the test
+ * Thywill instances, which must be running one of the example applications.
+ * This should be generic for all test applications.
+ *
+ * @param {Object} suite
+ *   A Vows test suite instance.
+ * @param {number} thywillInstanceIndex
+ *   Which of the Thywill instances to point this client at.
+ */
+exports.addInitialWorkAlreadyClientBatches = function (suite, thywillInstanceIndex) {
+  suite.addBatch({
+    "Create work-already client": {
+      topic: function () {
+        var ports = suite.thywillInstances[thywillInstanceIndex].config.thywill.ports;
+        var portName = (Object.keys(ports))[thywillInstanceIndex];
+        return new Client({
+          server: {
+            host: "localhost",
+            port: ports[portName],
+            protocol: "http"
+          },
+          sockets: {
+            defaultNamespace: suite.thywillInstances[thywillInstanceIndex].config.clientInterface.namespace
+          }
+        });
+      },
+      "client created": function (client) {
+        suite.clients = suite.clients || [];
+        suite.clients[thywillInstanceIndex] = client;
+      }
+    }
+  });
+  suite.addBatch({
+    "Load application page": {
+      topic: function () {
+        var path = suite.thywillInstances[thywillInstanceIndex].config.clientInterface.baseClientPath + "/";
+        suite.clients[thywillInstanceIndex].action(path, this.callback);
+      },
+      "page fetched": function (error, page) {
+        assert.isNull(error);
+        assert.isObject(page);
+        assert.strictEqual(page.statusCode, 200);
+        assert.include(page.body, "<button>{{buttonText}}</button>");
+      }
+    }
+  });
+  suite.addBatch({
+    "Connect via Socket.IO": {
+      topic: function () {
+        suite.clients[thywillInstanceIndex].action({
+          type: "socket",
+          timeout: 250,
+          socketConfig: suite.thywillInstances[thywillInstanceIndex].config.clientInterface.socketClientConfig
+        }, this.callback);
+      },
+      "socket connected": function (error) {
+        var client = suite.clients[thywillInstanceIndex];
+        assert.isUndefined(error);
+        assert.isObject(client.page.sockets);
+        assert.isObject(client.page.sockets[client.config.sockets.defaultNamespace]);
       }
     }
   });
