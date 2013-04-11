@@ -121,6 +121,20 @@ p.setType = function (type) {
 //-----------------------------------------------------------
 
 /**
+ * Return a raw object representation of this message. Chiefly useful in
+ * testing.
+ *
+ * @return {object}
+ *   A plain object.
+ */
+p.toObject = function () {
+  return {
+    data: this.data,
+    _: this._
+  };
+};
+
+/**
  * Return a JSON string representing this object.
  *
  * @return {string}

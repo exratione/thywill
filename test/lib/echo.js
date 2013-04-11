@@ -12,15 +12,25 @@ var tools = require("./tools");
  * Add general tests for the Echo application to the suite.
  */
 exports.general = function (suite) {
-  tools.addInitialWorkAlreadyClientBatches(suite, 0);
+  var instanceIndex = 0;
+  var applicationIndex = 0;
+  // The initial batches load the application page and then connect via
+  // Socket.IO. The matches are checked against the page contents. Here
+  // we're looking at the templates that should be included.
+  var pageMatches = [
+    "<button>{{buttonText}}</button>",
+    '<div class="echoed-message">{{data}}</div>'
+  ];
+  tools.workAlready.addInitialBatches(suite, instanceIndex, pageMatches);
 
+  // A check to see if sending works.
   suite.addBatch({
     "Send message without waiting on response": {
       topic: function () {
         var message = new Message("pre-test");
-        suite.clients[0].action({
+        suite.clients[instanceIndex].action({
           type: "emit",
-          args: ["fromClient", suite.applications[0].id, message]
+          args: ["fromClient", suite.applications[applicationIndex].id, message]
         }, this.callback);
       },
       "message sent": function (error) {
@@ -28,8 +38,8 @@ exports.general = function (suite) {
       }
     }
   });
-  // Just a delay to be sure that the Echo response to the last message is
-  // done with before waiting for the next one.
+  // A delay to be sure that the Echo response to the last message is
+  // done with before testing for the next one.
   suite.addBatch({
     "Delay": {
       topic: function () {
@@ -38,26 +48,12 @@ exports.general = function (suite) {
       "delayed": function () {}
     }
   });
-  suite.addBatch({
-    "Send message and await echoed response": {
-      topic: function () {
-        suite.clients[0].action({
-          type: "awaitEmit",
-          eventType: "toClient",
-          timeout: 1000
-        }, this.callback);
 
-        suite.message = new Message("test");
-        suite.clients[0].action({
-          type: "emit",
-          args: ["fromClient", suite.applications[0].id, suite.message]
-        }, function (error) {});
-      },
-      "message echoed correctly": function (error, socketEvent) {
-        assert.isNull(error);
-        assert.isObject(socketEvent);
-        assert.deepEqual(socketEvent.args, [suite.applications[0].id, { data: suite.message.data, _: suite.message._ }]);
-      }
-    }
-  });
+  // Test the echoing functionality.
+  var sendMessage = "test";
+  var responseMessage = "test";
+  tools.workAlready.addSendAndAwaitResponseBatch(
+    "Echo message and response",
+    suite, instanceIndex, applicationIndex, sendMessage, responseMessage
+  );
 };

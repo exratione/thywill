@@ -14,6 +14,7 @@ var MemoryStore = require("socket.io/lib/stores/memory");
 var RedisStore = require("socket.io/lib/stores/redis");
 var RedisSessionStore = require("connect-redis")(express);
 var Thywill = require("thywill");
+var Message = Thywill.getBaseClass("Message");
 
 /**
  * Utility function to create a client for a local Redis server.
@@ -168,72 +169,6 @@ exports.addThywillLaunchBatch = function (suite, options) {
 };
 
 /**
- * Create a work-already package client and connect it to one of the test
- * Thywill instances, which must be running one of the example applications.
- * This should be generic for all test applications.
- *
- * @param {Object} suite
- *   A Vows test suite instance.
- * @param {number} thywillInstanceIndex
- *   Which of the Thywill instances to point this client at.
- */
-exports.addInitialWorkAlreadyClientBatches = function (suite, thywillInstanceIndex) {
-  suite.addBatch({
-    "Create work-already client": {
-      topic: function () {
-        var ports = suite.thywillInstances[thywillInstanceIndex].config.thywill.ports;
-        var portName = (Object.keys(ports))[thywillInstanceIndex];
-        return new Client({
-          server: {
-            host: "localhost",
-            port: ports[portName],
-            protocol: "http"
-          },
-          sockets: {
-            defaultNamespace: suite.thywillInstances[thywillInstanceIndex].config.clientInterface.namespace
-          }
-        });
-      },
-      "client created": function (client) {
-        suite.clients = suite.clients || [];
-        suite.clients[thywillInstanceIndex] = client;
-      }
-    }
-  });
-  suite.addBatch({
-    "Load application page": {
-      topic: function () {
-        var path = suite.thywillInstances[thywillInstanceIndex].config.clientInterface.baseClientPath + "/";
-        suite.clients[thywillInstanceIndex].action(path, this.callback);
-      },
-      "page fetched": function (error, page) {
-        assert.isNull(error);
-        assert.isObject(page);
-        assert.strictEqual(page.statusCode, 200);
-        assert.include(page.body, "<button>{{buttonText}}</button>");
-      }
-    }
-  });
-  suite.addBatch({
-    "Connect via Socket.IO": {
-      topic: function () {
-        suite.clients[thywillInstanceIndex].action({
-          type: "socket",
-          timeout: 250,
-          socketConfig: suite.thywillInstances[thywillInstanceIndex].config.clientInterface.socketClientConfig
-        }, this.callback);
-      },
-      "socket connected": function (error) {
-        var client = suite.clients[thywillInstanceIndex];
-        assert.isUndefined(error);
-        assert.isObject(client.page.sockets);
-        assert.isObject(client.page.sockets[client.config.sockets.defaultNamespace]);
-      }
-    }
-  });
-};
-
-/**
  * Create a partially formed Vows suite that launches a Thywill instance as
  * its first batch. The options object is as follows:
  *
@@ -304,4 +239,208 @@ exports.createVowsSuiteForCluster = function (name, options) {
 exports.addBatches = function (suite, name, property) {
   var fn = require("./" + name)[property];
   fn(suite);
+};
+
+// ------------------------------------------------
+// Related to the work-already package.
+// ------------------------------------------------
+
+exports.workAlready = {};
+
+/**
+ * Create a work-already package client and connect it to one of the test
+ * Thywill instances, which must be running one of the example applications.
+ *
+ * This is generic for all test applications. It does the following:
+ *
+ * 1) Create a work-already client and attach it to the suite.
+ * 2) Load the main page.
+ * 3) Connect via Socket.IO.
+ *
+ * @param {Object} suite
+ *   A Vows test suite instance.
+ * @param {number} thywillInstanceIndex
+ *   Which of the Thywill instances to point this client at.
+ * @param {string|array} pageMatches
+ *   Strings to match on in the main application page.
+ */
+exports.workAlready.addInitialBatches = function (suite, thywillInstanceIndex, pageMatches) {
+  pageMatches = pageMatches || [];
+  if (!Array.isArray(pageMatches)) {
+    pageMatches = [pageMatches];
+  }
+
+  suite.addBatch({
+    "Create work-already client": {
+      topic: function () {
+        var ports = suite.thywillInstances[thywillInstanceIndex].config.thywill.ports;
+        var portName = (Object.keys(ports))[thywillInstanceIndex];
+        return new Client({
+          server: {
+            host: "localhost",
+            port: ports[portName],
+            protocol: "http"
+          },
+          sockets: {
+            defaultNamespace: suite.thywillInstances[thywillInstanceIndex].config.clientInterface.namespace
+          }
+        });
+      },
+      "client created": function (client) {
+        suite.clients = suite.clients || [];
+        suite.clients[thywillInstanceIndex] = client;
+      }
+    }
+  });
+  suite.addBatch({
+    "Load application page": {
+      topic: function () {
+        var path = suite.thywillInstances[thywillInstanceIndex].config.clientInterface.baseClientPath + "/";
+        suite.clients[thywillInstanceIndex].action(path, this.callback);
+      },
+      "page fetched": function (error, page) {
+        assert.isNull(error);
+        assert.isObject(page);
+        assert.strictEqual(page.statusCode, 200);
+        assert.isString(page.body);
+        pageMatches.forEach(function (pageMatch, index, array) {
+          assert.include(page.body, pageMatch);
+        });
+      }
+    }
+  });
+  suite.addBatch({
+    "Connect via Socket.IO": {
+      topic: function () {
+        suite.clients[thywillInstanceIndex].action({
+          type: "socket",
+          timeout: 250,
+          socketConfig: suite.thywillInstances[thywillInstanceIndex].config.clientInterface.socketClientConfig
+        }, this.callback);
+      },
+      "socket connected": function (error) {
+        var client = suite.clients[thywillInstanceIndex];
+        assert.isUndefined(error);
+        assert.isObject(client.page.sockets);
+        assert.isObject(client.page.sockets[client.config.sockets.defaultNamespace]);
+      }
+    }
+  });
+};
+
+/**
+ * Send a message to the server, and wait for a response.
+ *
+ * @param {string} batchName
+ *   Name of the batch.
+ * @param {Object} suite
+ *   A Vows test suite instance.
+ * @param {number} thywillInstanceIndex
+ *   Which of the Thywill instances to point this client at.
+ * @param {number} applicationIndex
+ *   Which of the applications to use.
+ * @param {Message|mixed} sendMessage
+ *   Either a Message instance or data.
+ * @param {Message|mixed} responseMessage
+ *   Either a Message instance or data.
+ */
+exports.workAlready.addSendAndAwaitResponseBatch = function (batchName, suite, thywillInstanceIndex, applicationIndex, sendMessage, responseMessage) {
+  var batch = {};
+  var definition = {
+    topic: function () {
+      suite.clients[0].action({
+        type: "awaitEmit",
+        eventType: "toClient",
+        timeout: 1000
+      }, this.callback);
+
+      suite.message = exports.wrapAsMessage(sendMessage);
+      suite.clients[thywillInstanceIndex].action({
+        type: "emit",
+        args: ["fromClient", suite.applications[applicationIndex].id, suite.message]
+      }, function (error) {});
+    },
+    "expected response": function (error, socketEvent) {
+      assert.isNull(error);
+      assert.isObject(socketEvent);
+      var args = [
+        suite.applications[applicationIndex].id,
+        exports.wrapAsMessage(responseMessage).toObject()
+      ];
+      assert.deepEqual(socketEvent.args, args);
+    }
+  };
+  batch[batchName] = definition;
+  suite.addBatch(batch);
+};
+
+// ------------------------------------------------
+// Utilities.
+// ------------------------------------------------
+
+/**
+ * For associating RPC messages and responses.
+ */
+exports.rpcMessageId = 0;
+
+/**
+ * Create an RPC Message instance. Data has the form:
+ *
+ * {
+ *   // Name of the remote function.
+ *   name: string
+ *   // Does the remote function have a callback?
+ *   cb: boolean
+ *   // Arguments for the function, lacking the final callback.
+ *   args: array
+ * }
+ *
+ * @param {object} data
+ *   Data for the message.
+ * @return {Message}
+ *   A Message instance.
+ */
+exports.createRpcMessage = function (data) {
+  var rpcId = exports.rpcMessageId++;
+  var sendData = {
+    id: rpcId,
+    name: data.name,
+    cb: data.hasCallback,
+    args: data.args
+  };
+  var message = new Message(sendData);
+  message.setType(Message.TYPES.RPC);
+  return message;
+};
+
+/**
+ * Create a response message of the sort returned by an RPC call.
+ *
+ * @param {mixed} id
+ *   Must match the ID of the sent RPC message.
+ * @param {array} args
+ *   Returned arguments as for a callback with leading null if successful.
+ * @return {Message}
+ *   A Message instance.
+ */
+exports.createRpcResponseMessage = function (id, args) {
+  var message = new Message({
+    id: id,
+    cbArgs: args
+  });
+  message.setType(Message.TYPES.RPC);
+  return message;
+};
+
+/**
+ * Ensure message data is wrapped in a Message instance.
+ *
+ * @param {mixed|Message} message
+ *   The message data.
+ */
+exports.wrapAsMessage = function (message) {
+  if (!(message instanceof Message)) {
+    message = new Message(message);
+  }
+  return message;
 };
