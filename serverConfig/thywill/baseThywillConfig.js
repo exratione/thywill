@@ -2,8 +2,7 @@
  * @fileOverview
  * A baseline configuration file for Thywill.
  *
- * This is used by the example applications to save on repetition, and to
- * provide a single place where the configuration is fairly well documented.
+ * This is used by test code, and as an example for application configuration.
  */
 
 //-----------------------------------------------------------
@@ -78,11 +77,7 @@ module.exports = {
     namespace: "/applicationNamespace",
     // The HTML page encoding to use.
     pageEncoding: "utf-8",
-    // The http.Server (required) and Express application (optional) are set
-    // here. These values are set in the start.js script. See these examples:
-    //
-    // /applications/echo/service/start.js
-    // /applications/shapes/service/start.js
+    // The http.Server is set here.
     server: {
       // An http.Server instance.
       server: null

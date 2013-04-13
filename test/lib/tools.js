@@ -62,25 +62,65 @@ function createRedisClient () {
 exports.setupConfig = function (baseConfig, options) {
   var config = clone(baseConfig);
 
+  // Create some Redis clients, if needed.
+  var redisClients;
+  function setupRedisClients () {
+    if (!redisClients) {
+      redisClients = {
+        pub: createRedisClient(),
+        sub: createRedisClient(),
+        other: createRedisClient()
+      };
+    }
+  }
+
   // ------------------------------------------------------------
   // Set up server.
   // ------------------------------------------------------------
 
-  // Create some Redis clients, if needed.
-  var redisClients = {
-    pub: createRedisClient(),
-    sub: createRedisClient(),
-    other: createRedisClient()
-  };
+  var port = config.thywill.ports[options.localClusterMemberId];
 
   // If using Express, set it up.
   if (config.clientInterface.implementation.name === "socketIoExpressClientInterface") {
-    exports.setupExpress(config, options, redisClients.other);
+    // Create servers.
+    var app = express();
+    config.clientInterface.server.app = app;
+    var server = http.createServer(app).listen(port);
+    config.clientInterface.server.server = server;
+
+    // Create a session store.
+    if (options.useRedisSessionStore) {
+      setupRedisClients();
+      config.clientInterface.sessions.store = new RedisSessionStore({
+        client: redisClients.other
+      });
+    } else {
+      config.clientInterface.sessions.store = new MemorySessionStore();
+    }
+
+    // Add minimal configuration to the Express application: just the cookie and
+    // session middleware.
+    app.use(express.cookieParser(config.clientInterface.sessions.cookieSecret));
+    app.use(express.session({
+      cookie: {
+        httpOnly: true
+      },
+      key: config.clientInterface.sessions.cookieKey,
+      secret: config.clientInterface.sessions.cookieSecret,
+      store: config.clientInterface.sessions.store
+    }));
+
+    // Middleware and routes might be added here or after Thywill launches. Either
+    // way is just fine and won't interfere with Thywill's use of Express to serve
+    // resources. e.g. adding a catch-all here is acceptable:
+    app.all("*", function (req, res, next) {
+      res.statusCode = 404;
+      res.send("No such resource.");
+    });
   }
   // Not using Express, so a vanilla http.Server with no session management is
   // set up.
   else {
-    var port = config.thywill.ports[options.localClusterMemberId];
     config.clientInterface.server.server = http.createServer().listen(port);
   }
 
@@ -91,6 +131,7 @@ exports.setupConfig = function (baseConfig, options) {
   // Are we using Redis?
   if (options.useRedisSocketStore) {
     // Create a RedisStore for Socket.IO.
+    setupRedisClients();
     config.clientInterface.socketConfig.global.store = new RedisSocketStore({
       redisPub: redisClients.pub,
       redisSub: redisClients.sub,
@@ -107,6 +148,7 @@ exports.setupConfig = function (baseConfig, options) {
 
   config.cluster.localClusterMemberId = options.localClusterMemberId;
   if (config.cluster.implementation.name === "redisCluster") {
+    setupRedisClients();
     config.cluster.communication.publishRedisClient = redisClients.pub;
     config.cluster.communication.subscribeRedisClient = redisClients.sub;
   }
@@ -116,6 +158,7 @@ exports.setupConfig = function (baseConfig, options) {
   // ------------------------------------------------------------
 
   if (config.resourceManager.implementation.name === "redisResourceManager") {
+    setupRedisClients();
     config.resourceManager.redisClient = redisClients.other;
   }
 
@@ -124,58 +167,11 @@ exports.setupConfig = function (baseConfig, options) {
   // ------------------------------------------------------------
 
   if (config.channelManager && config.channelManager.implementation.name === "redisChannelManager") {
+    setupRedisClients();
     config.channelManager.redisClient = redisClients.other;
   }
 
   return config;
-};
-
-/**
- * Setup an Express server and attach it and other needed items to the config.
- *
- * @param {Object} config
- *   The configuration object.
- * @param {Object} options
- *   The various options.
- * @param {Object} redisClient
- *   If needed, a Redis client.
- */
-exports.setupExpress = function (config, options, redisClient) {
-  // Create servers.
-  var app = express();
-  config.clientInterface.server.app = app;
-  var port = config.thywill.ports[options.localClusterMemberId];
-  var server = http.createServer(app).listen(port);
-  config.clientInterface.server.server = server;
-
-  // Create a session store.
-  if (options.useRedisSessionStore) {
-    config.clientInterface.sessions.store = new RedisSessionStore({
-      client: redisClient
-    });
-  } else {
-    config.clientInterface.sessions.store = new MemorySessionStore();
-  }
-
-  // Add minimal configuration to the Express application: just the cookie and
-  // session middleware.
-  app.use(express.cookieParser(config.clientInterface.sessions.cookieSecret));
-  app.use(express.session({
-    cookie: {
-      httpOnly: true
-    },
-    key: config.clientInterface.sessions.cookieKey,
-    secret: config.clientInterface.sessions.cookieSecret,
-    store: config.clientInterface.sessions.store
-  }));
-
-  // Middleware and routes might be added here or after Thywill launches. Either
-  // way is just fine and won't interfere with Thywill's use of Express to serve
-  // resources. e.g. adding a catch-all here is acceptable:
-  app.all("*", function (req, res, next) {
-    res.statusCode = 404;
-    res.send("No such resource.");
-  });
 };
 
 /**
