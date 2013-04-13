@@ -19,10 +19,10 @@ exports.cluster = function (suite) {
           data: "test"
         };
         var taskName = "testTask";
-        suite.thywillInstances[1].cluster.once(taskName, function (receivedTaskData) {
+        suite.thywills[1].cluster.once(taskName, function (receivedTaskData) {
           self.callback(null, receivedTaskData);
         });
-        suite.thywillInstances[0].cluster.sendTo("beta", taskName, taskData);
+        suite.thywills[0].cluster.sendTo("beta", taskName, taskData);
       },
       "task data received": function (taskData) {
         assert.strictEqual(taskData.data, "test");
@@ -37,10 +37,10 @@ exports.cluster = function (suite) {
           data: "test"
         };
         var taskName = "testTask";
-        suite.thywillInstances[1].cluster.once(taskName, function (receivedTaskData) {
+        suite.thywills[1].cluster.once(taskName, function (receivedTaskData) {
           self.callback(null, receivedTaskData);
         });
-        suite.thywillInstances[0].cluster.sendToOthers(taskName, taskData);
+        suite.thywills[0].cluster.sendToOthers(taskName, taskData);
       },
       "task data received": function (taskData) {
         assert.strictEqual(taskData.data, "test");
@@ -55,15 +55,15 @@ exports.cluster = function (suite) {
           data: "test"
         };
         var taskName = "testTask";
-        var received = suite.thywillInstances.map(function (thywill, index, array) {
+        var received = suite.thywills.map(function (thywill, index, array) {
           return false;
         });
-        suite.thywillInstances.forEach(function (thywill, index, array) {
+        suite.thywills.forEach(function (thywill, index, array) {
           thywill.cluster.once(taskName, function (receivedTaskData) {
             received[index] = receivedTaskData;
           });
         });
-        suite.thywillInstances[0].cluster.sendToAll(taskName, taskData);
+        suite.thywills[0].cluster.sendToAll(taskName, taskData);
 
         var intervalId = setInterval(function () {
           var anyUnreceivedLeft = received.some(function (element, index, array) {

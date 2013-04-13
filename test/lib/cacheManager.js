@@ -14,7 +14,7 @@ exports.general = function (suite) {
     "cacheManager#createCache": {
       topic: function () {
         // Create a cache with room for only two items.
-        return suite.thywillInstances[0].cacheManager.createCache("testCache", 2);
+        return suite.thywills[0].cacheManager.createCache("testCache", 2);
       },
       "cache created successfully": function (cache) {
         assert.instanceOf(cache, Thywill.getBaseClass("Cache"));

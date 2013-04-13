@@ -6,6 +6,7 @@
 var assert = require("assert");
 var Thywill = require("thywill");
 var Message = Thywill.getBaseClass("Message");
+var RpcCapableApplication = Thywill.getBaseClass("RpcCapableApplication");
 var tools = require("./tools");
 
 /**
@@ -57,7 +58,7 @@ exports.general = function (suite) {
       batchName: "Test RPC: no function error",
       hasCallback: true,
       args: [100],
-      responseArgs: [suite.applications[applicationIndex].rpcErrors.NO_FUNCTION]
+      responseArgs: [RpcCapableApplication.RPC_ERRORS.NO_FUNCTION]
     }
   ];
 

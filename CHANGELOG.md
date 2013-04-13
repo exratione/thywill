@@ -5,7 +5,8 @@ Work in Progress
 ----------------
 
   * Expanded test coverage to applications with web/socket client tests.
-  * Crucial bugfix for sessions in SocketIoExpressClientInterface.
+  * Crucial bugfixes for sessions in SocketIoExpressClientInterface and in test code.
+  * Improved readability of example application start scripts.
 
 v0.0.8 - 04/06/2013
 -------------------

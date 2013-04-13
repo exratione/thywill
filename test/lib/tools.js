@@ -184,11 +184,7 @@ exports.setupConfig = function (baseConfig, options) {
  *   The various options.
  */
 exports.addThywillLaunchBatch = function (suite, options) {
-  suite.applications = options.applications || [];
-  if (!Array.isArray(suite.applications)) {
-    suite.applications = [suite.applications];
-  }
-  suite.thywillInstances = suite.thywillInstances || [];
+  suite.thywills = suite.thywills || [];
 
   // Config should have only clonable things in it - no class instances, etc.
   var config = exports.setupConfig(options.config, options);
@@ -200,8 +196,8 @@ exports.addThywillLaunchBatch = function (suite, options) {
       },
       "successful launch": function (error, thywill) {
         assert.isNull(error);
-        suite.thywillInstances.push(thywill);
-        assert.isTrue(suite.thywillInstances[0] instanceof Thywill);
+        suite.thywills.push(thywill);
+        assert.isTrue(suite.thywills[0] instanceof Thywill);
       }
     }
   });
@@ -312,7 +308,7 @@ exports.workAlready.addInitialBatches = function (suite, thywillInstanceIndex, p
   suite.addBatch({
     "Create work-already client": {
       topic: function () {
-        var ports = suite.thywillInstances[thywillInstanceIndex].config.thywill.ports;
+        var ports = suite.thywills[thywillInstanceIndex].config.thywill.ports;
         var portName = (Object.keys(ports))[thywillInstanceIndex];
         return new Client({
           server: {
@@ -321,7 +317,7 @@ exports.workAlready.addInitialBatches = function (suite, thywillInstanceIndex, p
             protocol: "http"
           },
           sockets: {
-            defaultNamespace: suite.thywillInstances[thywillInstanceIndex].config.clientInterface.namespace,
+            defaultNamespace: suite.thywills[thywillInstanceIndex].config.clientInterface.namespace,
             defaultTimeout: 1000
           }
         });
@@ -335,7 +331,7 @@ exports.workAlready.addInitialBatches = function (suite, thywillInstanceIndex, p
   suite.addBatch({
     "Load application page": {
       topic: function () {
-        var path = suite.thywillInstances[thywillInstanceIndex].config.clientInterface.baseClientPath + "/";
+        var path = suite.thywills[thywillInstanceIndex].config.clientInterface.baseClientPath + "/";
         suite.clients[thywillInstanceIndex].action(path, this.callback);
       },
       "page fetched": function (error, page) {
@@ -354,7 +350,7 @@ exports.workAlready.addInitialBatches = function (suite, thywillInstanceIndex, p
       topic: function () {
         suite.clients[thywillInstanceIndex].action({
           type: "connect",
-          socketConfig: suite.thywillInstances[thywillInstanceIndex].config.clientInterface.socketClientConfig
+          socketConfig: suite.thywills[thywillInstanceIndex].config.clientInterface.socketClientConfig
         }, this.callback);
       },
       "socket connected": function (error) {
@@ -400,16 +396,17 @@ exports.workAlready.addSendAndAwaitResponseBatch = function (batchName, suite, o
       }, this.callback);
 
       var message = exports.wrapAsMessage(options.sendMessage);
+      var applicationId = suite.thywills[options.sendInstanceIndex].applications[options.applicationIndex].id;
       suite.clients[options.sendInstanceIndex].action({
         type: "emit",
-        args: ["fromClient", suite.applications[options.applicationIndex].id, message]
+        args: ["fromClient", applicationId, message]
       }, function (error) {});
     },
     "expected response": function (error, socketEvent) {
       assert.isNull(error);
       assert.isObject(socketEvent);
       var args = [
-        suite.applications[options.applicationIndex].id,
+        suite.thywills[options.sendInstanceIndex].applications[options.applicationIndex].id,
         exports.wrapAsMessage(options.responseMessage).toObject()
       ];
       assert.deepEqual(socketEvent.args, args);

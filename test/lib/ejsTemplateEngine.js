@@ -13,7 +13,7 @@ exports.general = function (suite) {
     "ejsTemplateEngine#render": {
       topic: function () {
         var template = "<div><%= name %></div>";
-        return suite.thywillInstances[0].templateEngine.render(template, {
+        return suite.thywills[0].templateEngine.render(template, {
           name: "value"
         });
       },

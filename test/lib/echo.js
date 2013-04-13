@@ -30,7 +30,7 @@ exports.general = function (suite) {
         var message = new Message("pre-test");
         suite.clients[instanceIndex].action({
           type: "emit",
-          args: ["fromClient", suite.applications[applicationIndex].id, message]
+          args: ["fromClient", suite.thywills[instanceIndex].applications[applicationIndex].id, message]
         }, this.callback);
       },
       "message sent": function (error) {

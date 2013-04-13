@@ -16,7 +16,7 @@ exports.general = function (suite) {
   suite.addBatch({
     "channelManager#getChannelIdsForSession empty": {
       topic: function () {
-        suite.thywillInstances[0].channelManager.getChannelIdsForSession("no-session", this.callback);
+        suite.thywills[0].channelManager.getChannelIdsForSession("no-session", this.callback);
       },
       "empty array returned": function (error, channelIds) {
         assert.equal(error, null);
@@ -27,7 +27,7 @@ exports.general = function (suite) {
   suite.addBatch({
     "channelManager#getSessionIds empty": {
       topic: function () {
-        suite.thywillInstances[0].channelManager.getSessionIds("not-a-channel", this.callback);
+        suite.thywills[0].channelManager.getSessionIds("not-a-channel", this.callback);
       },
       "empty array returned": function (error, sessionIds) {
         assert.equal(error, null);
@@ -38,7 +38,7 @@ exports.general = function (suite) {
   suite.addBatch({
     "channelManager#addSessionIds": {
       topic: function () {
-        suite.thywillInstances[0].channelManager.addSessionIds(testChannelId, testSessionIds, this.callback);
+        suite.thywills[0].channelManager.addSessionIds(testChannelId, testSessionIds, this.callback);
       },
       "add successful": function (error) {
         assert.equal(error, null);
@@ -48,7 +48,7 @@ exports.general = function (suite) {
   suite.addBatch({
     "channelManager#addSessionIds again": {
       topic: function () {
-        suite.thywillInstances[0].channelManager.addSessionIds(testChannelId, testSessionIds, this.callback);
+        suite.thywills[0].channelManager.addSessionIds(testChannelId, testSessionIds, this.callback);
       },
       "add successful": function (error) {
         assert.equal(error, null);
@@ -58,7 +58,7 @@ exports.general = function (suite) {
   suite.addBatch({
     "channelManager#getSessionIds": {
       topic: function () {
-        suite.thywillInstances[0].channelManager.getSessionIds(testChannelId, this.callback);
+        suite.thywills[0].channelManager.getSessionIds(testChannelId, this.callback);
       },
       "correct sessions returned": function (error, sessionIds) {
         assert.equal(error, null);
@@ -70,7 +70,7 @@ exports.general = function (suite) {
   suite.addBatch({
     "channelManager#removeSessionIds": {
       topic: function () {
-        suite.thywillInstances[0].channelManager.removeSessionIds(testChannelId, testSessionIds, this.callback);
+        suite.thywills[0].channelManager.removeSessionIds(testChannelId, testSessionIds, this.callback);
       },
       "remove successful": function (error) {
         assert.equal(error, null);
@@ -80,7 +80,7 @@ exports.general = function (suite) {
   suite.addBatch({
     "channelManager#getSessionIds empty again": {
       topic: function () {
-        suite.thywillInstances[0].channelManager.getSessionIds(testChannelId, this.callback);
+        suite.thywills[0].channelManager.getSessionIds(testChannelId, this.callback);
       },
       "empty array returned": function (error, sessionIds) {
         assert.equal(error, null);
@@ -92,8 +92,8 @@ exports.general = function (suite) {
     "channelManager#clear": {
       topic: function () {
         var self = this;
-        suite.thywillInstances[0].channelManager.addSessionIds(testChannelId, testSessionIds, function (error) {
-          suite.thywillInstances[0].channelManager.clear(testChannelId, self.callback);
+        suite.thywills[0].channelManager.addSessionIds(testChannelId, testSessionIds, function (error) {
+          suite.thywills[0].channelManager.clear(testChannelId, self.callback);
         });
       },
       "correct sessions returned": function (error, sessionIds) {
@@ -116,11 +116,11 @@ exports.cluster = function (suite) {
     "emit on add": {
       topic: function () {
         var self = this;
-        var channelManager = suite.thywillInstances[1].channelManager;
+        var channelManager = suite.thywills[1].channelManager;
         channelManager.once(channelManager.events.SESSIONS_ADDED, function (channelId, sessionIds) {
           self.callback(channelId, sessionIds);
         });
-        suite.thywillInstances[0].channelManager.addSessionIds(testChannelId, testSessionIds, function (error) {
+        suite.thywills[0].channelManager.addSessionIds(testChannelId, testSessionIds, function (error) {
           // Do nothing.
         });
       },
@@ -134,7 +134,7 @@ exports.cluster = function (suite) {
   suite.addBatch({
     "channelManager#getSessionIds from other process": {
       topic: function () {
-        suite.thywillInstances[1].channelManager.getSessionIds(testChannelId, this.callback);
+        suite.thywills[1].channelManager.getSessionIds(testChannelId, this.callback);
       },
       "session IDs returned correctly": function (error, sessionIds) {
         assert.equal(error, null);
@@ -146,11 +146,11 @@ exports.cluster = function (suite) {
     "emit on remove": {
       topic: function () {
         var self = this;
-        var channelManager = suite.thywillInstances[1].channelManager;
+        var channelManager = suite.thywills[1].channelManager;
         channelManager.once(channelManager.events.SESSIONS_REMOVED, function (channelId, sessionIds) {
           self.callback(channelId, sessionIds);
         });
-        suite.thywillInstances[0].channelManager.removeSessionIds(testChannelId, testSessionIds, function (error) {
+        suite.thywills[0].channelManager.removeSessionIds(testChannelId, testSessionIds, function (error) {
           // Do nothing.
         });
       },
@@ -164,7 +164,7 @@ exports.cluster = function (suite) {
   suite.addBatch({
     "channelManager#getSessionIds empty in other process": {
       topic: function () {
-        suite.thywillInstances[1].channelManager.getSessionIds(testChannelId, this.callback);
+        suite.thywills[1].channelManager.getSessionIds(testChannelId, this.callback);
       },
       "empty array returned": function (error, sessionIds) {
         assert.equal(error, null);
@@ -177,12 +177,12 @@ exports.cluster = function (suite) {
     "emit on clear": {
       topic: function () {
         var self = this;
-        var channelManager = suite.thywillInstances[1].channelManager;
+        var channelManager = suite.thywills[1].channelManager;
         channelManager.once(channelManager.events.SESSIONS_REMOVED, function (channelId, sessionIds) {
           self.callback(channelId, sessionIds);
         });
-        suite.thywillInstances[0].channelManager.addSessionIds(testChannelId, testSessionIds, function (error) {
-          suite.thywillInstances[0].channelManager.clear(testChannelId, function (error) {
+        suite.thywills[0].channelManager.addSessionIds(testChannelId, testSessionIds, function (error) {
+          suite.thywills[0].channelManager.clear(testChannelId, function (error) {
             // Do nothing.
           });
         });
@@ -197,7 +197,7 @@ exports.cluster = function (suite) {
   suite.addBatch({
     "channelManager#getSessionIds still empty in other process": {
       topic: function () {
-        suite.thywillInstances[1].channelManager.getSessionIds(testChannelId, this.callback);
+        suite.thywills[1].channelManager.getSessionIds(testChannelId, this.callback);
       },
       "empty array returned": function (error, sessionIds) {
         assert.equal(error, null);

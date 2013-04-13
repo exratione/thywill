@@ -66,7 +66,7 @@ exports.general = function (suite) {
   suite.addBatch({
     "resourceManager#createResource": {
       topic: function () {
-        return suite.createSimpleResource(suite.thywillInstances[0].resourceManager);
+        return suite.createSimpleResource(suite.thywills[0].resourceManager);
       },
       "resource created successfully": function (resource) {
         assert.instanceOf(resource, Thywill.getBaseClass("Resource"));
@@ -79,7 +79,7 @@ exports.general = function (suite) {
   suite.addBatch({
     "resourceManager#createResourceFromFile": {
       topic: function () {
-        suite.createResourceFromFile(suite.thywillInstances[0].resourceManager, this.callback);
+        suite.createResourceFromFile(suite.thywills[0].resourceManager, this.callback);
       },
       "resource created successfully": function (resource) {
         assert.instanceOf(resource, Thywill.getBaseClass("Resource"));
@@ -90,7 +90,7 @@ exports.general = function (suite) {
   suite.addBatch({
     "resourceManager#store": {
       topic: function () {
-        suite.thywillInstances[0].resourceManager.store(
+        suite.thywills[0].resourceManager.store(
           suite.resources.simple.clientPath, suite.resources.simple, this.callback
         );
       },
@@ -101,7 +101,7 @@ exports.general = function (suite) {
   suite.addBatch({
     "resourceManager#load": {
       topic: function () {
-        suite.thywillInstances[0].resourceManager.load(suite.resources.simple.clientPath, this.callback);
+        suite.thywills[0].resourceManager.load(suite.resources.simple.clientPath, this.callback);
       },
       "resource loaded successfully": function (resource) {
         assert.instanceOf(resource, Thywill.getBaseClass("Resource"));
@@ -112,7 +112,7 @@ exports.general = function (suite) {
   suite.addBatch({
     "resourceManager#remove": {
       topic: function () {
-        suite.thywillInstances[0].resourceManager.remove(suite.resources.simple.clientPath, this.callback);
+        suite.thywills[0].resourceManager.remove(suite.resources.simple.clientPath, this.callback);
       },
       "resource removed successfully": function (resource) {
         assert.instanceOf(resource, Thywill.getBaseClass("Resource"));
@@ -123,7 +123,7 @@ exports.general = function (suite) {
   suite.addBatch({
     "resourceManager#load removed resource": {
       topic: function () {
-        suite.thywillInstances[0].resourceManager.load(suite.resources.simple.clientPath, this.callback);
+        suite.thywills[0].resourceManager.load(suite.resources.simple.clientPath, this.callback);
       },
       "resource is null": function (resource) {
         assert.isNull(resource);

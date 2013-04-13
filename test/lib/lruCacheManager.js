@@ -17,7 +17,7 @@ exports.cluster = function (suite) {
     "create cluster caches": {
       topic: function () {
         // Create an array of caches with matching Ids and room for two items.
-        return suite.thywillInstances.map(function (thywill, index, array) {
+        return suite.thywills.map(function (thywill, index, array) {
           return thywill.cacheManager.createCache("clusterCache", 2);
         });
       },

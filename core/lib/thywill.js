@@ -341,6 +341,7 @@ p.startup = function (applications, callback) {
   }
 
   var self = this;
+  this.applications = applications;
   this.readyCallback = callback;
   var fns = [
     // Convert uid and gid names in configuration to numeric ids.
@@ -349,7 +350,7 @@ p.startup = function (applications, callback) {
     },
     // Run through the component initialization.
     function (asyncCallback) {
-      self._initializeComponents(applications, asyncCallback);
+      self._initializeComponents(asyncCallback);
     }
   ];
   async.series(fns, function (error) {
@@ -463,12 +464,10 @@ p._checkDependenciesAndSortComponentNames = function (componentNames) {
  * /extra components
  * applications
  *
- * @param {Application[]} passedApplications
- *   Array of object instances of classes derived from Application.
  * @param {Function} callback
  *   Of the form function (error).
  */
-p._initializeComponents = function (passedApplications, callback) {
+p._initializeComponents = function (callback) {
   var self = this;
   // Most of this method builds up this array of functions to be called at the
   // end via async.series().
@@ -500,34 +499,33 @@ p._initializeComponents = function (passedApplications, callback) {
   };
   fns.push(initializeComponents);
 
-  /**
-   * A convenience function for initializing applications.
-   */
-  var initializeApplication = function (application, callback) {
-    var fns = [
-      function (asyncCallback) {
-        self._registerApplication(application, asyncCallback);
-      },
-      function (asyncCallback) {
-        application._defineBootstrapResources(asyncCallback);
-      },
-      function (asyncCallback) {
-        application._setup(asyncCallback);
-      },
-      function (asyncCallback) {
-        application._setupListeners(asyncCallback);
-      }
-    ];
-    async.series(fns, callback);
-  };
-
   // If we have applications, add a function to initialize them to the array.
-  if (passedApplications) {
-    if (!Array.isArray(passedApplications)) {
-      passedApplications = [passedApplications];
-    }
+  this.applications = this.applications || [];
+  if (!Array.isArray(this.applications)) {
+    this.applications = [this.applications];
+  }
+  if (this.applications.length) {
+    // Convenience function for initializing applications.
+    var initializeApplication = function (application, callback) {
+      var fns = [
+        function (asyncCallback) {
+          self._registerApplication(application, asyncCallback);
+        },
+        function (asyncCallback) {
+          application._defineBootstrapResources(asyncCallback);
+        },
+        function (asyncCallback) {
+          application._setup(asyncCallback);
+        },
+        function (asyncCallback) {
+          application._setupListeners(asyncCallback);
+        }
+      ];
+      async.series(fns, callback);
+    };
+    // Convenience function for initializing applications.
     var initializeApplications = function (callback) {
-      async.forEach(passedApplications, function (application, asyncCallback) {
+      async.forEach(self.applications, function (application, asyncCallback) {
         initializeApplication(application, asyncCallback);
       }, callback);
     };

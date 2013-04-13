@@ -13,7 +13,7 @@ exports.cluster = function (suite) {
   suite.addBatch({
     "create resource in cluster member alpha": {
       topic: function () {
-        suite.createResourceFromFile(suite.thywillInstances[0].resourceManager, this.callback);
+        suite.createResourceFromFile(suite.thywills[0].resourceManager, this.callback);
       },
       "resource created successfully": function (resource) {
         assert.instanceOf(resource, Thywill.getBaseClass("Resource"));
@@ -24,7 +24,7 @@ exports.cluster = function (suite) {
   suite.addBatch({
     "store resource in cluster member alpha": {
       topic: function () {
-        suite.thywillInstances[0].resourceManager.store(
+        suite.thywills[0].resourceManager.store(
           suite.resources.file.clientPath, suite.resources.file, this.callback
         );
       },
@@ -35,7 +35,7 @@ exports.cluster = function (suite) {
   suite.addBatch({
     "load resource in cluster member beta": {
       topic: function () {
-        suite.thywillInstances[1].resourceManager.load(suite.resources.file.clientPath, this.callback);
+        suite.thywills[1].resourceManager.load(suite.resources.file.clientPath, this.callback);
       },
       "resource loaded successfully": function (resource) {
         assert.instanceOf(resource, Thywill.getBaseClass("Resource"));
@@ -46,7 +46,7 @@ exports.cluster = function (suite) {
   suite.addBatch({
     "load cached resource in cluster member beta": {
       topic: function () {
-        suite.thywillInstances[1].resourceManager.load(suite.resources.file.clientPath, this.callback);
+        suite.thywills[1].resourceManager.load(suite.resources.file.clientPath, this.callback);
       },
       "resource loaded successfully": function (resource) {
         assert.instanceOf(resource, Thywill.getBaseClass("Resource"));
@@ -57,7 +57,7 @@ exports.cluster = function (suite) {
   suite.addBatch({
     "remove resource in cluster member beta": {
       topic: function () {
-        suite.thywillInstances[1].resourceManager.remove(suite.resources.file.clientPath, this.callback);
+        suite.thywills[1].resourceManager.remove(suite.resources.file.clientPath, this.callback);
       },
       "resource removed successfully": function (resource) {
         assert.instanceOf(resource, Thywill.getBaseClass("Resource"));
@@ -68,7 +68,7 @@ exports.cluster = function (suite) {
   suite.addBatch({
     "load removed resource in cluster member beta": {
       topic: function () {
-        suite.thywillInstances[1].resourceManager.load(suite.resources.file.clientPath, this.callback);
+        suite.thywills[1].resourceManager.load(suite.resources.file.clientPath, this.callback);
       },
       "resource is null": function (resource) {
         assert.isNull(resource);
@@ -78,7 +78,7 @@ exports.cluster = function (suite) {
   suite.addBatch({
     "load removed resource in cluster member alpha": {
       topic: function () {
-        suite.thywillInstances[0].resourceManager.load(suite.resources.file.clientPath, this.callback);
+        suite.thywills[0].resourceManager.load(suite.resources.file.clientPath, this.callback);
       },
       "resource is null": function (resource) {
         assert.isNull(resource);
