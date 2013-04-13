@@ -73,10 +73,8 @@ var config = {
     namespace: "/calculations",
     // The HTML page encoding to use.
     pageEncoding: "utf-8",
-    // The http.Server (required) and Express application (optional) are set
-    // here. These values are set in the start.js script.
+    // The http.Server instance is set here.
     server: {
-      // An http.Server instance.
       server: http.createServer().listen(10082)
     },
     // Configuration to apply to the Socket.IO client on setup. This is
