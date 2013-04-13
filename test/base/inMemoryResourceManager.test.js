@@ -21,7 +21,8 @@ config.resourceManager = {
 var suite = tools.createVowsSuite("Base: resourceManager/inMemoryResourceManager", {
   config: config,
   applications: null,
-  useRedis: false
+  useRedisSocketStore: false,
+  useRedisSessionStore: false
 });
 tools.addBatches(suite, "resourceManager", "general");
 

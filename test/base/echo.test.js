@@ -29,7 +29,8 @@ config.minifier.jsBaseClientPath = "/echo/js";
 var suite = tools.createVowsSuite("Base: Echo application", {
   config: config,
   applications: new Echo("echoId"),
-  useRedis: false
+  useRedisSocketStore: false,
+  useRedisSessionStore: false
 });
 tools.addBatches(suite, "echo", "general");
 

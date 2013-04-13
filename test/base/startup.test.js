@@ -16,7 +16,8 @@ var config = clone(baseConfig);
 var suite = tools.createVowsSuite("Base: Startup Thywill", {
   config: baseConfig,
   applications: null,
-  useRedis: false
+  useRedisSocketStore: false,
+  useRedisSessionStore: false
 });
 
 //-----------------------------------------------------------

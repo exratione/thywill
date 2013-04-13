@@ -12,6 +12,7 @@
     "async": "*",
     "clean-css": "*",
     "clone": "*",
+    "connect": "*",
     "connect-redis": "*",
     "dateformat": "*",
     "ejs": "*",

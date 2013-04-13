@@ -29,7 +29,8 @@ config.minifier.jsBaseClientPath = "/calculations/js";
 var suite = tools.createVowsSuite("Base: Calculations application", {
   config: config,
   applications: new Calculations("calculationsId"),
-  useRedis: false
+  useRedisSocketStore: false,
+  useRedisSessionStore: false
 });
 tools.addBatches(suite, "calculations", "general");
 

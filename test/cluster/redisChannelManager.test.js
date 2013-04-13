@@ -32,7 +32,8 @@ config.clientTracker = {
 var suite = tools.createVowsSuiteForCluster("Cluster: channelManager/redisChannelManager", {
   config: config,
   applications: null,
-  useRedis: true
+  useRedisSocketStore: true,
+  useRedisSessionStore: true
 });
 tools.addBatches(suite, "channelManager", "general");
 tools.addBatches(suite, "channelManager", "cluster");

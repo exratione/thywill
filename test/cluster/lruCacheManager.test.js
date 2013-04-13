@@ -22,7 +22,8 @@ config.cacheManager = {
 var suite = tools.createVowsSuite("Cluster: cacheManager/lruCacheManager", {
   config: config,
   applications: null,
-  useRedis: false
+  useRedisSocketStore: false,
+  useRedisSessionStore: false
 });
 tools.addBatches(suite, "cacheManager", "general");
 tools.addBatches(suite, "lruCacheManager", "cluster");

@@ -10,9 +10,10 @@ var clone = require("clone");
 var express = require("express");
 var redis = require("redis");
 var Client = require("work-already").Client;
-var MemoryStore = require("socket.io/lib/stores/memory");
-var RedisStore = require("socket.io/lib/stores/redis");
+var MemorySocketStore = require("socket.io/lib/stores/memory");
+var RedisSocketStore = require("socket.io/lib/stores/redis");
 var RedisSessionStore = require("connect-redis")(express);
+var MemorySessionStore = require("connect/lib/middleware/session/memory");
 var Thywill = require("thywill");
 var Message = Thywill.getBaseClass("Message");
 
@@ -65,27 +66,21 @@ exports.setupConfig = function (baseConfig, options) {
   // Set up server.
   // ------------------------------------------------------------
 
-  var port = config.thywill.ports[options.localClusterMemberId];
+  // Create some Redis clients, if needed.
+  var redisClients = {
+    pub: createRedisClient(),
+    sub: createRedisClient(),
+    other: createRedisClient()
+  };
 
-  // Are we using Express or not?
+  // If using Express, set it up.
   if (config.clientInterface.implementation.name === "socketIoExpressClientInterface") {
-    // Create servers.
-    var app = express();
-    config.clientInterface.server.app = app;
-    var server = http.createServer(app).listen(port);
-    config.clientInterface.server.server = server;
-    // Create a session store.
-    if (options.useRedis) {
-      config.clientInterface.sessions.store = new RedisSessionStore({
-        client: createRedisClient()
-      });
-    } else {
-      config.clientInterface.sessions.store = new MemoryStore();
-    }
+    exports.setupExpress(config, options, redisClients.other);
   }
   // Not using Express, so a vanilla http.Server with no session management is
   // set up.
   else {
+    var port = config.thywill.ports[options.localClusterMemberId];
     config.clientInterface.server.server = http.createServer().listen(port);
   }
 
@@ -94,16 +89,16 @@ exports.setupConfig = function (baseConfig, options) {
   // ------------------------------------------------------------
 
   // Are we using Redis?
-  if (options.useRedis) {
+  if (options.useRedisSocketStore) {
     // Create a RedisStore for Socket.IO.
-    config.clientInterface.socketConfig.global.store = new RedisStore({
-      redisPub: createRedisClient(),
-      redisSub: createRedisClient(),
-      redisClient: createRedisClient()
+    config.clientInterface.socketConfig.global.store = new RedisSocketStore({
+      redisPub: redisClients.pub,
+      redisSub: redisClients.sub,
+      redisClient: redisClients.other
     });
   } else {
     // Create a MemoryStore for Socket.IO.
-    config.clientInterface.socketConfig.global.store = new MemoryStore();
+    config.clientInterface.socketConfig.global.store = new MemorySocketStore();
   }
 
   // ------------------------------------------------------------
@@ -112,8 +107,8 @@ exports.setupConfig = function (baseConfig, options) {
 
   config.cluster.localClusterMemberId = options.localClusterMemberId;
   if (config.cluster.implementation.name === "redisCluster") {
-    config.cluster.communication.publishRedisClient = createRedisClient();
-    config.cluster.communication.subscribeRedisClient = createRedisClient();
+    config.cluster.communication.publishRedisClient = redisClients.pub;
+    config.cluster.communication.subscribeRedisClient = redisClients.sub;
   }
 
   // ------------------------------------------------------------
@@ -121,7 +116,7 @@ exports.setupConfig = function (baseConfig, options) {
   // ------------------------------------------------------------
 
   if (config.resourceManager.implementation.name === "redisResourceManager") {
-    config.resourceManager.redisClient = createRedisClient();
+    config.resourceManager.redisClient = redisClients.other;
   }
 
   // ------------------------------------------------------------
@@ -129,10 +124,58 @@ exports.setupConfig = function (baseConfig, options) {
   // ------------------------------------------------------------
 
   if (config.channelManager && config.channelManager.implementation.name === "redisChannelManager") {
-    config.channelManager.redisClient = createRedisClient();
+    config.channelManager.redisClient = redisClients.other;
   }
 
   return config;
+};
+
+/**
+ * Setup an Express server and attach it and other needed items to the config.
+ *
+ * @param {Object} config
+ *   The configuration object.
+ * @param {Object} options
+ *   The various options.
+ * @param {Object} redisClient
+ *   If needed, a Redis client.
+ */
+exports.setupExpress = function (config, options, redisClient) {
+  // Create servers.
+  var app = express();
+  config.clientInterface.server.app = app;
+  var port = config.thywill.ports[options.localClusterMemberId];
+  var server = http.createServer(app).listen(port);
+  config.clientInterface.server.server = server;
+
+  // Create a session store.
+  if (options.useRedisSessionStore) {
+    config.clientInterface.sessions.store = new RedisSessionStore({
+      client: redisClient
+    });
+  } else {
+    config.clientInterface.sessions.store = new MemorySessionStore();
+  }
+
+  // Add minimal configuration to the Express application: just the cookie and
+  // session middleware.
+  app.use(express.cookieParser(config.clientInterface.sessions.cookieSecret));
+  app.use(express.session({
+    cookie: {
+      httpOnly: true
+    },
+    key: config.clientInterface.sessions.cookieKey,
+    secret: config.clientInterface.sessions.cookieSecret,
+    store: config.clientInterface.sessions.store
+  }));
+
+  // Middleware and routes might be added here or after Thywill launches. Either
+  // way is just fine and won't interfere with Thywill's use of Express to serve
+  // resources. e.g. adding a catch-all here is acceptable:
+  app.all("*", function (req, res, next) {
+    res.statusCode = 404;
+    res.send("No such resource.");
+  });
 };
 
 /**
@@ -180,7 +223,7 @@ exports.addThywillLaunchBatch = function (suite, options) {
  *   // Optionally name the local cluster member.
  *   localClusterMemberId: string
  *   // If true then Redis implementations are used.
- *   useRedis: boolean
+ *   UseRedisSocketStore: boolean
  * }
  *
  * @param {string} name
@@ -282,7 +325,8 @@ exports.workAlready.addInitialBatches = function (suite, thywillInstanceIndex, p
             protocol: "http"
           },
           sockets: {
-            defaultNamespace: suite.thywillInstances[thywillInstanceIndex].config.clientInterface.namespace
+            defaultNamespace: suite.thywillInstances[thywillInstanceIndex].config.clientInterface.namespace,
+            defaultTimeout: 1000
           }
         });
       },
@@ -313,8 +357,7 @@ exports.workAlready.addInitialBatches = function (suite, thywillInstanceIndex, p
     "Connect via Socket.IO": {
       topic: function () {
         suite.clients[thywillInstanceIndex].action({
-          type: "socket",
-          timeout: 250,
+          type: "connect",
           socketConfig: suite.thywillInstances[thywillInstanceIndex].config.clientInterface.socketClientConfig
         }, this.callback);
       },
@@ -329,43 +372,49 @@ exports.workAlready.addInitialBatches = function (suite, thywillInstanceIndex, p
 };
 
 /**
- * Send a message to the server, and wait for a response.
+ * Send a message to the server, and wait for a response. Options has the form:
+ *
+ * {
+ *   // Which application this involves.
+ *   applicationIndex: number,
+ *   // Which Thywill instance / client instance to use for sending.
+ *   sendInstanceIndex: number,
+ *   // Which Thywill instance / client instance expects the response
+ *   responseInstanceIndex: number,
+ *   // The Message instance or message data to send.
+ *   sendMessage: object,
+ *   // The Message instance or message data expected in the response.
+ *   responseMessage: object
+ * }
  *
  * @param {string} batchName
  *   Name of the batch.
- * @param {Object} suite
+ * @param {object} suite
  *   A Vows test suite instance.
- * @param {number} thywillInstanceIndex
- *   Which of the Thywill instances to point this client at.
- * @param {number} applicationIndex
- *   Which of the applications to use.
- * @param {Message|mixed} sendMessage
- *   Either a Message instance or data.
- * @param {Message|mixed} responseMessage
- *   Either a Message instance or data.
+ * @param {object} options
+ *   The rest of the needed parameters.
  */
-exports.workAlready.addSendAndAwaitResponseBatch = function (batchName, suite, thywillInstanceIndex, applicationIndex, sendMessage, responseMessage) {
+exports.workAlready.addSendAndAwaitResponseBatch = function (batchName, suite, options) {
   var batch = {};
   var definition = {
     topic: function () {
-      suite.clients[0].action({
+      suite.clients[options.responseInstanceIndex].action({
         type: "awaitEmit",
-        eventType: "toClient",
-        timeout: 1000
+        eventType: "toClient"
       }, this.callback);
 
-      suite.message = exports.wrapAsMessage(sendMessage);
-      suite.clients[thywillInstanceIndex].action({
+      var message = exports.wrapAsMessage(options.sendMessage);
+      suite.clients[options.sendInstanceIndex].action({
         type: "emit",
-        args: ["fromClient", suite.applications[applicationIndex].id, suite.message]
+        args: ["fromClient", suite.applications[options.applicationIndex].id, message]
       }, function (error) {});
     },
     "expected response": function (error, socketEvent) {
       assert.isNull(error);
       assert.isObject(socketEvent);
       var args = [
-        suite.applications[applicationIndex].id,
-        exports.wrapAsMessage(responseMessage).toObject()
+        suite.applications[options.applicationIndex].id,
+        exports.wrapAsMessage(options.responseMessage).toObject()
       ];
       assert.deepEqual(socketEvent.args, args);
     }

@@ -52,8 +52,11 @@ exports.general = function (suite) {
   // Test the echoing functionality.
   var sendMessage = "test";
   var responseMessage = "test";
-  tools.workAlready.addSendAndAwaitResponseBatch(
-    "Echo message and response",
-    suite, instanceIndex, applicationIndex, sendMessage, responseMessage
-  );
+  tools.workAlready.addSendAndAwaitResponseBatch("Echo message and response", suite, {
+    applicationIndex: applicationIndex,
+    sendInstanceIndex: instanceIndex,
+    responseInstanceIndex: instanceIndex,
+    sendMessage: sendMessage,
+    responseMessage: responseMessage
+  });
 };

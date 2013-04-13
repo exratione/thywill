@@ -177,7 +177,7 @@ p._attachExpressSessionsToSockets = function () {
     if (data && data.headers && data.headers.cookie) {
       cookieParser(data, {}, function (error) {
         if (error) {
-          self.thywill.debug(error);
+          self.thywill.log.debug(error);
           callback("COOKIE_PARSE_ERROR", false);
           return;
         }
@@ -192,7 +192,7 @@ p._attachExpressSessionsToSockets = function () {
           // debugging that much easier.
           data.sessionId = sessionId;
           if (error) {
-            self.thywill.debug(error);
+            self.thywill.log.debug(error);
             callback("ERROR", false);
           } else if (!session) {
             callback("NO_SESSION", false);
@@ -298,18 +298,21 @@ p._send500ResourceResponse = function (req, res, next, error) {
 
 /**
  * @see ClientInterface#loadSession
+ *
+ * Using Express sessions.
  */
 p.loadSession = function (client, callback) {
   var sessionId = this._clientOrSessionIdToSessionId(client);
-  this.config.sessions.store.get(sessionId, callback);
+  this.config.sessions.store.load(sessionId, callback);
 };
 
 /**
  * @see ClientInterface#storeSession
+ *
+ * Using Express sessions.
  */
 p.storeSession = function (client, session, callback) {
-  var sessionId = this._clientOrSessionIdToSessionId(client);
-  this.config.sessions.store.set(sessionId, session, callback);
+  session.save(callback);
 };
 
 // -----------------------------------------------------------

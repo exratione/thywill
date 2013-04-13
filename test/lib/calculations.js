@@ -22,64 +22,58 @@ exports.general = function (suite) {
   ];
   tools.workAlready.addInitialBatches(suite, instanceIndex, pageMatches);
 
-  // Test the RPC calls.
-  var sendMessage, responseMessage;
-  sendMessage = tools.createRpcMessage({
-    name: "multiplicative.multiplyByTwo",
-    hasCallback: false,
-    args: [10]
+  // Test the RPC calls and errors.
+  var data = [
+    {
+      name: "multiplicative.multiplyByTwo",
+      batchName: "Test RPC: multiplicative.multiplyByTwo",
+      hasCallback: false,
+      args: [10],
+      responseArgs: [null, 20]
+    },
+    {
+      name: "multiplicative.divideByTwo",
+      batchName: "Test RPC: multiplicative.divideByTwo",
+      hasCallback: true,
+      args: [10],
+      responseArgs: [null, 5]
+    },
+    {
+      name: "powers.square",
+      batchName: "Test RPC: powers.square",
+      hasCallback: false,
+      args: [10],
+      responseArgs: [null, 100]
+    },
+    {
+      name: "powers.squareRoot",
+      batchName: "Test RPC: powers.squareRoot",
+      hasCallback: true,
+      args: [100],
+      responseArgs: [null, 10]
+    },
+    {
+      name: "not a function",
+      batchName: "Test RPC: no function error",
+      hasCallback: true,
+      args: [100],
+      responseArgs: [suite.applications[applicationIndex].rpcErrors.NO_FUNCTION]
+    }
+  ];
+
+  data.forEach(function (element, index, array) {
+    var sendMessage = tools.createRpcMessage({
+      name: element.name,
+      hasCallback: element.hasCallback,
+      args: element.args
+    });
+    var responseMessage = tools.createRpcResponseMessage(sendMessage.getData().id, element.responseArgs);
+    tools.workAlready.addSendAndAwaitResponseBatch(element.batchName, suite, {
+      applicationIndex: applicationIndex,
+      sendInstanceIndex: instanceIndex,
+      responseInstanceIndex: instanceIndex,
+      sendMessage: sendMessage,
+      responseMessage: responseMessage
+    });
   });
-  responseMessage = tools.createRpcResponseMessage(sendMessage.getData().id, [null, 20]);
-  tools.workAlready.addSendAndAwaitResponseBatch(
-    "Test RPC: multiplicative.multiplyByTwo",
-    suite, instanceIndex, applicationIndex, sendMessage, responseMessage
-  );
-
-  sendMessage = tools.createRpcMessage({
-    name: "multiplicative.divideByTwo",
-    hasCallback: true,
-    args: [10]
-  });
-  responseMessage = tools.createRpcResponseMessage(sendMessage.getData().id, [null, 5]);
-  tools.workAlready.addSendAndAwaitResponseBatch(
-    "Test RPC: multiplicative.divideByTwo",
-    suite, instanceIndex, applicationIndex, sendMessage, responseMessage
-  );
-
-  sendMessage = tools.createRpcMessage({
-    name: "powers.square",
-    hasCallback: false,
-    args: [10]
-  });
-  responseMessage = tools.createRpcResponseMessage(sendMessage.getData().id, [null, 100]);
-  tools.workAlready.addSendAndAwaitResponseBatch(
-    "Test RPC: powers.square",
-    suite, instanceIndex, applicationIndex, sendMessage, responseMessage
-  );
-
-  sendMessage = tools.createRpcMessage({
-    name: "powers.squareRoot",
-    hasCallback: true,
-    args: [100]
-  });
-  responseMessage = tools.createRpcResponseMessage(sendMessage.getData().id, [null, 10]);
-  tools.workAlready.addSendAndAwaitResponseBatch(
-    "Test RPC: powers.squareRoot",
-    suite, instanceIndex, applicationIndex, sendMessage, responseMessage
-  );
-
-  // Test some errors.
-  var noFunctionError = suite.applications[applicationIndex].rpcErrors.NO_FUNCTION;
-
-  sendMessage = tools.createRpcMessage({
-    name: "not a function",
-    hasCallback: true,
-    args: [100]
-  });
-  responseMessage = tools.createRpcResponseMessage(sendMessage.getData().id, [noFunctionError]);
-  tools.workAlready.addSendAndAwaitResponseBatch(
-    "Test RPC: no function error",
-    suite, instanceIndex, applicationIndex, sendMessage, responseMessage
-  );
-
 };

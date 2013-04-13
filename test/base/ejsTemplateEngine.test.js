@@ -21,7 +21,8 @@ config.templateEngine = {
 var suite = tools.createVowsSuite("Base: templateEngine/ejsTemplateEngine", {
   config: config,
   applications: null,
-  useRedis: false
+  useRedisSocketStore: false,
+  useRedisSessionStore: false
 });
 tools.addBatches(suite, "ejsTemplateEngine", "general");
 

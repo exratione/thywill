@@ -16,7 +16,8 @@ var config = clone(clusterConfig);
 var suite = tools.createVowsSuiteForCluster("Cluster: resourceManager/redisResourceManager", {
   config: config,
   applications: null,
-  useRedis: true
+  useRedisSocketStore: true,
+  useRedisSessionStore: true
 });
 tools.addBatches(suite, "resourceManager", "general");
 tools.addBatches(suite, "redisResourceManager", "cluster");
