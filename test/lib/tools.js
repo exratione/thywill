@@ -48,6 +48,35 @@ function createRedisClient () {
   return client;
 }
 
+exports.applicationClasses = {
+  calculations: require("../../applications/calculations/lib/calculations"),
+  chat: require("../../applications/chat/lib/chat"),
+  display: require("../../applications/display/lib/display"),
+  draw: require("../../applications/draw/lib/draw"),
+  echo: require("../../applications/echo/lib/echo")
+};
+
+/**
+ * Create an appropriate application instance.
+ *
+ * @param {string} name
+ *   Lowercase application name.
+ * @return {object}
+ *   An application instance of the appropriate class.
+ */
+exports.createApplicationInstance = function (name) {
+  if (name === "chat") {
+    return new exports.applicationClasses[name](name, {
+      redis: {
+        client: createRedisClient(),
+        prefix: "thywill:chat:application:"
+      }
+    });
+  } else {
+    return new exports.applicationClasses[name](name);
+  }
+};
+
 /**
  * Set up the config to start the Thywill server, based on the options provided.
  * The options object is the same as for createVowsTestSuite().
@@ -186,13 +215,21 @@ exports.setupConfig = function (baseConfig, options) {
 exports.addThywillLaunchBatch = function (suite, options) {
   suite.thywills = suite.thywills || [];
 
+  options.applications = options.applications || [];
+  if (!Array.isArray(options.applications)) {
+    options.applications = [options.applications];
+  }
+  var applications = options.applications.map(function (name, index, array) {
+    return exports.createApplicationInstance(name);
+  });
+
   // Config should have only clonable things in it - no class instances, etc.
   var config = exports.setupConfig(options.config, options);
 
   suite.addBatch({
     "Launch Thywill": {
       topic: function () {
-        Thywill.launch(config, options.applications, this.callback);
+        Thywill.launch(config, applications, this.callback);
       },
       "successful launch": function (error, thywill) {
         assert.isNull(error);

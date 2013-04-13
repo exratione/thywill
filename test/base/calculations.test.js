@@ -28,7 +28,7 @@ config.minifier.jsBaseClientPath = "/calculations/js";
 // Obtain a test suit that launches Thywill.
 var suite = tools.createVowsSuite("Base: Calculations application", {
   config: config,
-  applications: new Calculations("calculationsId"),
+  applications: "calculations",
   useRedisSocketStore: false,
   useRedisSessionStore: false
 });

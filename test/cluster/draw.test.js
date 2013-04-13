@@ -28,7 +28,7 @@ config.minifier.jsBaseClientPath = "/draw/js";
 // Obtain a test suit that launches Thywill.
 var suite = tools.createVowsSuiteForCluster("Cluster: Draw application", {
   config: config,
-  applications: new Draw("drawId"),
+  applications: "draw",
   useRedisSocketStore: true,
   useRedisSessionStore: true
 });

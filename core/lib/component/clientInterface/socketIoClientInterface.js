@@ -438,41 +438,20 @@ p._setHttpServerToServeResources = function () {
 p._initializeSocketIo = function () {
   var self = this;
   // Establish Socket.IO on the server instance.
-  this.socketFactory = io.listen(this.config.server.server);
+  this.config.socketConfig = this.config.socketConfig || {};
+  this.config.socketConfig.global = this.config.socketConfig.global || {};
+  this.socketFactory = io.listen(this.config.server.server, this.config.socketConfig.global);
 
-  // Configure Socket.IO based on what we have in the configuration object.
-  // This first set is server configuration - client configuration happens
-  // later on, and must be put into a resource file using templates.
-  var socketConfig = this.config.socketConfig;
-  var resourceSettings = [];
-  if (socketConfig) {
-    // If there is a global configuration set, then use it.
-    if (socketConfig.global && socketConfig.global instanceof Object) {
-      this.socketFactory.configure(function () {
-        for (var property in socketConfig.global) {
-          self.socketFactory.set(property, socketConfig.global[property]);
-        }
-      });
+  // Now walk through to apply whatever environment-specific Socket.IO
+  // configuration is provided in the configuration object. These
+  // configuration properties will override the general ones, but will
+  // only be used if the NODE_ENV environment variable matches the
+  // environmentName - e.g. "production", "development", etc.
+  var environmentConfig = this.config.socketConfig[process.env.NODE_ENV];
+  if (environmentConfig) {
+    for (var property in environmentConfig) {
+      this.socketFactory.set(property, environmentConfig[property]);
     }
-
-    // Now walk through to apply whatever environment-specific Socket.IO
-    // configurations are provided in the configuration object. These
-    // configuration properties will only be used if the NODE_ENV environment
-    // variable matches the environmentName - e.g. "production", "development",
-    // etc.
-    var environmentNames = Object.keys(socketConfig);
-    environmentNames.filter(function (environmentName, index, array) {
-      return (environmentName !== "global");
-    }).forEach(function (environmentName, index, array) {
-      var environmentConfig = socketConfig[environmentName];
-      if (environmentConfig && environmentConfig instanceof Object) {
-        self.socketFactory.configure(environmentName, function() {
-          for (var property in environmentConfig) {
-            self.socketFactory.set(property, environmentConfig[property]);
-          }
-        });
-      }
-    });
   }
 
   // Tell socket.io what to do when a connection starts - this will kick off the

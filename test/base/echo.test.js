@@ -28,7 +28,7 @@ config.minifier.jsBaseClientPath = "/echo/js";
 // Obtain a test suit that launches Thywill.
 var suite = tools.createVowsSuite("Base: Echo application", {
   config: config,
-  applications: new Echo("echoId"),
+  applications: "echo",
   useRedisSocketStore: false,
   useRedisSessionStore: false
 });
