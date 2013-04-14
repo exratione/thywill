@@ -367,34 +367,12 @@ function launchApplicationInChildProcess (data, callback) {
 /**
  * Obtain a Vows suite in which the first batches involve launching one or
  * more child processes running one of the example applications, and then
- * starting up work-already package clients and connecting via Socket.IO.
+ * starting up work-already package clients - but not actually connecting
+ * via Socket.IO.
  *
- * The processData has the form:
- *
- * [
- *   {
- *     port: 10078,
- *     clusterMemberId: "alpha"
- *   },
- *   {
- *     port: 10079,
- *     clusterMemberId: "beta"
- *   },
- *   ...
- * ]
- *
- * @param {string} name
- *   The Vows suite name.
- * @param {string} applicationName
- *   The application name.
- * @param {array} pageMatches
- *   Strings to check for in the application page.
- * @param {array} processData
- *   Data on the process to be launched.
- * @return {object}
- *   A Vows suite.
+ * @see exports.application.vowsSuite
  */
-exports.application.vowsSuite = function(name, applicationName, pageMatches, processData) {
+exports.application.vowsSuitePendingConnections = function (name, applicationName, pageMatches, processData) {
   var suite = vows.describe(name);
   if (!Array.isArray(processData)) {
     processData = [processData];
@@ -470,9 +448,46 @@ exports.application.vowsSuite = function(name, applicationName, pageMatches, pro
     batch = {};
     batch[batchName] = batchContent;
     suite.addBatch(batch);
+  });
 
-    // 3) Connect via Socket.IO.
-    batchContent = {
+  return suite;
+};
+
+/**
+ * Obtain a Vows suite in which the first batches involve launching one or
+ * more child processes running one of the example applications, and then
+ * starting up work-already package clients and connecting via Socket.IO.
+ *
+ * The processData has the form:
+ *
+ * [
+ *   {
+ *     port: 10078,
+ *     clusterMemberId: "alpha"
+ *   },
+ *   {
+ *     port: 10079,
+ *     clusterMemberId: "beta"
+ *   },
+ *   ...
+ * ]
+ *
+ * @param {string} name
+ *   The Vows suite name.
+ * @param {string} applicationName
+ *   The application name.
+ * @param {array} pageMatches
+ *   Strings to check for in the application page.
+ * @param {array} processData
+ *   Data on the process to be launched.
+ * @return {object}
+ *   A Vows suite.
+ */
+exports.application.vowsSuite = function(name, applicationName, pageMatches, processData) {
+  var suite = exports.application.vowsSuitePendingConnections(name, applicationName, pageMatches, processData);
+  // Add batches to connect via Socket.IO.
+  processData.forEach(function (data, index, array) {
+    var batchContent = {
       topic: function () {
         suite.clients[index].action({
           type: "connect",
@@ -488,8 +503,8 @@ exports.application.vowsSuite = function(name, applicationName, pageMatches, pro
         assert.isObject(client.page.sockets[client.config.sockets.defaultNamespace]);
       }
     };
-    batchName = "Connect via Socket.IO to clusterMemberId: " + data.clusterMemberId;
-    batch = {};
+    var batchName = "Connect via Socket.IO to clusterMemberId: " + data.clusterMemberId;
+    var batch = {};
     batch[batchName] = batchContent;
     suite.addBatch(batch);
   });
