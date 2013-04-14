@@ -334,28 +334,36 @@ function launchApplicationInChildProcess (data, callback) {
     }
   );
 
+  // Helper functions added to the child process instance.
+  child.onUnexpectedExit = function (code, signal) {
+    throw new Error("Child process running application terminated with code: " + code);
+  };
+  child.shutdown = function () {
+    this.removeListener("exit", this.onUnexpectedExit);
+    this.kill("SIGTERM");
+  };
+
   // Make sure the child process dies along with this parent process insofar
   // as is possible. SIGTERM listener shouldn't be needed here for Vows test
   // processes, but leave it in anyway.
   process.on("SIGTERM", function () {
-    child.kill("SIGTERM");
+    child.shutdown();
   });
   process.on("exit", function () {
-    child.kill("SIGTERM");
+    child.shutdown();
   });
   // Kind of ugly. TODO: replace with Domains or something better.
   process.once("uncaughtException", function (error) {
-    child.kill("SIGTERM");
+    child.shutdown();
     throw error;
   });
 
   // If the child process dies, then we have a problem.
-  child.on("exit", function (code, signal) {
-    throw new Error("Child process running application terminated with code: " + code);
-  });
+  child.on("exit", child.onUnexpectedExit);
 
-  // Listen for messages from the heartbeat child process.
-  child.on("message", function (message) {
+  // Listen for one message from the application child process - used to wait
+  // for its Thywill startup to be done.
+  child.once("message", function (message) {
     if (message === "complete") {
       callback(null, child);
     } else {
@@ -542,8 +550,8 @@ exports.application.closeVowsSuite = function (suite) {
       topic: function () {
         if (Array.isArray(suite.childProcesses)) {
           suite.childProcesses.forEach(function (child, index, array) {
-            child.disconnect();
-            child.kill("SIGTERM");
+            // Use the helper method we added to the child.
+            child.shutdown();
           });
         }
         return true;

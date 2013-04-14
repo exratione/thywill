@@ -308,6 +308,16 @@ p.launchHeartbeatProcess = function () {
     self.heartbeatProcessMessage(message);
   });
 
+  // Helper functions added to the child process to manage shutdown.
+  this.heartbeatProcess.onUnexpectedExit = function (code, signal) {
+    self.thywill.log.error("RedisCluster: heartbeat process terminated with code: " + code);
+    process.exit(1);
+  }
+  this.heartbeatProcess.shutdown = function () {
+    this.removeListener("exit", this.onUnexpectedExit);
+    this.kill("SIGTERM");
+  }
+
   // Make sure the child process dies along with this parent process, as far as
   // is possible. I believe a SIGKILL to this process is going to leave the
   // child heartbeat processes hanging for a little while on trying to send the
@@ -316,23 +326,20 @@ p.launchHeartbeatProcess = function () {
   // This combination of items works under most circumstances; e.g. running
   // ordinarily, running as child process in test code, running under a monitor
   // process, etc.
-  process.on("SIGTERM", function () {
-    self.heartbeatProcess.kill("SIGTERM");
+  process.once("SIGTERM", function () {
+    self.heartbeatProcess.shutdown();
   });
-  process.on("exit", function () {
-    self.heartbeatProcess.kill("SIGTERM");
+  process.once("exit", function () {
+    self.heartbeatProcess.shutdown();
   });
   // Kind of ugly. TODO: replace with Domains or something better.
   process.once("uncaughtException", function (error) {
-    self.heartbeatProcess.kill("SIGTERM");
+    self.heartbeatProcess.shutdown();
     throw error;
   });
 
   // If the child process dies, then we have a problem, and need to die also.
-  this.heartbeatProcess.on("exit", function (code, signal) {
-    self.thywill.log.error("RedisCluster: heartbeat process terminated with code: " + code);
-    process.exit(1);
-  });
+  this.heartbeatProcess.on("exit", this.heartbeatProcess.onUnexpectedExit);
 };
 
 /**
