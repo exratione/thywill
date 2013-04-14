@@ -18,13 +18,12 @@ config.resourceManager = {
 };
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuite("Base: resourceManager/inMemoryResourceManager", {
+var suite = tools.headless.singleInstanceVowsSuite("Base: resourceManager/inMemoryResourceManager", {
   config: config,
-  applications: null,
   useRedisSocketStore: false,
   useRedisSessionStore: false
 });
-tools.addBatches(suite, "resourceManager", "general");
+tools.headless.addBatches(suite, "resourceManager", "general");
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

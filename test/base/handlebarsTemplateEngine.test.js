@@ -19,13 +19,12 @@ config.templateEngine = {
 };
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuite("Base: templateEngine/handlebarsTemplateEngine", {
+var suite = tools.headless.singleInstanceVowsSuite("Base: templateEngine/handlebarsTemplateEngine", {
   config: config,
-  applications: null,
   useRedisSocketStore: false,
   useRedisSessionStore: false
 });
-tools.addBatches(suite, "handlebarsTemplateEngine", "general");
+tools.headless.addBatches(suite, "handlebarsTemplateEngine", "general");
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

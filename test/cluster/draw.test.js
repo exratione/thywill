@@ -2,38 +2,48 @@
  * @fileOverview
  * Vows tests for the Draw example application.
  *
- * These are base tests without Express, Redis, or other frills.
+ * These are cluster tests using Express, Redis, and multiple Thywill
+ * processes.
  */
 
-var clone = require("clone");
 var tools = require("../lib/tools");
-var Draw = require("../../applications/draw/lib/draw");
-var clusterConfig = require("../config/clusterTestThywillConfig");
 
-var config = clone(clusterConfig);
-// An example application should have its own base path and Socket.IO
-// namespace.
-config.clientInterface.baseClientPath = "/draw";
-config.clientInterface.namespace = "/draw";
-// Note that the client resource has no leading /. These must otherwise match.
-config.clientInterface.socketClientConfig.resource = "draw/socket.io";
-config.clientInterface.socketConfig.global.resource = "/draw/socket.io";
-// Resource minification settings.
-config.clientInterface.minifyCss = true;
-config.clientInterface.minifyJavascript = true;
-// Base paths to use when defining new resources for merged CSS and Javascript.
-config.minifier.cssBaseClientPath = "/draw/css";
-config.minifier.jsBaseClientPath = "/draw/js";
+var suiteName = "Base: Draw application";
+var applicationName = "draw";
+// The initial batches load the application page and then connect via
+// Socket.IO. The matches are checked against the page contents. Here
+// we're looking at the templates that should be included.
+var pageMatches = [
+  '<div id="title">{{title}}</div>'
+];
+// Data for the processes to launch.
+var processData = [
+  {
+    port: 10078,
+    clusterMemberId: "alpha"
+  },
+  {
+    port: 10079,
+    clusterMemberId: "beta"
+  }
+];
 
-// Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuiteForCluster("Cluster: Draw application", {
-  config: config,
-  applications: "draw",
-  useRedisSocketStore: true,
-  useRedisSessionStore: true
+// Obtain a test suit that launches Thywill instances in child processes.
+var suite = tools.application.vowsSuite(suiteName, applicationName, pageMatches, processData);
+
+// Test the functionality for sending notice of a drawn item and having
+// the same data broadcast to the other client.
+//
+// Send fake data, since we're not actually processing the front end stuff.
+var sendMessage = { segments: [] };
+var responseMessage = { segments: [] };
+tools.application.addSendAndAwaitResponseBatch("Draw line data message and response", suite, {
+  applicationId: "draw",
+  sendInstanceIndex: 0,
+  responseInstanceIndex: 1,
+  sendMessage: sendMessage,
+  responseMessage: responseMessage
 });
-tools.addBatches(suite, "draw", "general");
-//tools.addBatches(suite, "draw", "cluster");
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

@@ -3,6 +3,8 @@
  * Various utility functions for testing Thywill.
  */
 
+var childProcess = require("child_process");
+var path = require("path");
 var http = require("http");
 var vows = require("vows");
 var assert = require("assert");
@@ -16,6 +18,14 @@ var RedisSessionStore = require("connect-redis")(express);
 var MemorySessionStore = require("connect/lib/middleware/session/memory");
 var Thywill = require("thywill");
 var Message = Thywill.getBaseClass("Message");
+
+
+// ------------------------------------------------------------
+// Relating to setting up headless Thywill instances without
+// applications running in this process.
+// ------------------------------------------------------------
+
+exports.headless = {};
 
 /**
  * Utility function to create a client for a local Redis server.
@@ -48,38 +58,8 @@ function createRedisClient () {
   return client;
 }
 
-exports.applicationClasses = {
-  calculations: require("../../applications/calculations/lib/calculations"),
-  chat: require("../../applications/chat/lib/chat"),
-  display: require("../../applications/display/lib/display"),
-  draw: require("../../applications/draw/lib/draw"),
-  echo: require("../../applications/echo/lib/echo")
-};
-
 /**
- * Create an appropriate application instance.
- *
- * @param {string} name
- *   Lowercase application name.
- * @return {object}
- *   An application instance of the appropriate class.
- */
-exports.createApplicationInstance = function (name) {
-  if (name === "chat") {
-    return new exports.applicationClasses[name](name, {
-      redis: {
-        client: createRedisClient(),
-        prefix: "thywill:chat:application:"
-      }
-    });
-  } else {
-    return new exports.applicationClasses[name](name);
-  }
-};
-
-/**
- * Set up the config to start the Thywill server, based on the options provided.
- * The options object is the same as for createVowsTestSuite().
+ * Set up the config to start a Thywill server, based on the options provided.
  *
  * @param {Object} baseConfig
  *   The base configuration object, lacking any class instances, etc.
@@ -88,7 +68,7 @@ exports.createApplicationInstance = function (name) {
  * @return {Object}
  *   A cloned configuration object.
  */
-exports.setupConfig = function (baseConfig, options) {
+function setupConfig (baseConfig, options) {
   var config = clone(baseConfig);
 
   // Create some Redis clients, if needed.
@@ -201,35 +181,27 @@ exports.setupConfig = function (baseConfig, options) {
   }
 
   return config;
-};
+}
 
 /**
- * Add a batch to a Vows suite that launches a Thywill instance. The options object is
- * the same as for createVowsTestSuite().
+ * Add a batch to a Vows suite that launches a Thywill instance without any
+ * applications.
  *
  * @param {Object} suite
  *   A Vows test suite instance.
  * @param {Object} options
  *   The various options.
  */
-exports.addThywillLaunchBatch = function (suite, options) {
+exports.headless.addThywillLaunchBatch = function (suite, options) {
   suite.thywills = suite.thywills || [];
 
-  options.applications = options.applications || [];
-  if (!Array.isArray(options.applications)) {
-    options.applications = [options.applications];
-  }
-  var applications = options.applications.map(function (name, index, array) {
-    return exports.createApplicationInstance(name);
-  });
-
   // Config should have only clonable things in it - no class instances, etc.
-  var config = exports.setupConfig(options.config, options);
+  var config = setupConfig(options.config, options);
 
   suite.addBatch({
     "Launch Thywill": {
       topic: function () {
-        Thywill.launch(config, applications, this.callback);
+        Thywill.launch(config, null, this.callback);
       },
       "successful launch": function (error, thywill) {
         assert.isNull(error);
@@ -241,18 +213,19 @@ exports.addThywillLaunchBatch = function (suite, options) {
 };
 
 /**
- * Create a partially formed Vows suite that launches a Thywill instance as
- * its first batch. The options object is as follows:
+ * Create a partially formed Vows suite that launches a Thywill instance
+ * without any applications as the first batch. This all happens in the
+ * local process.
  *
  * {
  *   // Thywill configuration, without any of the class instances filled in.
  *   config: object
- *   // Optional applications.
- *   applications: Application|Application[]
  *   // Optionally name the local cluster member.
  *   localClusterMemberId: string
- *   // If true then Redis implementations are used.
+ *   // If true then Redis implementations are used for Socket.IO.
  *   UseRedisSocketStore: boolean
+ *   // If true then Redis implementations are used for Express sessions.
+ *   UseRedisSessionStore: boolean
  * }
  *
  * @param {string} name
@@ -260,39 +233,37 @@ exports.addThywillLaunchBatch = function (suite, options) {
  * @param {Object} options
  *   The various options.
  * @return {Object}
- *   A Vows suite with a batch added to launch a Thywill server.
+ *   A Vows suite.
  */
-exports.createVowsSuite = function (name, options) {
-  // Set up the test suite and return it.
+exports.headless.singleInstanceVowsSuite = function (name, options) {
   var suite = vows.describe(name);
   options.localClusterMemberId = options.localClusterMemberId || "alpha";
-  exports.addThywillLaunchBatch(suite, options);
+  exports.headless.addThywillLaunchBatch(suite, options);
   return suite;
 };
 
 /**
- * Create a partially formed Vows suite that launches multiple Thywill
- * instances as the first batches. The options object the same as for
- * createVowsSuite().
+ * Create a partially formed Vows suite that launches two Thywill instances
+ * without any applications in the initial batches. This all happens in the
+ * local process.
  *
  * @param {string} name
  *   The test suite name.
  * @param {Object} options
  *   The various options.
  * @return {Object}
- *   A Vows suite with a batch added to launch a Thywill server.
+ *   A Vows suite.
  */
-exports.createVowsSuiteForCluster = function (name, options) {
-  // Set up the test suite and return it.
+exports.headless.clusterVowsSuite = function (name, options) {
   var suite = vows.describe(name);
 
   var optionsAlpha = clone(options);
   optionsAlpha.localClusterMemberId = "alpha";
-  exports.addThywillLaunchBatch(suite, optionsAlpha);
+  exports.headless.addThywillLaunchBatch(suite, optionsAlpha);
 
   var optionsBeta = clone(options);
   optionsBeta.localClusterMemberId = "beta";
-  exports.addThywillLaunchBatch(suite, optionsBeta);
+  exports.headless.addThywillLaunchBatch(suite, optionsBeta);
 
   return suite;
 };
@@ -308,68 +279,157 @@ exports.createVowsSuiteForCluster = function (name, options) {
  * @param {String} property
  *   The property that will contain the batch-adding function.
  */
-exports.addBatches = function (suite, name, property) {
+exports.headless.addBatches = function (suite, name, property) {
   var fn = require("./" + name)[property];
   fn(suite);
 };
 
-// ------------------------------------------------
-// Related to the work-already package.
-// ------------------------------------------------
+// ------------------------------------------------------------------------
+// Related to testing against application child processes.
+// ------------------------------------------------------------------------
 
-exports.workAlready = {};
+// On the use of child processes to test the applications:
+//
+// This is done because there are odd issues with the use of the Redis-based
+// Socket.IO store when running multiple Thywill servers in the same process.
+// It is quicker to work around that with child processes for end-to-end web
+// and socket tests than to head on down the rabbit hole of figuring out
+// exactly what the problem is.
+//
+// This issue only impacts socket.io connections, and only with two or more
+// Thywill instances in the same process. When trying to connect, the
+// connection hangs, as the connection event is only emitted in the general
+// namespace, not in the application namespace as it should be. Again, this
+// only happens when two or more Thywill instances run in the same process.
+
+exports.application = {};
+
+function launchApplicationInChildProcess (data) {
+  var args = JSON.stringify(data);
+  args = new Buffer(args, "utf8").toString("base64");
+
+  var child = childProcess.fork(
+    path.join(__dirname, "launchApplicationInstance.js"),
+    [args],
+    {
+      // Pass over all of the environment.
+      env: process.ENV,
+      // Share stdout.
+      silent: false
+    }
+  );
+
+  // Make sure the child process dies along with this parent process; certainly
+  // necessary for Vows tests, possible not so much under other circumstances.
+  process.on("exit", function () {
+    child.kill("SIGKILL");
+  });
+  // Kind of ugly. TODO: replace with Domains or something better.
+  process.once("uncaughtException", function (error) {
+    child.kill("SIGKILL");
+    throw error;
+  });
+
+  // If the child process dies, then we have a problem.
+  child.on("exit", function (code, signal) {
+    throw new Error("Child process running application terminated with code: " + code);
+  });
+
+  return child;
+}
 
 /**
- * Create a work-already package client and connect it to one of the test
- * Thywill instances, which must be running one of the example applications.
+ * Obtain a Vows suite in which the first batches involve launching one or
+ * more child processes running one of the example applications, and then
+ * starting up work-already package clients and connecting via Socket.IO.
  *
- * This is generic for all test applications. It does the following:
+ * The processData has the form:
  *
- * 1) Create a work-already client and attach it to the suite.
- * 2) Load the main page.
- * 3) Connect via Socket.IO.
+ * [
+ *   {
+ *     port: 10078,
+ *     clusterMemberId: "alpha"
+ *   },
+ *   {
+ *     port: 10079,
+ *     clusterMemberId: "beta"
+ *   },
+ *   ...
+ * ]
  *
- * @param {Object} suite
- *   A Vows test suite instance.
- * @param {number} thywillInstanceIndex
- *   Which of the Thywill instances to point this client at.
- * @param {string|array} pageMatches
- *   Strings to match on in the main application page.
+ * @param {string} name
+ *   The Vows suite name.
+ * @param {string} applicationName
+ *   The application name.
+ * @param {array} pageMatches
+ *   Strings to check for in the application page.
+ * @param {array} processData
+ *   Data on the process to be launched.
+ * @return {object}
+ *   A Vows suite.
  */
-exports.workAlready.addInitialBatches = function (suite, thywillInstanceIndex, pageMatches) {
-  pageMatches = pageMatches || [];
-  if (!Array.isArray(pageMatches)) {
-    pageMatches = [pageMatches];
+exports.application.vowsSuite = function(name, applicationName, pageMatches, processData) {
+  var suite = vows.describe(name);
+  if (!Array.isArray(processData)) {
+    processData = [processData];
   }
 
-  suite.addBatch({
-    "Create work-already client": {
+  // Add batches to launch the child processes.
+  processData.forEach(function (data, index, array) {
+    data.application = applicationName;
+    var batchContent = {
       topic: function () {
-        var ports = suite.thywills[thywillInstanceIndex].config.thywill.ports;
-        var portName = (Object.keys(ports))[thywillInstanceIndex];
+        return launchApplicationInChildProcess(data);
+      },
+      "child process launched": function (child) {
+        suite.childProcesses = suite.childProcesses || [];
+        suite.childProcessData = suite.childProcessData || [];
+        suite.childProcesses.push(child);
+        suite.childProcessData.push(data);
+      }
+    };
+    var batchName = "Launch application: " + applicationName + " port: " + data.port + " clusterMemberId: " + data.clusterMemberId;
+    var batch = {};
+    batch[batchName] = batchContent;
+    suite.addBatch(batch);
+  });
+
+  // Add a delay batch to allow time for the processes to complete.
+  exports.addDelayBatch(suite, 5000);
+
+  // Add batches to set up work-already clients and get them connected via
+  // Socket.IO to these child process Thywill instances.
+  processData.forEach(function (data, index, array) {
+    var batchContent, batchName, batch;
+    // 1) Create client.
+    batchContent = {
+      topic: function () {
         return new Client({
           server: {
             host: "localhost",
-            port: ports[portName],
+            port: data.port,
             protocol: "http"
           },
           sockets: {
-            defaultNamespace: suite.thywills[thywillInstanceIndex].config.clientInterface.namespace,
+            defaultNamespace: "/" + applicationName,
             defaultTimeout: 1000
           }
         });
       },
       "client created": function (client) {
         suite.clients = suite.clients || [];
-        suite.clients[thywillInstanceIndex] = client;
+        suite.clients[index] = client;
       }
-    }
-  });
-  suite.addBatch({
-    "Load application page": {
+    };
+    batchName = "Create work-already client for clusterMemberId: " + data.clusterMemberId;
+    batch = {};
+    batch[batchName] = batchContent;
+    suite.addBatch(batch);
+
+    // 2) Get application page.
+    batchContent = {
       topic: function () {
-        var path = suite.thywills[thywillInstanceIndex].config.clientInterface.baseClientPath + "/";
-        suite.clients[thywillInstanceIndex].action(path, this.callback);
+        suite.clients[index].action("/" + applicationName + "/", this.callback);
       },
       "page fetched": function (error, page) {
         assert.isNull(error);
@@ -380,40 +440,55 @@ exports.workAlready.addInitialBatches = function (suite, thywillInstanceIndex, p
           assert.include(page.body, pageMatch);
         });
       }
-    }
-  });
-  suite.addBatch({
-    "Connect via Socket.IO": {
+    };
+    batchName = "Load application page from clusterMemberId: " + data.clusterMemberId;
+    batch = {};
+    batch[batchName] = batchContent;
+    suite.addBatch(batch);
+
+    // 3) Connect via Socket.IO.
+    batchContent = {
       topic: function () {
-        suite.clients[thywillInstanceIndex].action({
+        suite.clients[index].action({
           type: "connect",
-          socketConfig: suite.thywills[thywillInstanceIndex].config.clientInterface.socketClientConfig
+          socketConfig: {
+            "resource": applicationName + "/socket.io"
+          }
         }, this.callback);
       },
-      "socket connected": function (error) {
-        var client = suite.clients[thywillInstanceIndex];
-        assert.isUndefined(error);
+      "connected": function (error, page) {
+        var client = suite.clients[index];
+        assert.isNull(error);
         assert.isObject(client.page.sockets);
         assert.isObject(client.page.sockets[client.config.sockets.defaultNamespace]);
       }
-    }
+    };
+    batchName = "Connect via Socket.IO to clusterMemberId: " + data.clusterMemberId;
+    batch = {};
+    batch[batchName] = batchContent;
+    suite.addBatch(batch);
   });
+
+  return suite;
 };
 
 /**
- * Send a message to the server, and wait for a response. Options has the form:
+ * Send a message to a child process Thywill instance, and wait for a response,
+ * either on that instance or another instance.
+ *
+ * Options has the form:
  *
  * {
  *   // Which application this involves.
- *   applicationIndex: number,
+ *   applicationId: string,
  *   // Which Thywill instance / client instance to use for sending.
- *   sendInstanceIndex: number,
+ *   sendIndex: number,
  *   // Which Thywill instance / client instance expects the response
- *   responseInstanceIndex: number,
+ *   responseIndex: number,
  *   // The Message instance or message data to send.
- *   sendMessage: object,
+ *   sendMessage: mixed,
  *   // The Message instance or message data expected in the response.
- *   responseMessage: object
+ *   responseMessage: mixed
  * }
  *
  * @param {string} batchName
@@ -423,27 +498,26 @@ exports.workAlready.addInitialBatches = function (suite, thywillInstanceIndex, p
  * @param {object} options
  *   The rest of the needed parameters.
  */
-exports.workAlready.addSendAndAwaitResponseBatch = function (batchName, suite, options) {
+exports.application.addSendAndAwaitResponseBatch = function (batchName, suite, options) {
   var batch = {};
   var definition = {
     topic: function () {
-      suite.clients[options.responseInstanceIndex].action({
+      suite.clients[options.responseIndex].action({
         type: "awaitEmit",
         eventType: "toClient"
       }, this.callback);
 
       var message = exports.wrapAsMessage(options.sendMessage);
-      var applicationId = suite.thywills[options.sendInstanceIndex].applications[options.applicationIndex].id;
-      suite.clients[options.sendInstanceIndex].action({
+      suite.clients[options.sendIndex].action({
         type: "emit",
-        args: ["fromClient", applicationId, message]
+        args: ["fromClient", options.applicationId, message]
       }, function (error) {});
     },
     "expected response": function (error, socketEvent) {
       assert.isNull(error);
       assert.isObject(socketEvent);
       var args = [
-        suite.thywills[options.sendInstanceIndex].applications[options.applicationIndex].id,
+        options.applicationId,
         exports.wrapAsMessage(options.responseMessage).toObject()
       ];
       assert.deepEqual(socketEvent.args, args);
@@ -522,4 +596,25 @@ exports.wrapAsMessage = function (message) {
     message = new Message(message);
   }
   return message;
+};
+
+/**
+ * Add a batch that does nothing but delay.
+ *
+ * @param {object} suite
+ *   A Vows suite.
+ * @param {number} delay
+ *   Delay in milliseconds.
+ */
+exports.addDelayBatch = function (suite, delay) {
+  var batchContents = {
+    topic: function () {
+      setTimeout(this.callback, delay);
+    },
+    "delayed": function () {}
+  };
+  var batchName = "Delay by " + delay + "ms";
+  var batch = {};
+  batch[batchName] = batchContents;
+  suite.addBatch(batch);
 };

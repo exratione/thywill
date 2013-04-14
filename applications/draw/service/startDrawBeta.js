@@ -4,4 +4,4 @@
  * Draw example application.
  */
 
-require("../lib/service").start("beta");
+require("../lib/service").start(10084, "beta");

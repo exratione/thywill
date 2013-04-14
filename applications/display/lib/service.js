@@ -13,23 +13,17 @@ var Display = require("./display");
 var config = require("../../../serverConfig/thywill/baseThywillConfig");
 var Thywill = require("thywill");
 
-// Data for the cluster members.
-var cluster = {
-  alpha: {
-    port: 10091
-  },
-  beta: {
-    port: 10092
-  }
-};
-
 /**
- * Start a Display application process running.
+ * Obtain a configuration object.
  *
- * @param {string} clusterMemberName
+ * @param {number} port
+ *   The port to listen on.
+ * @param {string} clusterMemberId
  *   The name of the cluster member to start.
+ * @return {object}
+ *   The configuration object.
  */
-exports.start = function (clusterMemberId) {
+exports.getConfig = function (port, clusterMemberId) {
 
   // All of the Redis clients that will be needed.
   var redisClients = {
@@ -40,7 +34,7 @@ exports.start = function (clusterMemberId) {
 
   // Express application and http.Server.
   var app = express();
-  var server = http.createServer(app).listen(cluster[clusterMemberId].port);
+  var server = http.createServer(app).listen(port);
 
   /**
    * Thywill configuration is a nested set of objects, one for each of the
@@ -291,12 +285,52 @@ exports.start = function (clusterMemberId) {
     }
   };
 
-  // ------------------------------------------------------
-  // Other odds and ends.
-  // ------------------------------------------------------
+  return config;
+};
+
+/**
+ * Start an Draw application process running.
+ *
+ * Use in one these ways, with the callback being optional.
+ *
+ * start (config, [callback])
+ * start (port, clusterMemberId, [callback])
+ */
+exports.start = function () {
+  // Sort out the configuration.
+  var config;
+  if (typeof arguments[0] === "object") {
+    config = arguments[0];
+  } else {
+    config = exports.getConfig(arguments[0], arguments[1]);
+  }
+
+  // Sort out the callback for the launch.
+  var callback;
+  if (typeof arguments[arguments.length - 1] === "function") {
+    callback = arguments[arguments.length - 1];
+  } else {
+    callback = function (error, thywill) {
+      if (error) {
+        if (error instanceof Error) {
+          error = error.stack;
+        }
+        console.error("Thywill launch failed with error: " + error);
+        process.exit(1);
+      }
+
+      // Protect the Redis clients from hanging if they are timed out by the server.
+      for (var key in config._redisClients) {
+        thywill.protectRedisClient(config._redisClients[key]);
+      }
+
+      thywill.log.info("Thywill is ready to run cluster member [" + config.cluster.localClusterMemberId + "] for the Display example application.");
+    };
+  }
 
   // Add minimal configuration to the Express application: just the cookie and
   // session middleware.
+  var app = config.clientInterface.server.app;
   app.use(express.cookieParser(config.clientInterface.sessions.cookieSecret));
   app.use(express.session({
     cookie: {
@@ -318,25 +352,6 @@ exports.start = function (clusterMemberId) {
   // Instantiate an application object.
   var display = new Display("display");
 
-  // ------------------------------------------------------
-  // Launch Thywill.
-  // ------------------------------------------------------
-
   // And off we go: launch a Thywill instance to run the the application.
-  Thywill.launch(config, display, function (error, thywill) {
-    if (error) {
-      if (error instanceof Error) {
-        error = error.stack;
-      }
-      console.error("Thywill launch failed with error: " + error);
-      process.exit(1);
-    }
-
-    // Protect the Redis clients from hanging if they are timed out by the server.
-    for (var key in redisClients) {
-      thywill.protectRedisClient(redisClients[key]);
-    }
-
-    thywill.log.info("Thywill is ready to run cluster member [" + clusterMemberId + "] for the Display example application.");
-  });
+  Thywill.launch(config, display, callback);
 };

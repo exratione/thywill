@@ -13,14 +13,13 @@ var clusterConfig = require("../config/clusterTestThywillConfig");
 var config = clone(clusterConfig);
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuiteForCluster("Cluster: resourceManager/redisResourceManager", {
+var suite = tools.headless.clusterVowsSuite("Cluster: resourceManager/redisResourceManager", {
   config: config,
-  applications: null,
   useRedisSocketStore: true,
   useRedisSessionStore: true
 });
-tools.addBatches(suite, "resourceManager", "general");
-tools.addBatches(suite, "redisResourceManager", "cluster");
+tools.headless.addBatches(suite, "resourceManager", "general");
+tools.headless.addBatches(suite, "redisResourceManager", "cluster");
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

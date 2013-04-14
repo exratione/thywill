@@ -39,13 +39,12 @@ config.cluster = {
 };
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuiteForCluster("Cluster: cluster/httpCluster", {
+var suite = tools.headless.clusterVowsSuite("Cluster: cluster/httpCluster", {
   config: config,
-  applications: null,
   useRedisSocketStore: true,
   useRedisSessionStore: true
 });
-tools.addBatches(suite, "cluster", "cluster");
+tools.headless.addBatches(suite, "cluster", "cluster");
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

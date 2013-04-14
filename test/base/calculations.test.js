@@ -5,34 +5,83 @@
  * These are base tests without Express, Redis, or other frills.
  */
 
-var clone = require("clone");
 var tools = require("../lib/tools");
-var Calculations = require("../../applications/calculations/lib/calculations");
-var baseConfig = require("../config/baseTestThywillConfig");
+var Thywill = require("thywill");
+var RpcCapableApplication = Thywill.getBaseClass("RpcCapableApplication");
 
-var config = clone(baseConfig);
-// An example application should have its own base path and Socket.IO
-// namespace.
-config.clientInterface.baseClientPath = "/calculations";
-config.clientInterface.namespace = "/calculations";
-// Note that the client resource has no leading /. These must otherwise match.
-config.clientInterface.socketClientConfig.resource = "calculations/socket.io";
-config.clientInterface.socketConfig.global.resource = "/calculations/socket.io";
-// Resource minification settings.
-config.clientInterface.minifyCss = true;
-config.clientInterface.minifyJavascript = true;
-// Base paths to use when defining new resources for merged CSS and Javascript.
-config.minifier.cssBaseClientPath = "/calculations/css";
-config.minifier.jsBaseClientPath = "/calculations/js";
+var suiteName = "Base: Calculations application";
+var applicationName = "calculations";
+// The initial batches load the application page and then connect via
+// Socket.IO. The matches are checked against the page contents. Here
+// we're looking at the templates that should be included.
+var pageMatches = [
+  '<div id="calculations-wrapper">'
+];
+// Data for the process to launch.
+var processData = [
+  {
+    port: 10079,
+    clusterMemberId: "alpha"
+  }
+];
 
-// Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuite("Base: Calculations application", {
-  config: config,
-  applications: "calculations",
-  useRedisSocketStore: false,
-  useRedisSessionStore: false
+// Obtain a test suit that launches Thywill in a child process.
+var suite = tools.application.vowsSuite(suiteName, applicationName, pageMatches, processData);
+
+// Test the RPC calls and errors.
+var data = [
+  {
+    name: "multiplicative.multiplyByTwo",
+    batchName: "Test RPC: multiplicative.multiplyByTwo",
+    hasCallback: false,
+    args: [10],
+    responseArgs: [null, 20]
+  },
+  {
+    name: "multiplicative.divideByTwo",
+    batchName: "Test RPC: multiplicative.divideByTwo",
+    hasCallback: true,
+    args: [10],
+    responseArgs: [null, 5]
+  },
+  {
+    name: "powers.square",
+    batchName: "Test RPC: powers.square",
+    hasCallback: false,
+    args: [10],
+    responseArgs: [null, 100]
+  },
+  {
+    name: "powers.squareRoot",
+    batchName: "Test RPC: powers.squareRoot",
+    hasCallback: true,
+    args: [100],
+    responseArgs: [null, 10]
+  },
+  {
+    name: "not a function",
+    batchName: "Test RPC: no function error",
+    hasCallback: true,
+    args: [100],
+    responseArgs: [RpcCapableApplication.RPC_ERRORS.NO_FUNCTION]
+  }
+];
+
+data.forEach(function (element, index, array) {
+  var sendMessage = tools.createRpcMessage({
+    name: element.name,
+    hasCallback: element.hasCallback,
+    args: element.args
+  });
+  var responseMessage = tools.createRpcResponseMessage(sendMessage.getData().id, element.responseArgs);
+  tools.application.addSendAndAwaitResponseBatch(element.batchName, suite, {
+    applicationId: "calculations",
+    sendIndex: 0,
+    responseIndex: 0,
+    sendMessage: sendMessage,
+    responseMessage: responseMessage
+  });
 });
-tools.addBatches(suite, "calculations", "general");
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

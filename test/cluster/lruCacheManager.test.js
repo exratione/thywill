@@ -19,14 +19,13 @@ config.cacheManager = {
 };
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuite("Cluster: cacheManager/lruCacheManager", {
+var suite = tools.headless.singleInstanceVowsSuite("Cluster: cacheManager/lruCacheManager", {
   config: config,
-  applications: null,
   useRedisSocketStore: false,
   useRedisSessionStore: false
 });
-tools.addBatches(suite, "cacheManager", "general");
-tools.addBatches(suite, "lruCacheManager", "cluster");
+tools.headless.addBatches(suite, "cacheManager", "general");
+tools.headless.addBatches(suite, "lruCacheManager", "cluster");
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

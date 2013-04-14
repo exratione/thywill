@@ -29,14 +29,13 @@ config.clientTracker = {
 };
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuiteForCluster("Cluster: channelManager/redisChannelManager", {
+var suite = tools.headless.clusterVowsSuite("Cluster: channelManager/redisChannelManager", {
   config: config,
-  applications: null,
   useRedisSocketStore: true,
   useRedisSessionStore: true
 });
-tools.addBatches(suite, "channelManager", "general");
-tools.addBatches(suite, "channelManager", "cluster");
+tools.headless.addBatches(suite, "channelManager", "general");
+tools.headless.addBatches(suite, "channelManager", "cluster");
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

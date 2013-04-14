@@ -13,9 +13,8 @@ var baseConfig = require("../config/baseTestThywillConfig");
 var config = clone(baseConfig);
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuite("Base: Startup Thywill", {
+var suite = tools.headless.singleInstanceVowsSuite("Base: Startup Thywill", {
   config: baseConfig,
-  applications: null,
   useRedisSocketStore: false,
   useRedisSessionStore: false
 });

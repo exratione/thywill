@@ -11,9 +11,8 @@ var clusterConfig = require("../config/clusterTestThywillConfig");
 var config = clone(clusterConfig);
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuiteForCluster("Cluster: Startup Thywill", {
+var suite = tools.headless.clusterVowsSuite("Cluster: Startup Thywill", {
   config: config,
-  applications: null,
   useRedisSocketStore: true,
   useRedisSessionStore: true
 });

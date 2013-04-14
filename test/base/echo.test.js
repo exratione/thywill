@@ -5,34 +5,36 @@
  * These are base tests without Express, Redis, or other frills.
  */
 
-var clone = require("clone");
 var tools = require("../lib/tools");
-var Echo = require("../../applications/echo/lib/echo");
-var baseConfig = require("../config/baseTestThywillConfig");
 
-var config = clone(baseConfig);
-// An example application should have its own base path and Socket.IO
-// namespace.
-config.clientInterface.baseClientPath = "/echo";
-config.clientInterface.namespace = "/echo";
-// Note that the client resource has no leading /. These must otherwise match.
-config.clientInterface.socketClientConfig.resource = "echo/socket.io";
-config.clientInterface.socketConfig.global.resource = "/echo/socket.io";
-// Resource minification settings.
-config.clientInterface.minifyCss = true;
-config.clientInterface.minifyJavascript = true;
-// Base paths to use when defining new resources for merged CSS and Javascript.
-config.minifier.cssBaseClientPath = "/echo/css";
-config.minifier.jsBaseClientPath = "/echo/js";
+var suiteName = "Base: Echo application";
+var applicationName = "echo";
+// The initial batches load the application page and then connect via
+// Socket.IO. The matches are checked against the page contents. Here
+// we're looking at the templates that should be included.
+var pageMatches = [
+  "<button>{{buttonText}}</button>",
+  '<div class="echoed-message">{{data}}</div>'
+];
+// Data for the process to launch.
+var processData = [
+  {
+    port: 10079,
+    clusterMemberId: "alpha"
+  }
+];
 
-// Obtain a test suit that launches Thywill.
-var suite = tools.createVowsSuite("Base: Echo application", {
-  config: config,
-  applications: "echo",
-  useRedisSocketStore: false,
-  useRedisSessionStore: false
+// Obtain a test suit that launches Thywill in a child process.
+var suite = tools.application.vowsSuite(suiteName, applicationName, pageMatches, processData);
+
+// Test the echoing functionality.
+tools.application.addSendAndAwaitResponseBatch("Echo message and response", suite, {
+  applicationId: "echo",
+  sendIndex: 0,
+  responseIndex: 0,
+  sendMessage: "test",
+  responseMessage: "test"
 });
-tools.addBatches(suite, "echo", "general");
 
 //-----------------------------------------------------------
 // Exports - Vows test suite
