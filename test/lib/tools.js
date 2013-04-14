@@ -6,6 +6,7 @@
 var childProcess = require("child_process");
 var path = require("path");
 var http = require("http");
+var async = require("async");
 var vows = require("vows");
 var assert = require("assert");
 var clone = require("clone");
@@ -304,7 +305,21 @@ exports.headless.addBatches = function (suite, name, property) {
 
 exports.application = {};
 
-function launchApplicationInChildProcess (data) {
+/**
+ * Launch one of the applications in a child process.
+ *
+ * Data has the form:
+ *
+ * {
+ *   application: string
+ *   port: number
+ *   clusterMemberId: string
+ * }
+ *
+ * @param {object} data
+ * @param {Function} callback
+ */
+function launchApplicationInChildProcess (data, callback) {
   var args = JSON.stringify(data);
   args = new Buffer(args, "utf8").toString("base64");
 
@@ -319,14 +334,18 @@ function launchApplicationInChildProcess (data) {
     }
   );
 
-  // Make sure the child process dies along with this parent process; certainly
-  // necessary for Vows tests, possible not so much under other circumstances.
+  // Make sure the child process dies along with this parent process insofar
+  // as is possible. SIGTERM listener shouldn't be needed here for Vows test
+  // processes, but leave it in anyway.
+  process.on("SIGTERM", function () {
+    child.kill("SIGTERM");
+  });
   process.on("exit", function () {
-    child.kill("SIGKILL");
+    child.kill("SIGTERM");
   });
   // Kind of ugly. TODO: replace with Domains or something better.
   process.once("uncaughtException", function (error) {
-    child.kill("SIGKILL");
+    child.kill("SIGTERM");
     throw error;
   });
 
@@ -335,7 +354,14 @@ function launchApplicationInChildProcess (data) {
     throw new Error("Child process running application terminated with code: " + code);
   });
 
-  return child;
+  // Listen for messages from the heartbeat child process.
+  child.on("message", function (message) {
+    if (message === "complete") {
+      callback(null, child);
+    } else {
+      callback(message);
+    }
+  });
 }
 
 /**
@@ -379,9 +405,11 @@ exports.application.vowsSuite = function(name, applicationName, pageMatches, pro
     data.application = applicationName;
     var batchContent = {
       topic: function () {
-        return launchApplicationInChildProcess(data);
+        launchApplicationInChildProcess(data, this.callback);
       },
-      "child process launched": function (child) {
+      "child process launched": function (error, child) {
+        assert.isNull(error);
+        assert.isObject(child);
         suite.childProcesses = suite.childProcesses || [];
         suite.childProcessData = suite.childProcessData || [];
         suite.childProcesses.push(child);
@@ -393,9 +421,6 @@ exports.application.vowsSuite = function(name, applicationName, pageMatches, pro
     batch[batchName] = batchContent;
     suite.addBatch(batch);
   });
-
-  // Add a delay batch to allow time for the processes to complete.
-  exports.addDelayBatch(suite, 5000);
 
   // Add batches to set up work-already clients and get them connected via
   // Socket.IO to these child process Thywill instances.
@@ -470,6 +495,47 @@ exports.application.vowsSuite = function(name, applicationName, pageMatches, pro
   });
 
   return suite;
+};
+
+/**
+ * Add a batch to ensure that work-already clients are shut down and child
+ * application processes go away, regardless of how the rest of the tests
+ * progress.
+ *
+ * @param {object} suite
+ *   A Vows test suite instance.
+ */
+exports.application.closeVowsSuite = function (suite) {
+  suite.addBatch({
+    "Close clients": {
+      topic: function () {
+        if (Array.isArray(suite.clients) && suite.clients.length) {
+          async.forEach(suite.clients, function (client, asyncCallback) {
+            client.action({ type: "unload" }, asyncCallback);
+          }, this.callback);
+        } else {
+          this.callback();
+        }
+      },
+      "clients unloaded": function (error) {
+        assert.typeOf(error, "undefined");
+      }
+    }
+  });
+  suite.addBatch({
+    "Shut down application child processes": {
+      topic: function () {
+        if (Array.isArray(suite.childProcesses)) {
+          suite.childProcesses.forEach(function (child, index, array) {
+            child.disconnect();
+            child.kill("SIGTERM");
+          });
+        }
+        return true;
+      },
+      "shutdown complete": function () {}
+    }
+  });
 };
 
 /**

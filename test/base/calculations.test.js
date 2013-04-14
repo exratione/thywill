@@ -83,6 +83,9 @@ data.forEach(function (element, index, array) {
   });
 });
 
+// Ensure that clients are closed and child processes are killed.
+tools.application.closeVowsSuite(suite);
+
 //-----------------------------------------------------------
 // Exports - Vows test suite
 //-----------------------------------------------------------

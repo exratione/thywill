@@ -39,11 +39,14 @@ var sendMessage = { segments: [] };
 var responseMessage = { segments: [] };
 tools.application.addSendAndAwaitResponseBatch("Draw line data message and response", suite, {
   applicationId: "draw",
-  sendInstanceIndex: 0,
-  responseInstanceIndex: 1,
+  sendIndex: 0,
+  responseIndex: 1,
   sendMessage: sendMessage,
   responseMessage: responseMessage
 });
+
+// Ensure that clients are closed and child processes are killed.
+tools.application.closeVowsSuite(suite);
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

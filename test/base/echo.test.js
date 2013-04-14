@@ -36,6 +36,9 @@ tools.application.addSendAndAwaitResponseBatch("Echo message and response", suit
   responseMessage: "test"
 });
 
+// Ensure that clients are closed and child processes are killed.
+tools.application.closeVowsSuite(suite);
+
 //-----------------------------------------------------------
 // Exports - Vows test suite
 //-----------------------------------------------------------

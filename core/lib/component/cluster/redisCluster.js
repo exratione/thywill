@@ -308,14 +308,23 @@ p.launchHeartbeatProcess = function () {
     self.heartbeatProcessMessage(message);
   });
 
-  // Make sure the child process dies along with this parent process; certainly
-  // necessary for Vows tests, possible not so much under other circumstances.
+  // Make sure the child process dies along with this parent process, as far as
+  // is possible. I believe a SIGKILL to this process is going to leave the
+  // child heartbeat processes hanging for a little while on trying to send the
+  // last message over the channel to the now-vanished parent.
+  //
+  // This combination of items works under most circumstances; e.g. running
+  // ordinarily, running as child process in test code, running under a monitor
+  // process, etc.
+  process.on("SIGTERM", function () {
+    self.heartbeatProcess.kill("SIGTERM");
+  });
   process.on("exit", function () {
-    self.heartbeatProcess.kill("SIGKILL");
+    self.heartbeatProcess.kill("SIGTERM");
   });
   // Kind of ugly. TODO: replace with Domains or something better.
   process.once("uncaughtException", function (error) {
-    self.heartbeatProcess.kill("SIGKILL");
+    self.heartbeatProcess.kill("SIGTERM");
     throw error;
   });
 

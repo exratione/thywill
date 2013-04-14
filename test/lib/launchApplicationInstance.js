@@ -24,4 +24,22 @@ var config = service.getConfig(args.port, args.clusterMemberId);
 
 // TODO: switch around paths and prefixes in config to be test.
 
-service.start(config);
+service.start(config, function (error, thywill) {
+  if (error) {
+    if (error instanceof Error) {
+      error = error.stack;
+    }
+    error = "Thywill launch failed with error: " + error;
+    console.error(error);
+    process.send("error");
+    process.exit(1);
+  }
+
+  // Protect the Redis clients from hanging if they are timed out by the server.
+  for (var key in config._redisClients) {
+    thywill.protectRedisClient(config._redisClients[key]);
+  }
+
+  thywill.log.info("Thywill is ready to run cluster member [" + config.cluster.localClusterMemberId + "].");
+  process.send("complete");
+});
