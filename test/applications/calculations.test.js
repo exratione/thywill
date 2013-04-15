@@ -9,24 +9,26 @@ var tools = require("../lib/tools");
 var Thywill = require("thywill");
 var RpcCapableApplication = Thywill.getBaseClass("RpcCapableApplication");
 
-var suiteName = "Base: Calculations application";
-var applicationName = "calculations";
-// The initial batches load the application page and then connect via
-// Socket.IO. The matches are checked against the page contents. Here
-// we're looking at the templates that should be included.
-var pageMatches = [
-  '<div id="calculations-wrapper">'
-];
-// Data for the process to launch.
-var processData = [
-  {
-    port: 10079,
-    clusterMemberId: "alpha"
-  }
-];
-
 // Obtain a test suit that launches Thywill in a child process.
-var suite = tools.application.vowsSuite(suiteName, applicationName, pageMatches, processData);
+var suite = tools.application.vowsSuite("Application: Calculations", {
+  applicationName: "calculations",
+  // The initial batches load the application page and then connect via
+  // Socket.IO. The matches are checked against the page contents. Here
+  // we're looking at the templates that should be included.
+  pageMatches: [
+    '<div id="calculations-wrapper">'
+  ],
+  // Data for the processes to launch.
+  processData: [
+    {
+      port: 10079,
+      clusterMemberId: "alpha"
+    }
+  ],
+  // Set a long timeout for actions, because things sometimes lag on a small
+  // server when running a bunch of tests.
+  defaultTimeout: 5000
+});
 
 // Test the RPC calls and errors.
 var data = [
@@ -74,10 +76,10 @@ data.forEach(function (element, index, array) {
     args: element.args
   });
   var responseMessage = tools.createRpcResponseMessage(sendMessage.getData().id, element.responseArgs);
-  tools.application.addSendAndAwaitResponseBatch(element.batchName, suite, {
+  tools.application.addSendAndAwaitResponsesBatch(element.batchName, suite, {
     applicationId: "calculations",
-    sendIndex: 0,
-    responseIndex: 0,
+    actionIndex: 0,
+    responseIndexes: 0,
     sendMessage: sendMessage,
     responseMessage: responseMessage
   });

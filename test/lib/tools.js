@@ -380,15 +380,15 @@ function launchApplicationInChildProcess (data, callback) {
  *
  * @see exports.application.vowsSuite
  */
-exports.application.vowsSuitePendingConnections = function (name, applicationName, pageMatches, processData) {
+exports.application.vowsSuitePendingConnections = function (name, options) {
   var suite = vows.describe(name);
-  if (!Array.isArray(processData)) {
-    processData = [processData];
+  if (!Array.isArray(options.processData)) {
+    options.processData = [options.processData];
   }
 
   // Add batches to launch the child processes.
-  processData.forEach(function (data, index, array) {
-    data.application = applicationName;
+  options.processData.forEach(function (data, index, array) {
+    data.application = options.applicationName;
     var batchContent = {
       topic: function () {
         launchApplicationInChildProcess(data, this.callback);
@@ -402,7 +402,7 @@ exports.application.vowsSuitePendingConnections = function (name, applicationNam
         suite.childProcessData.push(data);
       }
     };
-    var batchName = "Launch application: " + applicationName + " port: " + data.port + " clusterMemberId: " + data.clusterMemberId;
+    var batchName = "Launch application: " + options.applicationName + " port: " + data.port + " clusterMemberId: " + data.clusterMemberId;
     var batch = {};
     batch[batchName] = batchContent;
     suite.addBatch(batch);
@@ -410,7 +410,7 @@ exports.application.vowsSuitePendingConnections = function (name, applicationNam
 
   // Add batches to set up work-already clients and get them connected via
   // Socket.IO to these child process Thywill instances.
-  processData.forEach(function (data, index, array) {
+  options.processData.forEach(function (data, index, array) {
     var batchContent, batchName, batch;
     // 1) Create client.
     batchContent = {
@@ -422,8 +422,8 @@ exports.application.vowsSuitePendingConnections = function (name, applicationNam
             protocol: "http"
           },
           sockets: {
-            defaultNamespace: "/" + applicationName,
-            defaultTimeout: 1000
+            defaultNamespace: "/" + options.applicationName,
+            defaultTimeout: options.defaultTimeout
           }
         });
       },
@@ -440,14 +440,14 @@ exports.application.vowsSuitePendingConnections = function (name, applicationNam
     // 2) Get application page.
     batchContent = {
       topic: function () {
-        suite.clients[index].action("/" + applicationName + "/", this.callback);
+        suite.clients[index].action("/" + options.applicationName + "/", this.callback);
       },
       "page fetched": function (error, page) {
         assert.isNull(error);
         assert.isObject(page);
         assert.strictEqual(page.statusCode, 200);
         assert.isString(page.body);
-        pageMatches.forEach(function (pageMatch, index, array) {
+        options.pageMatches.forEach(function (pageMatch, index, array) {
           assert.include(page.body, pageMatch);
         });
       }
@@ -466,41 +466,50 @@ exports.application.vowsSuitePendingConnections = function (name, applicationNam
  * more child processes running one of the example applications, and then
  * starting up work-already package clients and connecting via Socket.IO.
  *
- * The processData has the form:
+ * The options object has the form:
  *
- * [
- *   {
- *     port: 10078,
- *     clusterMemberId: "alpha"
- *   },
- *   {
- *     port: 10079,
- *     clusterMemberId: "beta"
- *   },
- *   ...
- * ]
+ * {
+ *   // Name of the application to run.
+ *   applicationName: string,
+ *   // The default timeout for operations in milliseconds.
+ *   defaultTimeout: number,
+ *   // When the application page loads, these strings must be matched in it.
+ *   pageMatches: [
+ *     string,
+ *     string,
+ *     ...
+ *   ]
+ *   // Details on the child processes to be launched.
+ *   processData: [
+ *     {
+ *       port: 10078,
+ *       clusterMemberId: "alpha"
+ *     },
+ *     {
+ *       port: 10079,
+ *       clusterMemberId: "beta"
+ *     },
+ *     ...
+ *   ]
+ * }
  *
  * @param {string} name
  *   The Vows suite name.
- * @param {string} applicationName
- *   The application name.
- * @param {array} pageMatches
- *   Strings to check for in the application page.
- * @param {array} processData
- *   Data on the process to be launched.
+ * @param {object} options
+ *   Options for the setup.
  * @return {object}
  *   A Vows suite.
  */
-exports.application.vowsSuite = function(name, applicationName, pageMatches, processData) {
-  var suite = exports.application.vowsSuitePendingConnections(name, applicationName, pageMatches, processData);
+exports.application.vowsSuite = function(name, options) {
+  var suite = exports.application.vowsSuitePendingConnections(name, options);
   // Add batches to connect via Socket.IO.
-  processData.forEach(function (data, index, array) {
+  options.processData.forEach(function (data, index, array) {
     var batchContent = {
       topic: function () {
         suite.clients[index].action({
           type: "connect",
           socketConfig: {
-            "resource": applicationName + "/socket.io"
+            "resource": options.applicationName + "/socket.io"
           }
         }, this.callback);
       },
@@ -562,22 +571,25 @@ exports.application.closeVowsSuite = function (suite) {
 };
 
 /**
- * Send a message to a child process Thywill instance, and wait for a response,
- * either on that instance or another instance.
+ * Perform an action with one child process Thywill instance, and wait for an
+ * emitted response, either from that instance or from another instance.
  *
  * Options has the form:
  *
  * {
  *   // Which application this involves.
  *   applicationId: string,
- *   // Which Thywill instance / client instance to use for sending.
- *   sendIndex: number,
- *   // Which Thywill instance / client instance expects the response
- *   responseIndex: number,
- *   // The Message instance or message data to send.
- *   sendMessage: mixed,
+ *   // Which Thywill instance / client instance to use for the action.
+ *   actionIndex: number,
+ *   // An action definition.
+ *   action: object,
+ *   // Which Thywill instances / client instances expect the response.
+ *   responseIndexes: number|array,
  *   // The Message instance or message data expected in the response.
- *   responseMessage: mixed
+ *   responseMessage: mixed,
+ *   // Optional vows functions to run tests, keyed by display name. Signatures
+ *   // are function (error, results).
+ *   vows: object
  * }
  *
  * @param {string} batchName
@@ -587,33 +599,208 @@ exports.application.closeVowsSuite = function (suite) {
  * @param {object} options
  *   The rest of the needed parameters.
  */
-exports.application.addSendAndAwaitResponseBatch = function (batchName, suite, options) {
-  var batch = {};
-  var definition = {
-    topic: function () {
-      suite.clients[options.responseIndex].action({
-        type: "awaitEmit",
-        eventType: "toClient"
-      }, this.callback);
+exports.application.addActionAndAwaitResponsesBatch = function (batchName, suite, options) {
+  if (!Array.isArray(options.responseIndexes)) {
+    options.responseIndexes = [options.responseIndexes];
+  }
 
-      var message = exports.wrapAsMessage(options.sendMessage);
-      suite.clients[options.sendIndex].action({
-        type: "emit",
-        args: ["fromClient", options.applicationId, message]
-      }, function (error) {});
-    },
-    "expected response": function (error, socketEvent) {
-      assert.isNull(error);
-      assert.isObject(socketEvent);
+  // If the action is connect, and the actionIndex is included in the response
+  // indexes, switch it to connectAndAwaitEmit, because otherwise we'll
+  // probably miss the emitted response.
+  //
+  // This requires further if-statements further down in this message as well.
+  if (options.action.type === "connect" && options.responseIndexes.indexOf(options.actionIndex) !== -1) {
+    options.action.type = "connectAndAwaitEmit";
+    options.action.eventType = "toClient";
+  }
+
+  // Put the default vow in place.
+  options.vows = options.vows || {
+    "expected responses emitted": function (unusedError, results) {
       var args = [
         options.applicationId,
         exports.wrapAsMessage(options.responseMessage).toObject()
       ];
-      assert.deepEqual(socketEvent.args, args);
+
+      // Strip out nulls, e.g. if waiting on index 0 and 2, then 1 will be
+      // empty.
+      results = results.filter(function (result, index, array) {
+        return result;
+      });
+
+      results.forEach(function (result, index, array) {
+        assert.isNull(result.error);
+        assert.deepEqual(result.socketEvent.args, args);
+      });
     }
   };
+
+  var batch = {};
+  var definition = {
+    topic: function () {
+      var self = this;
+      var results = [];
+      // Helper function; get all results before callback is called.
+      var addResult = function (index, error, socketEvent) {
+        results[index] = {
+          error: error,
+          socketEvent: socketEvent
+        };
+        var incomplete = options.responseIndexes.some(function (responseIndex, index, array) {
+          return (typeof results[responseIndex] !== "object");
+        });
+        if (!incomplete) {
+          self.callback(null, results);
+        }
+      };
+
+      // Note the filtering - don't wait on emit if we're already running
+      // connectAndAwaitEmit, and the actionIndex is also one of the
+      // responseIndexes. We're already waiting on an emitted event in that
+      // case.
+      options.responseIndexes.filter(function (responseIndex, index, array) {
+        return (options.action.type !== "connectAndAwaitEmit" || responseIndex !== options.actionIndex);
+      }).forEach(function (responseIndex, index, array) {
+        suite.clients[responseIndex].action({
+          type: "awaitEmit",
+          eventType: "toClient"
+        }, function (error, socketEvent) {
+          addResult(responseIndex, error, socketEvent);
+        });
+      });
+
+      // If this is connectAndAwaitEmit, and the actionIndex is one of the
+      // responseIndexes, then we have to pass the result along. Otherwise we
+      // discard the callback for the action.
+      if (options.action.type === "connectAndAwaitEmit" && options.responseIndexes.indexOf(options.actionIndex) !== -1) {
+        suite.clients[options.actionIndex].action(options.action, function (error, socketEvent) {
+          addResult(options.actionIndex, error, socketEvent);
+        });
+      } else {
+        suite.clients[options.actionIndex].action(options.action, function (error) {
+          if (error) {
+            console.error(error.stack || error.toString());
+          }
+        });
+      }
+    }
+  };
+  for (var prop in options.vows) {
+    definition[prop] = options.vows[prop];
+  }
+
   batch[batchName] = definition;
   suite.addBatch(batch);
+};
+
+/**
+ * Send a message to a child process Thywill instance, and wait for a response
+ * on one or more instances.
+ *
+ * Options has the form:
+ *
+ * {
+ *   // Which application this involves.
+ *   applicationId: string,
+ *   // Which Thywill instance / client instance to use for sending.
+ *   actionIndex: number,
+ *   // Which Thywill instances / client instances expect the response.
+ *   responseIndexes: number | array,
+ *   // The Message instance or message data to send.
+ *   sendMessage: mixed,
+ *   // The Message instance or message data expected in the response.
+ *   responseMessage: mixed,
+ *   // Optional vows functions to run tests, keyed by display name. Signatures
+ *   // are function (error, results).
+ *   vows: object
+ * }
+ *
+ * @param {string} batchName
+ *   Name of the batch.
+ * @param {object} suite
+ *   A Vows test suite instance.
+ * @param {object} options
+ *   The rest of the needed parameters.
+ */
+exports.application.addSendAndAwaitResponsesBatch = function (batchName, suite, options) {
+  var message = exports.wrapAsMessage(options.sendMessage);
+  options.action = {
+    type: "emit",
+    args: ["fromClient", options.applicationId, message]
+  };
+  exports.application.addActionAndAwaitResponsesBatch(batchName, suite, options);
+};
+
+/**
+ * Disconnect from one Thywill instance and wait on a response from one or more
+ * other instances.
+ *
+ * Options has the form:
+ *
+ * {
+ *   // Which application this involves.
+ *   applicationId: string,
+ *   // Which Thywill instance / client instance to disconnect form.
+ *   actionIndex: number,
+ *   // Which Thywill instances / client instances expect the response.
+ *   responseIndexes: number | array,
+ *   // The Message instance or message data expected in the response.
+ *   responseMessage: mixed,
+ *   // Optional vows functions to run tests, keyed by display name. Signatures
+ *   // are function (error, results).
+ *   vows: object
+ * }
+ *
+ * @param {string} batchName
+ *   Name of the batch.
+ * @param {object} suite
+ *   A Vows test suite instance.
+ * @param {object} options
+ *   The rest of the needed parameters.
+ */
+exports.application.addDisconnectAndAwaitResponsesBatch = function (batchName, suite, options) {
+  var message = exports.wrapAsMessage(options.sendMessage);
+  options.action = {
+    type: "unload"
+  };
+  exports.application.addActionAndAwaitResponsesBatch(batchName, suite, options);
+};
+
+/**
+ * Connect to one Thywill instance and wait on a message from one or more other
+ * instances.
+ *
+ * Options has the form:
+ *
+ * {
+ *   // Which application this involves.
+ *   applicationId: string,
+ *   // Which Thywill instance / client instance to connect to.
+ *   actionIndex: number,
+ *   // Which Thywill instances / client instances expect the response.
+ *   responseIndexes: number | array,
+ *   // The Message instance or message data expected in the response.
+ *   responseMessage: mixed,
+ *   // Optional vows functions to run tests, keyed by display name. Signatures
+ *   // are function (error, results).
+ *   vows: object
+ * }
+ *
+ * @param {string} batchName
+ *   Name of the batch.
+ * @param {object} suite
+ *   A Vows test suite instance.
+ * @param {object} options
+ *   The rest of the needed parameters.
+ */
+exports.application.addConnectAndAwaitResponsesBatch = function (batchName, suite, options) {
+  options.action = {
+    type: "connect",
+    socketConfig: {
+      "resource": options.applicationId + "/socket.io"
+    }
+  };
+  exports.application.addActionAndAwaitResponsesBatch(batchName, suite, options);
 };
 
 // ------------------------------------------------

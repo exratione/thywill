@@ -9,36 +9,34 @@
 var assert = require("assert");
 var tools = require("../lib/tools");
 
-var suiteName = "Base: Display application";
-var applicationName = "display";
-// The initial batches load the application page and then connect via
-// Socket.IO. The matches are checked against the page contents. Here
-// we're looking at the templates that should be included.
-var pageMatches = [
-  '<li id="{{connectionId}}">{{connectionId}}</li>',
-  '<span class="text">{{text}}</span>',
-  '<div id="{{id}}" class="cluster-member">'
-];
-// Data for the processes to launch.
-var processData = [
-  {
-    port: 10078,
-    clusterMemberId: "alpha"
-  },
-  {
-    port: 10079,
-    clusterMemberId: "beta"
-  }
-];
-
-//
-// TODO: detection and checking of shutdown/launch-related messages sent to the
-// client.
-//
-
 // Obtain a test suit that launches Thywill instances in child processes,
-// but where the clients haven't connected yet.
-var suite = tools.application.vowsSuitePendingConnections(suiteName, applicationName, pageMatches, processData);
+// but where the Socket.IO clients haven't connected yet.
+var suite = tools.application.vowsSuitePendingConnections("Application: Display", {
+  applicationName: "display",
+  // The initial batches load the application page and then connect via
+  // Socket.IO. The matches are checked against the page contents. Here
+  // we're looking at the templates that should be included.
+  pageMatches: [
+    '<li id="{{connectionId}}">{{connectionId}}</li>',
+    '<span class="text">{{text}}</span>',
+    '<div id="{{id}}" class="cluster-member">'
+  ],
+  // Data for the processes to launch.
+  processData: [
+    {
+      port: 10078,
+      clusterMemberId: "alpha"
+    },
+    {
+      port: 10079,
+      clusterMemberId: "beta"
+    }
+  ],
+  // Set a long timeout for actions, because things sometimes lag on a small
+  // server when running a bunch of tests.
+  defaultTimeout: 5000
+});
+
 // For keeping track of the connections.
 suite.connectionIds = [];
 
@@ -102,23 +100,15 @@ suite.addBatch({
 // Delay to let the other messages/traffic go by.
 tools.addDelayBatch(suite, 1000);
 
-suite.addBatch({
-  "Connect to beta and see connection notice in alpha": {
-    topic: function () {
-      suite.clients[0].action({
-        type: "awaitEmit",
-        eventType: "toClient"
-      }, this.callback);
-
-      suite.clients[1].action({
-        type: "connect",
-        socketConfig: {
-          "resource": "display/socket.io"
-        }
-      }, function (error) {});
-    },
-    "expected response on connect": function (error, socketEvent) {
-      assert.isNull(error);
+var batchName = "Connect to beta and see connection notice in alpha";
+tools.application.addConnectAndAwaitResponsesBatch(batchName, suite, {
+  applicationId: "display",
+  actionIndex: 1,
+  responseIndexes: 0,
+  vows: {
+    "expected response on connect": function (unusedError, results) {
+      assert.isNull(results[0].error);
+      var socketEvent = results[0].socketEvent;
       assert.strictEqual(socketEvent.args[0], "display");
       var data = socketEvent.args[1].data;
       assert.strictEqual(data.type, "connection");
@@ -135,21 +125,15 @@ tools.addDelayBatch(suite, 1000);
 
 // Disconnect alpha connection and see that the disconnection notice shows up
 // at the beta connection.
-suite.addBatch({
-  "Disconnect from alpha and see disconnection notice in beta": {
-    topic: function () {
-      suite.clients[1].action({
-        type: "awaitEmit",
-        eventType: "toClient"
-      }, this.callback);
-
-      suite.clients[0].action({
-        type: "unload"
-      }, function (error) {});
-    },
-    "expected response on disconnect": function (error, socketEvent) {
-      assert.isNull(error);
-      assert.deepEqual(socketEvent.args[1].data, {
+batchName = "Disconnect from alpha and see disconnection notice in beta";
+tools.application.addDisconnectAndAwaitResponsesBatch(batchName, suite, {
+  applicationId: "chat",
+  actionIndex: 0,
+  responseIndexes: 1,
+  vows: {
+    "expected response on disconnect": function (unusedError, results) {
+      assert.isNull(results[1].error);
+      assert.deepEqual(results[1].socketEvent.args[1].data, {
         type: "disconnection",
         connectionId: suite.connectionIds[0],
         clusterMemberId: "alpha"
@@ -157,6 +141,13 @@ suite.addBatch({
     }
   }
 });
+
+
+//
+// TODO: detection and checking of shutdown/launch-related messages sent to the
+// client.
+//
+
 
 // Ensure that clients are closed and child processes are killed.
 tools.application.closeVowsSuite(suite);

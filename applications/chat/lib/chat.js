@@ -356,7 +356,7 @@ p.notifyOfReconnectionIfNecessary = function (channelId, sessionId) {
         action: "reconnected"
       };
       sessionIds.forEach(function (id, index, array) {
-        self.sendToConnection(id, outgoingData);
+        self.sendToSession(id, outgoingData);
       });
       asyncCallback();
     }
@@ -460,7 +460,7 @@ p.disconnection = function (client) {
         action: "disconnected"
       };
       sessionIds.forEach(function (id, index, array) {
-        self.sendToConnection(id, outgoingData);
+        self.sendToSession(id, outgoingData);
       });
       asyncCallback();
     }

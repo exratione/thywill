@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Work in Progress
-----------------
+v0.0.9 - 04/15/2013
+-------------------
 
   * Expanded test coverage to applications with web/socket client tests.
   * Crucial bugfixes for sessions in SocketIoExpressClientInterface and in test code.

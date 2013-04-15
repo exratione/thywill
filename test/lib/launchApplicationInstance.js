@@ -22,7 +22,18 @@ args = JSON.parse(args);
 var service = require(path.join("../../applications", args.application, "lib/service"));
 var config = service.getConfig(args.port, args.clusterMemberId);
 
-// TODO: switch around paths and prefixes in config to be test.
+// Alter config to keep test data distinct from ordinary use of example
+// applications.
+if (args.application === "chat") {
+  config.channelManager.redisPrefix = "test:thywill:chat:channel:";
+  config.cluster.redisPrefix = "test:thywill:draw:cluster:";
+  config.resourceManager.redisPrefix = "test:thywill:draw:resource:";
+} else if (args.application === "draw") {
+  config.cluster.redisPrefix = "test:thywill:draw:cluster:";
+  config.resourceManager.redisPrefix = "test:thywill:draw:resource:";
+} else if (args.application === "display") {
+  config.resourceManager.redisPrefix = "test:thywill:draw:resource:";
+}
 
 service.start(config, function (error, thywill) {
   if (error) {
