@@ -355,7 +355,10 @@ function launchApplicationInChildProcess (data, callback) {
   // Kind of ugly. TODO: replace with Domains or something better.
   process.once("uncaughtException", function (error) {
     child.shutdown();
-    throw error;
+    // If this was the last of the listeners, then rethrow the error.
+    if (process.listeners("uncaughtException").length === 0) {
+      throw error;
+    }
   });
 
   // If the child process dies, then we have a problem.

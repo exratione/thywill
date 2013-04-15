@@ -9,6 +9,8 @@
 var assert = require("assert");
 var tools = require("../lib/tools");
 
+var batchName, sendMessage, responseMessage;
+
 // Obtain a test suit that launches Thywill instances in child processes,
 // but where the Socket.IO clients haven't connected yet.
 var suite = tools.application.vowsSuitePendingConnections("Application: Chat", {
@@ -63,7 +65,7 @@ tools.addDelayBatch(suite, 100);
 // that are sent to both alpha and beta connections. The response messages
 // have a channelId in them based on connection Ids, so have to use a
 // custom vow function to check the results.
-var batchName = "Make Socket.IO connection to beta, catch chat setup messages to alpha and beta";
+batchName = "Make Socket.IO connection to beta, catch chat setup messages to alpha and beta";
 tools.application.addConnectAndAwaitResponsesBatch(batchName, suite, {
   applicationId: "chat",
   actionIndex: 1,
@@ -84,11 +86,11 @@ tools.application.addConnectAndAwaitResponsesBatch(batchName, suite, {
 
 // Send a message, see it returned to both clients.
 batchName = "Send chat message from alpha";
-var sendMessage = {
+sendMessage = {
   action: "message",
   message: "test"
 };
-var responseMessage = sendMessage;
+responseMessage = sendMessage;
 tools.application.addSendAndAwaitResponsesBatch(batchName, suite, {
   applicationId: "chat",
   actionIndex: 0,
@@ -133,8 +135,72 @@ tools.application.addConnectAndAwaitResponsesBatch(batchName, suite, {
   }
 });
 
-// TODO: kick, then search for partner
+// Delay to let things settle down following reconnection.
+tools.addDelayBatch(suite, 100);
 
+// Beta kicks alpha.
+batchName = "Beta issues kick, check kicked notice for alpha";
+sendMessage = {
+  action: "kick"
+};
+responseMessage = {
+  action: "kicked"
+};
+tools.application.addSendAndAwaitResponsesBatch(batchName, suite, {
+  applicationId: "chat",
+  actionIndex: 1,
+  responseIndexes: 0,
+  sendMessage: sendMessage,
+  responseMessage: responseMessage
+});
+
+// Delay to let things settle down following kick.
+tools.addDelayBatch(suite, 500);
+
+// Beta asks to find partner.
+var message = tools.wrapAsMessage({
+  action: "findPartner"
+});
+suite.addBatch({
+  "Beta issues request for new partner": {
+    topic: function () {
+      suite.clients[1].action({
+        type: "emit",
+        args: ["fromClient", "chat", message.toObject()]
+      }, this.callback);
+    },
+    "request sent": function (error) {
+      assert.isUndefined(error);
+    }
+  }
+});
+
+// Delay to let things settle down following request.
+tools.addDelayBatch(suite, 500);
+
+// Alpha searches for partner, gets paired up with beta again.
+batchName = "Alpha issues findPartner, check to see if paired with beta again";
+sendMessage = {
+  action: "findPartner"
+};
+tools.application.addSendAndAwaitResponsesBatch(batchName, suite, {
+  applicationId: "chat",
+  actionIndex: 0,
+  responseIndexes: [0, 1],
+  sendMessage: sendMessage,
+  vows: {
+    "expected responses on connect": function (unusedError, results) {
+      assert.isNull(results[0].error);
+      assert.isNull(results[1].error);
+      // Check the one to see if the contents are expected.
+      assert.strictEqual(results[0].socketEvent.args[0], "chat");
+      var data = results[0].socketEvent.args[1].data;
+      assert.strictEqual(data.action, "startChat");
+      // The two messages are published to the room, so they should be the same.
+      assert.deepEqual(results[0].socketEvent, results[1].socketEvent);
+    }
+  }
+});
 
 // Ensure that clients are closed and child processes are killed.
 tools.application.closeVowsSuite(suite);
