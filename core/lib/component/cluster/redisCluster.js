@@ -332,11 +332,14 @@ p.launchHeartbeatProcess = function () {
   process.once("exit", function () {
     self.heartbeatProcess.shutdown();
   });
-  // Kind of ugly. TODO: replace with Domains or something better.
+  // Kind of ugly, but works.
   process.once("uncaughtException", function (error) {
-    self.heartbeatProcess.shutdown();
-    // If this was the last of the listeners, then rethrow the error.
+    // If this was the last of the listeners, then shut down the child and
+    // rethrow. Our assumption here is that any other code listening for an
+    // uncaught exception is going to do the sensible thing and call
+    // process.exit().
     if (process.listeners("uncaughtException").length === 0) {
+      self.heartbeatProcess.shutdown();
       throw error;
     }
   });
