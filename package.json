@@ -2,7 +2,7 @@
   "name" : "thywill",
   "description": "A Node.js framework for single page web applications based on asynchronous messaging.",
   "keywords": ["asynchronous", "message", "framework"],
-  "version": "0.0.9",
+  "version": "0.0.10",
   "homepage": "https://github.com/exratione/thywill",
   "author": "Reason <reason@exratione.com>",
   "engines": {

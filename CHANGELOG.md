@@ -5,6 +5,7 @@ Work in Progress
 ----------------
 
   * Fix fatal bug in failing to remove listeners when not using Express.
+  * Make client code in the SocketIoClientInterface less silly.
 
 
 v0.0.9 - 04/15/2013

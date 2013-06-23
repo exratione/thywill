@@ -18,35 +18,18 @@
    * Client ApplicationInterface that allows remote procedure calls to invoke
    * server-side functions.
    *
+   * Note that this does not emit events for completed RPC calls, but rather
+   * uses the provided callback function.
+   *
    * @see Thywill.ApplicationInterface
    */
   Thywill.RpcCapableApplicationInterface = function RpcCapableApplicationInterface (applicationId) {
-    Thywill.ApplicationInterface.call(this, applicationId);
-
-    // Replace the received() function so as to siphon off RPC messages.
-    var prototype = this.constructor.prototype;
-    if (!prototype._received) {
-      // this.received should be the right overridden function for this
-      // instance.
-      prototype._received = this.received;
-
-      /**
-       * @see Thywill.ApplicationInterface#received
-       */
-      prototype.received = function (message) {
-        if (message.getType() === Thywill.Message.TYPES.RPC) {
-          this.rpcResponse(message.getData());
-        } else {
-          this._received(message);
-        }
-      };
-    }
+    Thywill.RpcCapableApplicationInterface.super_.call(this, applicationId);
 
     // No timeout on RPC calls set by default.
     this.rpcTimeout = 0;
     // Holds the interval ID for the check process associated with timeouts.
     this.rpcTimeoutIntervalId = null;
-
     // Holds data pending calls and callback function references.
     this.rpcInProgress = {};
     // A counter used to generate identifiers.
@@ -60,7 +43,7 @@
   var p = Thywill.RpcCapableApplicationInterface.prototype;
 
   // ------------------------------------------
-  // "Static"
+  // "Static" properties.
   // ------------------------------------------
 
   Thywill.RpcCapableApplicationInterface.RPC_ERRORS = {
@@ -71,7 +54,33 @@
   };
 
   // ------------------------------------------
-  // Methods
+  // Methods: initialization
+  // ------------------------------------------
+
+  /**
+   * Override the listening behavior to strip out RPC response messages.
+   *
+   * @see Thywill.ApplicationInterface#_listenForReceived
+   */
+  p._listenForReceived = function () {
+    var self = this;
+    // Message received from the server.
+    Thywill.on("received", function (applicationId, message) {
+      if (applicationId !== self.applicationId) {
+        return;
+      }
+
+      if (message.getType() === Thywill.Message.TYPES.RPC) {
+        self.rpcResponse(message.getData());
+      } else {
+        self.received(message);
+        self.emit("received", message);
+      }
+    });
+  };
+
+  // ------------------------------------------
+  // Methods.
   // ------------------------------------------
 
   /**
@@ -102,7 +111,7 @@
    */
   p.rpc = function (data, callback) {
     // If not connected, then immediately respond with a suitable error.
-    if (!Thywill.serverInterface.isConnected) {
+    if (!Thywill.isConnected) {
       callback(this.rpcErrors.DISCONNECTED);
       return;
     }

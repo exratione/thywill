@@ -229,9 +229,10 @@ p._setupBootstrapResources = function (callback) {
 
   // Array of loader functions to be called in series.
   var fns = {
-    // Create a resource for the socket.IO client code.
+    // Create a resource for the socket.IO client code. Make sure it's first.
     createSocketIoJSResource: function (asyncCallback) {
-      var originFilePath = pathHelpers.resolve(__dirname, "../../../../node_modules/socket.io-client/dist/socket.io.min.js");
+      var path = "../../../../node_modules/socket.io-client/dist/socket.io.min.js";
+      var originFilePath = pathHelpers.resolve(__dirname, path);
       var data = fs.readFileSync(originFilePath, self.config.textEncoding);
       // Generate a resource.
       var resource = resourceManager.createResource(data, {
@@ -243,16 +244,23 @@ p._setupBootstrapResources = function (callback) {
       });
       self.storeBootstrapResource(resource, asyncCallback);
     },
+
     // Create a resource for the main client-side Thywill Javascript. We are
-    // passing in some additional code via templating.
+    // passing in some additional code and values via templating.
     createMainThywillJsResource: function (asyncCallback) {
-      var originFilePath = pathHelpers.resolve(__dirname, "../../../client/socketIoClientInterface/thywill.js");
+      var path = "../../../client/socketIoClientInterface/thywill.js";
+      var originFilePath = pathHelpers.resolve(__dirname, path);
       var data = fs.readFileSync(originFilePath, self.config.textEncoding);
       var thywillTemplate = handlebars.compile(data);
       // Template parameters.
       var params = {
-        messageClass: self.classToCodeString(Message, "  ", "  ")
+        messageClass: self.classToCodeString(Message, "  ", "  "),
+        namespace: self.config.namespace,
+        config: JSON.stringify({})
       };
+      if (self.config.socketClientConfig) {
+        params.config = JSON.stringify(self.config.socketClientConfig);
+      }
       // Generate a resource from the rendered template.
       var resource = resourceManager.createResource(thywillTemplate(params), {
         clientPath: self.config.baseClientPath + "/js/thywill.js",
@@ -264,43 +272,14 @@ p._setupBootstrapResources = function (callback) {
       self.storeBootstrapResource(resource, asyncCallback);
     },
 
-    // Client-side Javascript for this clientInterface component. This one
-    // needs minor templating to add in Socket.io client configuration values.
-    // Use Handlebar.js rather than the configured template engine for core
-    // files.
+    // Client-side Javascript for the ApplicationInterface.
     createClientInterfaceJsResource: function (asyncCallback) {
-      var originFilePath = pathHelpers.resolve(__dirname, "../../../client/socketIoClientInterface/socketIoServerInterface.js");
-      var data = fs.readFileSync(originFilePath, self.config.textEncoding);
-      var serverInterfaceTemplate = handlebars.compile(data);
-      // Template parameters.
-      var params = {
-        namespace: self.config.namespace,
-        config: JSON.stringify({})
-      };
-      if (self.config.socketClientConfig) {
-        params.config = JSON.stringify(self.config.socketClientConfig);
-      }
-      // Generate a resource from the rendered template.
-      var resource = resourceManager.createResource(serverInterfaceTemplate(params), {
-        clientPath: self.config.baseClientPath + "/js/serverInterface.js",
+      var path = "../../../client/socketIoClientInterface/socketIoApplicationInterface.js";
+      createBootstrapResourceFromFile(path, {
+        clientPath: self.config.baseClientPath + "/js/applicationInterface.js",
         encoding: self.config.textEncoding,
-        originFilePath: originFilePath,
         type: resourceManager.types.JAVASCRIPT,
         weight: 1
-      });
-      self.storeBootstrapResource(resource, asyncCallback);
-    },
-
-    // Define a Javascript resource that needs to be loaded after all other
-    // Javascript resources. We can't use things like jQuery(document).ready()
-    // for this because core Thywill doesn't assume any such framework is
-    // present.
-    createLoadLastJsResource: function (asyncCallback) {
-      createBootstrapResourceFromFile("../../../client/socketIoClientInterface/thywillLoadLast.js", {
-        clientPath: self.config.baseClientPath + "/js/thywillLoadLast.js",
-        encoding: self.config.textEncoding,
-        type: resourceManager.types.JAVASCRIPT,
-        weight: 999999
       }, asyncCallback);
     },
 
@@ -349,7 +328,8 @@ p._setupBootstrapResources = function (callback) {
     // Javascript resources. Again using Handlebar.js rather than the
     // configured template engine.
     createMainPageResource: function (asyncCallback) {
-      var originFilePath = pathHelpers.resolve(__dirname, "../../../client/socketIoClientInterface/thywill.html");
+      var path = "../../../client/socketIoClientInterface/thywill.html";
+      var originFilePath = pathHelpers.resolve(__dirname, path);
       var data = fs.readFileSync(originFilePath, self.config.textEncoding);
       var mainPageTemplate = handlebars.compile(data);
 
@@ -367,7 +347,8 @@ p._setupBootstrapResources = function (callback) {
         resources : resourcesByType,
         encoding : self.config.pageEncoding
       });
-      var resource = resourceManager.createResource(new Buffer (mainPage, self.config.textEncoding), {
+      var resource = new Buffer (mainPage, self.config.textEncoding);
+      resource = resourceManager.createResource(resource, {
         clientPath: self.config.baseClientPath + "/",
         encoding: self.config.textEncoding,
         originFilePath: originFilePath,
@@ -377,7 +358,8 @@ p._setupBootstrapResources = function (callback) {
     },
     // Create a trivial resource to be used for up-checks by a proxy server.
     createUpCheckResource: function (asyncCallback) {
-      var resource = resourceManager.createResource(new Buffer ("{ alive: true }", self.config.textEncoding), {
+      var resource = new Buffer ("{ alive: true }", self.config.textEncoding);
+      var resource = resourceManager.createResource(resource, {
         clientPath: self.config.baseClientPath + self.config.upCheckClientPath,
         encoding: self.config.textEncoding,
         type: resourceManager.types.JSON

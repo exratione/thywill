@@ -9,6 +9,7 @@
  */
 
 (function () {
+  "use strict";
 
   // ------------------------------------------
   // Define a Chat application class.
@@ -327,7 +328,6 @@
   // Initial UI setup.
   jQuery(document).ready(function () {
     app.uiSetup();
-    Thywill.serverInterface.registerApplication(app);
   });
 
 })();
