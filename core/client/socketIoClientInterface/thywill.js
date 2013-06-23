@@ -220,8 +220,8 @@ var Thywill = (function() {
   // -----------------------------------------------------
 
   /**
-   * Since we don't depend on any specific framework, here's a utility for inheritance,
-   * as done in Node.js.
+   * Since we don't depend on any specific framework, here's a utility for
+   * inheritance, as done in Node.js.
    *
    * TODO: Won't work in older browsers, of course.
    *
@@ -231,8 +231,8 @@ var Thywill = (function() {
     ctor.super_ = superCtor;
     ctor.prototype = Object.create(superCtor.prototype, {
       constructor: {
-          value: ctor,
-          enumerable: false
+        value: ctor,
+        enumerable: false
       }
     });
   };

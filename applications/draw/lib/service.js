@@ -265,9 +265,9 @@ exports.getConfig = function (port, clusterMemberId) {
 };
 
 /**
- * Start an Draw application process running.
+ * Start an application process running.
  *
- * Use in one these ways, with the callback being optional.
+ * Use in one of these ways, with the callback being optional.
  *
  * start (config, [callback])
  * start (port, clusterMemberId, [callback])
