@@ -73,7 +73,7 @@ exports.getConfig = function (port, clusterMemberId) {
       minifyCss: true,
       // If true, minify and merge bootstrap Javascript into a single resource.
       // This is the Javascript initially loaded when a client connections.
-      minifyJavascript: false,
+      minifyJavascript: true,
       // A namespace to apply to Socket.IO communications, allowing other
       // Socket.IO applications to run on the same server in their own,
       // separate namespaces.
