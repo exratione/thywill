@@ -4,8 +4,8 @@ Changelog
 Work in Progress
 ----------------
 
-  * Fix fatal bug in failing to remove listeners when not using Express.
-  * Make client code in the SocketIoClientInterface less silly.
+  * Fix fatal bugs in HttpCluster and SocketIOClientInterface components.
+  * Refactor client code in the SocketIoClientInterface to be less silly.
 
 
 v0.0.9 - 04/15/2013

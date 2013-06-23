@@ -698,11 +698,12 @@ p.subscribe = function (clients, channelIds, callback) {
 
   clients.forEach(function (client, index, array) {
     var connectionId = self._clientOrConnectionIdToConnectionId(client);
+    // If a local subscription attempt returns true, then we're done.
     if(self._subscribeLocalSocket(connectionId, channelIds)) {
       return;
     }
-    // The connection isn't local, but we know which cluster member the socket is
-    // connected to, so tell it directly.
+    // Otherwise the connection isn't local, but we know which cluster member
+    // the socket is connected to, so tell it directly.
     for (var clusterMemberId in self.connections) {
       if (self.connections[clusterMemberId].connections[connectionId]) {
         self.thywill.cluster.sendTo(clusterMemberId, self.clusterTask.subscribe, {
@@ -752,12 +753,12 @@ p.unsubscribe = function (clients, channelIds, callback) {
 
   clients.forEach(function (client, index, array) {
     var connectionId = self._clientOrConnectionIdToConnectionId(client);
+    // If a local unsubscription attempt returns true, then we're done.
     if(self._unsubscribeLocalSocket(connectionId, channelIds)) {
-      callback();
       return;
     }
-    // The connection isn't local, but we know which cluster member the socket is
-    // connected to, so tell it directly.
+    // Otherwise the connection isn't local, but we know which cluster member
+    // the socket is connected to, so tell it directly.
     for (var clusterMemberId in self.connections) {
       if (self.connections[clusterMemberId].connections[connectionId]) {
         self.thywill.cluster.sendTo(clusterMemberId, self.clusterTask.unsubscribe, {
