@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Work in Progress
-----------------
+v0.0.10 - 06/23/2013
+--------------------
 
   * Fix fatal bugs in HttpCluster and SocketIOClientInterface components.
   * Refactor client code in the SocketIoClientInterface to be less silly.
