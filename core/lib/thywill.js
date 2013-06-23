@@ -627,13 +627,18 @@ p._loadComponentConstructor = function (componentType) {
   var implementation = this.config[componentType].implementation;
   var componentPath;
   var ComponentConstructor;
+
   // Loading a constructor for a core component implementation.
   if (implementation.type === "core") {
     componentPath = "./component/" + componentType + "/" + implementation.name;
     try {
       ComponentConstructor = require(componentPath);
     } catch (e) {
-      throw new Error("Unsupported core component implementation '" + implementation.name + "' of type '" + componentType + "'");
+      var message = "Unsupported core component implementation '" +
+        implementation.name +
+        "' of type '" + componentType +
+        "'. Error: " + e.toString();
+      throw new Error(message);
     }
   }
   // Loading a constructor for an extra component implementation.
@@ -642,7 +647,11 @@ p._loadComponentConstructor = function (componentType) {
     try {
       ComponentConstructor = require(componentPath);
     } catch (e) {
-      throw new Error("Unsupported extra component implementation '" + implementation.name + "' of type '" + componentType + "'");
+      var message = "Unsupported extra component implementation '" +
+        implementation.name +
+        "' of type '" + componentType +
+        "'. Error: " + e.toString();
+      throw new Error(message);
     }
   }
   // Loading a constructor for a component implementation provided by another package.
@@ -655,7 +664,11 @@ p._loadComponentConstructor = function (componentType) {
         ComponentConstructor = require(implementation.path);
       }
     } catch (e) {
-      throw new Error("Missing require component implementation '" + implementation.path + "' of type '" + componentType + "'");
+      var message = "Missing require component implementation '" +
+        implementation.path +
+        "' of type '" + componentType +
+        "'. Error: " + e.toString();
+      throw new Error(message);
     }
   }
   // Not a valid type of implementation declaration.

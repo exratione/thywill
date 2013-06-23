@@ -9,7 +9,6 @@ var async = require("async");
 var express = require("express");
 var http = require("http");
 var request = require("request");
-var clusterMaster = require("cluster-master");
 var Thywill = require("thywill");
 
 //-----------------------------------------------------------
