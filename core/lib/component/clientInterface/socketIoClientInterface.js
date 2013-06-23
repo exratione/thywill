@@ -402,6 +402,7 @@ p._setHttpServerToServeResources = function () {
   // Remove all existing listeners from the server, while keeping a copy of
   // them.
   this.serverListeners = this.config.server.server.listeners("request").splice(0);
+  this.config.server.server.removeAllListeners('request');
 
   /**
    * Helper function - send the request on to other listeners.
