@@ -14,7 +14,6 @@ var suite = tools.application.vowsSuite("Application: Echo", {
   // Socket.IO. The matches are checked against the page contents. Here
   // we're looking at the templates that should be included.
   pageMatches: [
-    "<button>{{buttonText}}</button>",
     '<div class="echoed-message">{{data}}</div>'
   ],
   // Data for the processes to launch.

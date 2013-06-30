@@ -1,5 +1,5 @@
 <div id="calculations-wrapper">
-  <div id="title">{{title}}</div>
+  <div id="title">Thywill: Calculations Application</div>
   <ul class="operations-wrapper">
     {{#each operations}}<li id="{{{id}}}" class="operation-wrapper">
       <input operation="{{{id}}}" type="text" maxlength="5" />

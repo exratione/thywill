@@ -1,7 +1,7 @@
 {
   "name" : "thywill",
-  "description": "A Node.js framework for single page web applications based on asynchronous messaging.",
-  "keywords": ["asynchronous", "message", "framework"],
+  "description": "A Node.js clustered framework for single page web applications based on asynchronous messaging.",
+  "keywords": ["asynchronous", "clustered", "message", "framework", "single-page", "application"],
   "version": "0.0.10",
   "homepage": "https://github.com/exratione/thywill",
   "author": "Reason <reason@exratione.com>",

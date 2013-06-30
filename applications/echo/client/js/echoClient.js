@@ -38,14 +38,7 @@
    * Create the application user interface and its event listeners.
    */
   p.uiSetup = function () {
-    this.templates.uiTemplate = Handlebars.compile(jQuery("#{{{uiTemplateId}}}").html());
     this.templates.messageTemplate = Handlebars.compile(jQuery("#{{{messageTemplateId}}}").html());
-
-    jQuery("body").append(this.templates.uiTemplate({
-      title: "Thywill: Echo Application",
-      buttonText: "Send"
-    }));
-
     jQuery("#sender textarea").focus();
     jQuery("#echo-wrapper").append('');
   };

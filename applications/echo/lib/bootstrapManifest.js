@@ -1,7 +1,7 @@
 /**
  * @fileOverview
  * The bootstrap manifest is a way of listing files that will be turned into
- * bootstrap resources and presented to a client immediately on connection.
+ * bootstrap Resources and presented to a client immediately on connection.
  * The exported manifest must be passed to this function:
  *
  * Application#storeBootstrapResourcesFromManifest
@@ -10,8 +10,9 @@
  *
  * Application#_defineBootstrapResources
  *
- * Bootstrap resources can be otherwise be created and stored through
- * ClientInterface, ResourceManager, and Application class methods.
+ * Bootstrap Resources can be otherwise be created and stored through
+ * ClientInterface, ResourceManager, and Application class methods. This is
+ * appropriate for Resources that must be constructed or templated.
  */
 
 var path = require("path");
@@ -19,6 +20,10 @@ var Thywill = require("thywill");
 var Resource = Thywill.getBaseClass("Resource");
 
 var manifest = {
+  // Add the template for the application main page.
+  "../client/template/thywill.html": {
+    clientPath: "/echo/"
+  },
   // Add Modernizr, which has to come first in the Javascript.
   "../../../thirdParty/modernizr/modernizr.2.6.1.min.js": {
     clientPath: "/echo/js/modernizr.min.js",
@@ -37,7 +42,7 @@ var manifest = {
     weight: -10
   },
   // Add Handlebars.js.
-  "../../../thirdParty/handlebars.js/handlebars.1.0.0.rc.1.js": {
+  "../../../thirdParty/handlebars/handlebars.1.0.0.rc.1.js": {
     clientPath: "/echo/js/handlebars.js",
     weight: 10
   },
@@ -50,14 +55,6 @@ var manifest = {
   "../client/css/echoClient.css": {
     clientPath: "/echo/css/client.css",
     weight: 10
-  },
-  // Add the Echo client UI template. Note that this won't be loaded over
-  // HTTP, but rather included into the application main page.
-  "../client/template/ui.tpl": {
-    clientPath: "/echo/tpl/ui.tpl",
-    id: "echo-template-ui",
-    type: Resource.TYPES.TEMPLATE,
-    weight: 0
   },
   // Add the Echo client message display template. Note that this won't be
   // loaded over HTTP, but rather included into the application main page.

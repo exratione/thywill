@@ -11,7 +11,8 @@
  * Application#_defineBootstrapResources
  *
  * Bootstrap resources can be otherwise be created and stored through
- * ClientInterface, ResourceManager, and Application class methods.
+ * ClientInterface, ResourceManager, and Application class methods. This is
+ * appropriate for Resources that must be constructed or templated.
  */
 
 var path = require("path");
@@ -19,6 +20,10 @@ var Thywill = require("thywill");
 var Resource = Thywill.getBaseClass("Resource");
 
 var manifest = {
+  // Add the template for the application main page.
+  "../client/template/thywill.html": {
+    clientPath: "/display/"
+  },
   // Add Modernizr, which has to come first in the Javascript.
   "../../../thirdParty/modernizr/modernizr.2.6.1.min.js": {
     clientPath: "/display/js/modernizr.min.js",
@@ -37,7 +42,7 @@ var manifest = {
     weight: -10
   },
   // Add Handlebars.js.
-  "../../../thirdParty/handlebars.js/handlebars.1.0.0.rc.1.js": {
+  "../../../thirdParty/handlebars/handlebars.1.0.0.rc.1.js": {
     clientPath: "/display/js/handlebars.js",
     weight: 10
   },

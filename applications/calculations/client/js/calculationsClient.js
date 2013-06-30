@@ -70,7 +70,7 @@
    */
   p.uiSetup = function () {
     var self = this;
-    // The user interface is all contained in this one template.
+    // The user interface is contained in this one template.
     this.templates.uiTemplate = Handlebars.compile(jQuery("#{{{uiTemplateId}}}").html());
     // We'll need the operations definitions for rendering.
     var operations = Object.keys(this.operations).map(function (key, index, array) {
@@ -79,7 +79,6 @@
     });
     // Render and display the template.
     jQuery("body").append(this.templates.uiTemplate({
-      title: "Thywill: Calculations Application",
       operations: operations
     }));
     // Add references to elements to the operations definitions.

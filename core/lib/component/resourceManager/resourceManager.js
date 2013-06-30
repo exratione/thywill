@@ -98,11 +98,32 @@ p.createResource = function (data, attributes) {
     }
     data = new Buffer(data, encoding);
   }
-  // Check to see if we're defaulting the type based on a file extension.
+  // Check to see if we're defaulting the type based on a file extension. Look
+  // at the originFilePath, then the filePath, and then the clientPath if that
+  // doesn't exist.
+  //
+  // Any of these paths might not actually have a file extension, hence we
+  // check all three.
+  var extension;
   if (!attributes.type) {
-    var extension = pathUtils.extname(attributes.clientPath);
-    attributes.type = this.typeByExtension[extension] || this.defaultType;
+    if (attributes.originFilePath) {
+      extension = pathUtils.extname(attributes.originFilePath);
+      attributes.type = this.typeByExtension[extension];
+    }
+    // If that didn't get a useful type, then check the filePath.
+    if (!attributes.type && attributes.filePath) {
+      extension = pathUtils.extname(attributes.filePath);
+      attributes.type = this.typeByExtension[extension];
+    }
+    // Lastly try the clientPath.
+    if (!attributes.type && attributes.clientPath) {
+      extension = pathUtils.extname(attributes.clientPath);
+      attributes.type = this.typeByExtension[extension];
+    }
+    // Last of all, default if we've failed to identify a type.
+    attributes.type = attributes.type || this.defaultType;
   }
+
   // Generate the Resource instance.
   return new Resource(data, attributes);
 };

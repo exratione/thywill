@@ -4,6 +4,8 @@
  * application.
  */
 
+var fs = require("fs");
+var path = require("path");
 var http = require("http");
 var MemoryStore = require("socket.io/lib/stores/memory");
 var Calculations = require("../lib/calculations");

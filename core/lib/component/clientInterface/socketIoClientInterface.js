@@ -28,7 +28,8 @@ var Client = require("./client");
  * websockets as means of passing messages back and forth between server and
  * client. It does the following:
  *
- * 1) Set up the Resources delivered to the client on the initial page load.
+ * 1) Set up the Resources delivered to the client on the initial page load,
+ *    including the initial page HTML.
  * 2) Deliver messages between client and server via websockets.
  *
  * This implementation does not provide sessions; client information uses
@@ -38,6 +39,9 @@ function SocketIoClientInterface () {
   SocketIoClientInterface.super_.call(this);
   this.socketFactory = null;
   this.bootstrapResourceClientPaths = [];
+
+  // Convenience reference.
+  this.templates = SocketIoClientInterface.TEMPLATES;
 }
 util.inherits(SocketIoClientInterface, Thywill.getBaseClass("ClientInterface"));
 var p = SocketIoClientInterface.prototype;
@@ -128,6 +132,24 @@ SocketIoClientInterface.CONFIG_TEMPLATE = {
   }
 };
 
+// Handlebars templates for assembling various odds and ends. The spacing is for
+// the most common use in the HTML <head> element.
+SocketIoClientInterface.TEMPLATES = {
+  bootstrapCss: '<style type="text/css" media="all">' +
+    '\n{{#each resources.[text/css]}}    @import url("{{{clientPath}}}");\n{{/each}}' +
+    '  </style>',
+  bootstrapJs: '{{#each resources.[application/javascript]}}' +
+    '<script type="text/javascript" src="{{{clientPath}}}"></script>\n  {{/each}}',
+  // "this" gives you the template Resource object and calls toString() on it.
+  bootstrapTemplates: '{{#each resources.[text/template]}}' +
+    '<script type="text/template" id="{{{id}}}">\n    {{{this}}}  </script>\n  {{/each}}'
+};
+
+// Compile the templates here rather than later.
+for (var template in SocketIoClientInterface.TEMPLATES) {
+  SocketIoClientInterface.TEMPLATES[template] = handlebars.compile(SocketIoClientInterface.TEMPLATES[template]);
+}
+
 // -----------------------------------------------------------
 // Initialization
 // -----------------------------------------------------------
@@ -145,6 +167,23 @@ p._configure = function (thywill, config, callback) {
   this.config = config;
   // Create this once; it'll see a lot of use.
   this.config.baseClientPathRegExp = new RegExp("^" + this.config.baseClientPath.replace("/", "\\/") + "\\/?");
+
+  // Make sure there's an object present for the <html> and <body> attributes.
+  this.config.elementAttributesBody = this.config.elementAttributesBody || {};
+  this.config.elementAttributesHtml = this.config.elementAttributesHtml || {};
+
+  // Reduce array attributes down to strings.
+  var name;
+  for (name in this.config.elementAttributesBody) {
+    if (Array.isArray(this.config.elementAttributesBody[name])) {
+      this.config.elementAttributesBody[name] = this.config.elementAttributesBody[name].join(" ");
+    }
+  }
+  for (name in this.config.elementAttributesHtml) {
+    if (Array.isArray(this.config.elementAttributesHtml[name])) {
+      this.config.elementAttributesHtml[name] = this.config.elementAttributesHtml[name].join(" ");
+    }
+  }
 
   // -----------------------------------------------------------------
   // Cluster configuration: communication between processes.
@@ -206,13 +245,13 @@ p._setupBootstrapResources = function (callback) {
   /**
    * Helper function for creating and storing a bootstrap resource.
    *
-   * @param {string}
-   * relativePath A relative path from this file to the file to be loaded.
-   * @param {Object}
-   * attributes An attributes object for creating a resource - see the Resource
-   * class for more information.
-   * @param {Function}
-   * callback Of the form function (error) where error === null on success.
+   * @param {string} relativePath
+   *   A relative path from this file to the file to be loaded.
+   * @param {Object} attributes
+   *   An attributes object for creating a resource - see the Resource class
+   *   for more information.
+   * @param {Function} callback
+   *   Of the form function (error) where error === null on success.
    */
   function createBootstrapResourceFromFile (relativePath, attributes, callback) {
     // Add some attributes.
@@ -227,9 +266,10 @@ p._setupBootstrapResources = function (callback) {
     });
   }
 
-  // Array of loader functions to be called in series.
+  // Array of setup functions to be called in series.
   var fns = {
-    // Create a resource for the socket.IO client code. Make sure it's first.
+    // Create a bootstrap Resource for the socket.IO client code. Make sure it's
+    // first.
     createSocketIoJSResource: function (asyncCallback) {
       var path = "../../../../node_modules/socket.io-client/dist/socket.io.min.js";
       var originFilePath = pathHelpers.resolve(__dirname, path);
@@ -245,7 +285,7 @@ p._setupBootstrapResources = function (callback) {
       self.storeBootstrapResource(resource, asyncCallback);
     },
 
-    // Create a resource for the main client-side Thywill Javascript. We are
+    // Create a Resource for the main client-side Thywill Javascript. We are
     // passing in some additional code and values via templating.
     createMainThywillJsResource: function (asyncCallback) {
       var path = "../../../client/socketIoClientInterface/thywill.js";
@@ -261,7 +301,7 @@ p._setupBootstrapResources = function (callback) {
       if (self.config.socketClientConfig) {
         params.config = JSON.stringify(self.config.socketClientConfig);
       }
-      // Generate a resource from the rendered template.
+      // Generate a Resource from the rendered template.
       var resource = resourceManager.createResource(thywillTemplate(params), {
         clientPath: self.config.baseClientPath + "/js/thywill.js",
         encoding: self.config.textEncoding,
@@ -324,15 +364,14 @@ p._setupBootstrapResources = function (callback) {
       );
     },
 
-    // Template the main thywill HTML page, adding the necessary CSS and
-    // Javascript resources. Again using Handlebar.js rather than the
-    // configured template engine.
-    createMainPageResource: function (asyncCallback) {
-      var path = "../../../client/socketIoClientInterface/thywill.html";
-      var originFilePath = pathHelpers.resolve(__dirname, path);
-      var data = fs.readFileSync(originFilePath, self.config.textEncoding);
-      var mainPageTemplate = handlebars.compile(data);
-
+    // Template all of the text/html Resources and then save them. The expected
+    // text/html Resource is the main application page, which needs CSS,
+    // Javascript, and template elements added.
+    //
+    // We use Handlebars to template up the necessary <style> and <script>
+    // element blocks into strings, and then use the defined Thywill template
+    // engine to render the page.
+    templateHtmlResources: function (asyncCallback) {
       // Split out the assembled resources into arrays by type.
       var resourcesByType = {};
       for (var i = 0, length = resources.length; i < length; i++) {
@@ -342,24 +381,41 @@ p._setupBootstrapResources = function (callback) {
         resourcesByType[resources[i].type].push(resources[i]);
       }
 
-      // Render the template and stash it as a resource.
-      var mainPage = mainPageTemplate({
-        resources : resourcesByType,
+      // If there are no text/html bootstrap Resources then there is nothing to
+      // do here. This shouldn't happen: every service setup should provide at
+      // least one text/html page as a bootstrap Resource.
+      if (!resourcesByType[resourceManager.types.HTML]) {
+        self.thywill.log.warn("No text/html bootstrap Resource is defined. There should be at least one to act as the landing page.");
+        asyncCallback();
+        return;
+      }
+
+      // Assemble the locals for the resource HTML and the full page template
+      // by running the resources by type through the Handlebars templates.
+      // This produces the <style> and <script> elements for the page header.
+      var resourceLocals = {
+        resources : resourcesByType
+      };
+      var htmlLocals = {
         encoding : self.config.pageEncoding
-      });
-      var resource = new Buffer (mainPage, self.config.textEncoding);
-      resource = resourceManager.createResource(resource, {
-        clientPath: self.config.baseClientPath + "/",
-        encoding: self.config.textEncoding,
-        originFilePath: originFilePath,
-        type: resourceManager.types.HTML
-      });
-      self.storeResource(resource, asyncCallback);
+      };
+      for (var name in self.templates) {
+        htmlLocals[name] = self.templates[name](resourceLocals);
+      }
+
+      // Run through the text/html Resources, template them, and update them.
+      async.forEach(resourcesByType[resourceManager.types.HTML], function (resource, innerAsyncCallback) {
+        var template = resource.toString();
+        var html = self.thywill.templateEngine.render(resource.toString(), htmlLocals);
+        resource.buffer = new Buffer(html, resource.encoding);
+        self.storeResource(resource, innerAsyncCallback);
+      }, asyncCallback);
     },
+
     // Create a trivial resource to be used for up-checks by a proxy server.
     createUpCheckResource: function (asyncCallback) {
       var resource = new Buffer ("{ alive: true }", self.config.textEncoding);
-      var resource = resourceManager.createResource(resource, {
+      resource = resourceManager.createResource(resource, {
         clientPath: self.config.baseClientPath + self.config.upCheckClientPath,
         encoding: self.config.textEncoding,
         type: resourceManager.types.JSON

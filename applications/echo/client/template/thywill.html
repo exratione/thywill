@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!--
+  A Thywill service using the SocketIoClientInterface to run one or more
+  applications must specify one or more main page templates as text/html
+  Resources.
+
+  All text/html resources are templated by SocketIOClientInterface.
+
+  This page uses Handlebars templating because Handlebars is specified as the
+  templating engine in the Thywill configuration. It could use any template
+  engine with a Thywill component.
+
+  The following variables are made available by Thywill, and should NOT be
+  escaped:
+
+  encoding
+    The page encoding, e.g. "UTF-8".
+  bootstrapCss
+    HTML <style> elements for the CSS bootstrap resources.
+  bootstrapJs
+    HTML <script> elements for the Javascript bootstrap resources.
+  bootstrapTemplates
+    HTML <script> elements for template bootstrap resources.
+-->
+<!--[if lt IE 7]> <html class="no-js lt-ie9 lt-ie8 lt-ie7" lang="en"> <![endif]-->
+<!--[if IE 7]>    <html class="no-js lt-ie9 lt-ie8" lang="en"> <![endif]-->
+<!--[if IE 8]>    <html class="no-js lt-ie9" lang="en"> <![endif]-->
+<!--[if gt IE 8]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="{{{encoding}}}" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Thywill: Echo Application</title>
+  {{{bootstrapCss}}}
+  {{{bootstrapJs}}}
+  {{{bootstrapTemplates}}}
+</head>
+<body>
+  <div id="echo-wrapper">
+    <div id="title">Thywill: Echo Application</div>
+    <div id="sender">
+      <textarea></textarea>
+      <button>Send</button>
+    </div>
+    <div id="echo-output"></div>
+    <div id="instructions">
+      Enter text into the upper box and hit send. It will be passed to the Thywill server and
+      then echoed back to appear in the lower box.
+    </div>
+    <div id="status"></div>
+  </div>
+</body>
+</html>

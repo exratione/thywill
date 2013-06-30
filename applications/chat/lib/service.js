@@ -96,6 +96,17 @@ exports.getConfig = function (port, clusterMemberId) {
       // interface, allowing distinction between different Thywill Node.js
       // services running as backends on the same server.
       baseClientPath: "/chat",
+      // Attributes for the <body> element of the Thywill main application page
+      // are specified here. Attribute values can be arrays, in which case they
+      // will be joined to a space-delimited string.
+      elementAttributesBody: {},
+      // Attributes for the <html> element of the Thywill main application page
+      // are specified here. Attribute values can be arrays, in which case they
+      // will be joined to a space-delimited string.
+      elementAttributesHtml: {
+        class: ["no-js"],
+        lang: "en"
+      },
       // If true, minify and merge bootstrap CSS into a single resource. This
       // is the CSS initially loaded when a client connections.
       minifyCss: true,

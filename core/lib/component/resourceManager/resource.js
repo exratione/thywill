@@ -94,7 +94,10 @@ Resource.DEFAULT_TYPE = Resource.TYPES.TEXT;
 Resource.TYPE_BY_EXTENSION = {
   ".css": Resource.TYPES.CSS,
   ".html": Resource.TYPES.HTML,
-  ".js": Resource.TYPES.JAVASCRIPT
+  ".js": Resource.TYPES.JAVASCRIPT,
+  ".json": Resource.TYPES.JSON,
+  ".tpl": Resource.TYPES.TEMPLATE,
+  ".txt": Resource.TEXT
 };
 
 //-----------------------------------------------------------

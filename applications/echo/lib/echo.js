@@ -53,7 +53,6 @@ p._defineBootstrapResources = function (callback) {
       // A little templating to insert the application ID.
       data = self.thywill.templateEngine.render(data, {
         applicationId: self.id,
-        uiTemplateId: "echo-template-ui",
         messageTemplateId: "echo-template-message"
       });
       // Create and store the resource.
