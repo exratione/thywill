@@ -1,12 +1,17 @@
 Changelog
 =========
 
+Ongoing Work
+------------
+
+  * HTML page templates are now provided as bootstrap Resources in the service / application setup.
+  * Added Tabular example application to demonstrate integration with AngularJS.
+
 v0.0.10 - 06/23/2013
 --------------------
 
   * Fix fatal bugs in HttpCluster and SocketIOClientInterface components.
   * Refactor client code in the SocketIoClientInterface to be less silly.
-
 
 v0.0.9 - 04/15/2013
 -------------------

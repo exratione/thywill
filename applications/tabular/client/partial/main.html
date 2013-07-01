@@ -1,0 +1,39 @@
+<div class="tabular-wrapper" data-ng-class="getUiEnabledClass()">
+  <div class="title">Thywill: Tabular Application</div>
+
+  <div class="table-wrapper">
+    <ul class="table">
+      <li class="row row-header">
+        <span>Alpha</span>
+        <span>Beta</span>
+        <span>Gamma</span>
+        <span>Delta</span>
+        <span>Epsilon</span>
+      </li>
+      <li class="row" data-ng-repeat="row in rows" data-ng-animate="'row'">
+        <span data-ng-repeat="cell in row">{{cell}}</span>
+      </li>
+    </ul>
+  </div>
+
+  <div class="button-wrapper">
+    <button
+      class="start"
+      data-ng-class="getStartButtonEnabledClass()"
+      data-ng-click="start()"
+    >Start</button>
+    <button
+      class="stop"
+      data-ng-class="getStopButtonEnabledClass()"
+      data-ng-click="stop()"
+    >Stop</button>
+  </div>
+
+  <div class="instructions">
+    Click the start button once connected. New rows will arrive from the server
+    every few seconds until the stop button is clicked or the connection is
+    broken.
+  </div>
+
+  <div class="status" data-ng-class="status.state">{{status.message}}</div>
+</div>

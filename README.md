@@ -14,6 +14,7 @@ web application:
   * All traffic is sent encrypted over SSL
   * Uses Socket.IO as a communication layer
   * Functionality can be exposed to clients progressively
+  * Server processes can be clustered to support large numbers of connections
 
 In Thywill, messages are passed asynchronously between connected web clients
 and the server, and can be initiated at any time by either the client or the
@@ -28,31 +29,33 @@ Noteworthy Features
   * Optionally share sessions with Express
   * Minification of Javascript and CSS resources
   * EJS and Handlebars template engines are supported, others can be added
+  * Easy to integrate client code with AngularJS, Ember, or other similar frameworks
   * The client can issue remote procedure calls to server functions
   * Easy to set up clustered server processes
+  * Set up channels and keep tabs on current connections
   * Component architecture for easy extension or replacement of core functionality
-  * Example server configurations for running Thywill applications as a service
-  * Example applications to demonstrate setup and usage
+  * Full example server configuration to run Thywill web applications as a service
+  * Example applications to demonstrate setup, code organization, and usage
 
 Example Applications
 --------------------
 
-You can manually run the simplest example Thywill application, Echo, as
-follows:
+You can install Thywill and manually run the simplest example application, Echo,
+as follows:
 
-    cd path/to/thywill
-    node applications/echo/service/startEcho
+    npm install thywill
+    node node_modules/thywill/applications/echo/service/startEcho
 
 Navigate to the following URL on your server to see it in action.
 
     http://example.com:10080/echo/
 
 Then read /doc/applicationServiceSetup.md for instructions on how to set up a
-Thywill application Node.js process as a service.
+service that runs a Thywill application Node.js process.
 
 Go on to read /doc/serverSetup.md for instructions on how to set up a server
 with an SSL-capable proxy so as to run a Thywill application securely via HTTPS
-connections. With that built, you can access Echo as follows:
+connections. With that built, you could access Echo as follows:
 
     https://example.com/echo/
 
@@ -62,7 +65,7 @@ Creating New Thywill Applications
 A Thywill application implements the necessary server and client interfaces to:
 
   * Send and receive messages through Thywill
-  * Add Javascript, CSS, and other resources to be loaded by a client
+  * Add Javascript, CSS, and other resources initially loaded by a client
 
 The example applications found under /applications demonstrate how this is
 accomplished by:
@@ -70,13 +73,48 @@ accomplished by:
   * Inheriting from the Application class on the server
   * Inheriting from the ApplicationInterface class on the client
   * Writing a suitable main Thywill configuration file
-  * Writing templates and CSS that define the user interface
+  * Writing templates and CSS to define the user interface
   * Defining the manifest of resources for initial delivery to the client
   * Cloning and customizing a launch script
 
 Beyond this minimum, a Thywill application can contain any arbitrary code. It
 does its thing, while Thywill manages the message transport between server and
 client.
+
+Using Express With Thywill
+--------------------------
+
+When creating a Thywill application you don't have to define any more than the
+resources initially loaded when a user visits the application page. You could
+choose to set up the rest of your site, and other resources to be later loaded
+by your Thywill application, outside of Thywill in your Express application
+code.
+
+This is the best way to manage integrating Thywill with a web site already
+served by Express, for example, or with frameworks like AngularJS and Ember
+which, it is assumed, are going to be doing a lot of REST API access. You can
+let Thywill handle messaging, connection tracking, and the rest of its functions
+while both Express and the client framework get on with their jobs.
+
+Using AngularJS, Ember, or Other Frameworks With Thywill
+--------------------------------------------------------
+
+It's simple to use a front-end framework like AngularJS with Thywill. Just
+create an ApplicationInterface class as usual, obtain a reference to it in
+your framework code, and listen on it for events such as arriving messages.
+
+For example, in an AngularJS controller you might do something like this:
+
+    var thywillApp = Thywill.myApplicationInterfaceInstance;
+    thywillApp.on('received', function (message) {
+      $scope.messages.push(message);
+    });
+    $thywillApp.on('disconnected', function () {
+      $scope.isConnected = false;
+    })
+
+The Tabular example application in /applications/tabular illustrates how to
+create a Thywill-AngularJS integrated web application.
 
 Sending Messages From Server to Client
 --------------------------------------
@@ -103,7 +141,7 @@ You can also subscribe connections to a channel and publish messages to that
 channel:
 
     MyApplication.prototype.sendSomething = function (connectionId) {
-      var channelId = "someChannel";
+      var channelId = 'someChannel';
       this.subscribe(connectionId, channelId, function (error) {
         if (error) {
           this.thywill.log.error(error);
@@ -173,22 +211,22 @@ RedisCluster configuration:
     // The cluster implementation is backed by Redis.
     config.cluster = {
       implementation: {
-        type: "core",
-        name: "redisCluster"
+        type: 'core',
+        name: 'redisCluster'
       },
       // The cluster has four member processes.
-      clusterMemberIds: ["alpha", "beta", "gamma", "delta"],
+      clusterMemberIds: ['alpha', 'beta', 'gamma', 'delta'],
       communication: {
-        publishRedisClient: createRedisClient(6379, "127.0.0.1"),
-        subscribeRedisClient: createRedisClient(6379, "127.0.0.1")
+        publishRedisClient: createRedisClient(6379, '127.0.0.1'),
+        subscribeRedisClient: createRedisClient(6379, '127.0.0.1')
       },
       heartbeat: {
         interval: 200,
         timeout: 500
       },
       // This is the alpha process.
-      localClusterMemberId: "alpha",
-      redisPrefix: "thywill:draw:cluster:"
+      localClusterMemberId: 'alpha',
+      redisPrefix: 'thywill:draw:cluster:'
     };
 
 The HttpCluster implementation sets up its own web server per cluster member
@@ -198,17 +236,17 @@ is an example of the HttpCluster configuration:
     // The cluster implementation uses a web server for communication.
     config.cluster = {
       implementation: {
-        type: "core",
-        name: "httpCluster"
+        type: 'core',
+        name: 'httpCluster'
       },
       // The cluster has two member processes.
       clusterMembers: {
-        "alpha": {
-          host: "127.0.0.1",
+        'alpha': {
+          host: '127.0.0.1',
           port: 20091
         },
-        "beta": {
-          host: "127.0.0.1",
+        'beta': {
+          host: '127.0.0.1',
           port: 20092
         }
       },
@@ -218,7 +256,7 @@ is an example of the HttpCluster configuration:
         interval: 200,
         requestTimeout: 500
       },
-      localClusterMemberId: "alpha",
+      localClusterMemberId: 'alpha',
       taskRequestTimeout: 500
     };
 
@@ -230,7 +268,7 @@ example, on application setup listen on the cluster for specific events:
      */
     MyApp.prototype._setup = function (callback) {
       // Listen for cluster task requests of this specific sort.
-      this.thywill.cluster.on("myTaskType", function (taskData) {
+      this.thywill.cluster.on('myTaskType', function (taskData) {
         // Do something here.
       });
       callback();
@@ -244,11 +282,11 @@ other cluster processes:
       // Task data goes here.
     };
     // Send to the beta process.
-    this.thywill.cluster.sendTo("beta", "myTaskType", taskData);
+    this.thywill.cluster.sendTo('beta', 'myTaskType', taskData);
     // Send to all of the other processes.
-    this.thywill.cluster.sendToOthers("myTaskType", taskData);
+    this.thywill.cluster.sendToOthers('myTaskType', taskData);
     // Send to all processes, including this one.
-    this.thywill.cluster.sendToAll("myTaskType", taskData);
+    this.thywill.cluster.sendToAll('myTaskType', taskData);
 
 Keeping Track of Current Connections
 ------------------------------------
@@ -287,7 +325,7 @@ can call this method:
     // cluster processes.
     this.thywill.clientTracker.clientIsConnected(client, function (error, isConnected) {
       if (isConnected) {
-        console.log(connectionId + " is connected.");
+        console.log(connectionId + ' is connected.');
       }
     });
 
@@ -297,7 +335,7 @@ The same thing works for sessions:
     // connected to any of the cluster processes.
     this.thywill.clientTracker.clientSessionIsConnected(sessionId, function (error, isConnected) {
       if (isConnected) {
-        console.log(sessionId + " is connected.");
+        console.log(sessionId + ' is connected.');
       }
     });
 
@@ -321,18 +359,18 @@ application by adding the following to the main configuration object:
     // Configuration for the ChannelManager implementation.
     config.channelManager = {
       implementation: {
-        type: "extra",
-        name: "redisChannelManager"
+        type: 'extra',
+        name: 'redisChannelManager'
       },
-      redisPrefix: "thywill:chat:channel:",
+      redisPrefix: 'thywill:chat:channel:',
       redisClient: redis.createClient()
     };
     // A RedisChannelManager requires that a ClientTracker component also be
     // used.
     config.clientTracker = {
       implementation: {
-        type: "extra",
-        name: "inMemoryClientTracker"
+        type: 'extra',
+        name: 'inMemoryClientTracker'
       }
     };
 
@@ -353,7 +391,7 @@ Publishing a message to the channel in any application class method code is
 easy:
 
     this.sendToChannel(channelId, {
-      name: "value";
+      name: 'value';
     });
 
 You can see simple use of channels in the Chat example application, found
@@ -377,7 +415,7 @@ In the server code:
         }
       };
     }
-    util.inherits(ExampleApplication, Thywill.getBaseClass("RpcCapableApplication"));
+    util.inherits(ExampleApplication, Thywill.getBaseClass('RpcCapableApplication'));
 
 In the client code:
 
@@ -391,7 +429,7 @@ Then to make a remote procedure call from the client:
     var data = {
       // Will look for this.rpcContext.exampleFunctions.exampleFunction in the
       // server Application instance context.
-      name: "exampleFunctions.exampleFunction",
+      name: 'exampleFunctions.exampleFunction',
       // True if the server function is asynchronous and accepts a callback as
       // the last argument.
       hasCallback: false,
