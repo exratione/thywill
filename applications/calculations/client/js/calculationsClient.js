@@ -8,7 +8,7 @@
  */
 
 (function () {
-  "use strict";
+  'use strict';
 
   // ------------------------------------------
   // Define an Echo application class.
@@ -28,30 +28,30 @@
     // Data for the various operations shown on the page.
     this.operations = {
       multiplyByTwo: {
-        operationText: "* 2",
+        operationText: '* 2',
         rpc: {
-          name: "multiplicative.multiplyByTwo",
+          name: 'multiplicative.multiplyByTwo',
           hasCallback: false
         }
       },
       divideByTwo: {
-        operationText: "/ 2",
+        operationText: '/ 2',
         rpc: {
-          name: "multiplicative.divideByTwo",
+          name: 'multiplicative.divideByTwo',
           hasCallback: true
         }
       },
       square: {
-        operationText: "^ 2",
+        operationText: '^ 2',
         rpc: {
-          name: "powers.square",
+          name: 'powers.square',
           hasCallback: false
         }
       },
       squareRoot: {
-        operationText: "^ 0.5",
+        operationText: '^ 0.5',
         rpc: {
-          name: "powers.squareRoot",
+          name: 'powers.squareRoot',
           hasCallback: true
         }
       }
@@ -71,20 +71,20 @@
   p.uiSetup = function () {
     var self = this;
     // The user interface is contained in this one template.
-    this.templates.uiTemplate = Handlebars.compile(jQuery("#{{{uiTemplateId}}}").html());
+    this.templates.uiTemplate = Handlebars.compile(jQuery('#{{{uiTemplateId}}}').html());
     // We'll need the operations definitions for rendering.
     var operations = Object.keys(this.operations).map(function (key, index, array) {
       self.operations[key].id = key;
       return self.operations[key];
     });
     // Render and display the template.
-    jQuery("body").append(this.templates.uiTemplate({
+    jQuery('body').append(this.templates.uiTemplate({
       operations: operations
     }));
     // Add references to elements to the operations definitions.
     for (var key in this.operations) {
-      this.operations[key].inputElement = jQuery("#" + key + " input");
-      this.operations[key].resultElement = jQuery("#" + key + " .result");
+      this.operations[key].inputElement = jQuery('#' + key + ' input');
+      this.operations[key].resultElement = jQuery('#' + key + ' .result');
     }
   };
 
@@ -92,7 +92,7 @@
    * Make the UI disabled - no operations can be carried out.
    */
   p.uiDisable = function () {
-    jQuery("input").attr("disabled", true).removeClass("enabled").off("keyup");
+    jQuery('input').attr('disabled', true).removeClass('enabled').off('keyup');
   };
 
   /**
@@ -101,9 +101,9 @@
   p.uiEnable = function () {
     var self = this;
     // Enable the operations on data changing in the inputs.
-    jQuery("input").removeAttr("disabled").addClass("enabled").on("keyup", function (e) {
+    jQuery('input').removeAttr('disabled').addClass('enabled').on('keyup', function (e) {
       var elem = jQuery(this);
-      self.inputValueChanged(elem.attr("operation"), elem.val());
+      self.inputValueChanged(elem.attr('operation'), elem.val());
     });
   };
 
@@ -116,22 +116,22 @@
 
     switch (error) {
       case this.rpcErrors.DISCONNECTED:
-        error = "Not connected.";
+        error = 'Not connected.';
         break;
       case this.rpcErrors.NO_FUNCTION:
-        error = "Missing server function.";
+        error = 'Missing server function.';
         break;
       case this.rpcErrors.NO_PERMISSION:
-        error = "Access forbidden.";
+        error = 'Access forbidden.';
         break;
       case this.rpcErrors.TIMED_OUT:
-        error = "Timed out.";
+        error = 'Timed out.';
         break;
       default:
     }
 
     operation.resultElement.fadeOut(speed, function () {
-      operation.resultElement.addClass("result-error").html(error).fadeIn(speed);
+      operation.resultElement.addClass('result-error').html(error).fadeIn(speed);
     });
   };
 
@@ -148,22 +148,22 @@
     // complete example, it might deal with complex numbers and so forth.
     // But it doesn't.
     if (result === null) {
-      this.uiError(id, "Invalid calculation.");
+      this.uiError(id, 'Invalid calculation.');
       return;
     }
 
-    if (typeof result === "number") {
+    if (typeof result === 'number') {
       if (result % 1 === 0) {
         result = result.toFixed(0);
       } else {
-        result = result.toFixed(4).replace(/0+$/, "");
+        result = result.toFixed(4).replace(/0+$/, '');
       }
     }
 
     var operation = this.operations[id];
     var speed = 100;
     operation.resultElement.fadeOut(speed, function () {
-      operation.resultElement.removeClass("result-error").html(result).fadeIn(speed);
+      operation.resultElement.removeClass('result-error').html(result).fadeIn(speed);
     });
   };
 
@@ -171,11 +171,11 @@
    * Change the status message.
    */
   p.uiStatus = function (text, className) {
-    var status = jQuery("#status");
+    var status = jQuery('#status');
     var speed = 100;
     status.fadeOut(speed, function () {
-      status.html("[ " + text + " ]")
-        .removeClass("connecting connected disconnected")
+      status.html('[ ' + text + ' ]')
+        .removeClass('connecting connected disconnected')
         .addClass(className)
         .fadeIn(speed);
     });
@@ -257,35 +257,35 @@
    * @see Thywill.ApplicationInterface#connecting
    */
   p.connecting = function () {
-    this.uiStatus("Connecting...", "connecting");
-    this.log("Client attempting to connect.");
+    this.uiStatus('Connecting...', 'connecting');
+    this.log('Client attempting to connect.');
   };
 
   /**
    * @see Thywill.ApplicationInterface#connected
    */
   p.connected = function () {
-    this.uiStatus("Connected", "connected");
+    this.uiStatus('Connected', 'connected');
     this.uiEnable();
-    this.log("Client connected.");
+    this.log('Client connected.');
   };
 
   /**
    * @see Thywill.ApplicationInterface#connectionFailure
    */
   p.connectionFailure = function () {
-    this.uiStatus("Disconnected", "disconnected");
+    this.uiStatus('Disconnected', 'disconnected');
     this.uiDisable();
-    this.log("Client failed to connect.");
+    this.log('Client failed to connect.');
   };
 
   /**
    * @see Thywill.ApplicationInterface#disconnected
    */
   p.disconnected = function () {
-    this.uiStatus("Disconnected", "disconnected");
+    this.uiStatus('Disconnected', 'disconnected');
     this.uiDisable();
-    this.log("Client disconnected.");
+    this.log('Client disconnected.');
   };
 
   // ----------------------------------------------------------
@@ -295,7 +295,7 @@
   // Create the application instance. The application ID will be populated
   // by the backend via the Handlebars template engine when this Javascript
   // file is prepared as a resource.
-  var app = new CalculationsApplication("{{{applicationId}}}");
+  var app = new CalculationsApplication('{{{applicationId}}}');
 
   // Initial UI setup.
   jQuery(document).ready(function () {

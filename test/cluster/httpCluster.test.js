@@ -6,25 +6,25 @@
  * processes.
  */
 
-var clone = require("clone");
-var tools = require("../lib/tools");
-var clusterConfig = require("../config/clusterTestThywillConfig");
+var clone = require('clone');
+var tools = require('../lib/tools');
+var clusterConfig = require('../config/clusterTestThywillConfig');
 
 var config = clone(clusterConfig);
 
 config.cluster = {
   implementation: {
-    type: "core",
-    name: "httpCluster"
+    type: 'core',
+    name: 'httpCluster'
   },
   // The cluster has two members.
   clusterMembers: {
-    "alpha": {
-      host: "127.0.0.1",
+    'alpha': {
+      host: '127.0.0.1',
       port: 20078
     },
-    "beta": {
-      host: "127.0.0.1",
+    'beta': {
+      host: '127.0.0.1',
       port: 20079
     }
   },
@@ -39,12 +39,12 @@ config.cluster = {
 };
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.headless.clusterVowsSuite("Cluster: cluster/httpCluster", {
+var suite = tools.headless.clusterVowsSuite('Cluster: cluster/httpCluster', {
   config: config,
   useRedisSocketStore: true,
   useRedisSessionStore: true
 });
-tools.headless.addBatches(suite, "cluster", "cluster");
+tools.headless.addBatches(suite, 'cluster', 'cluster');
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

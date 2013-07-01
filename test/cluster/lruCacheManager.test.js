@@ -6,26 +6,26 @@
  * processes.
  */
 
-var clone = require("clone");
-var tools = require("../lib/tools");
-var clusterConfig = require("../config/clusterTestThywillConfig");
+var clone = require('clone');
+var tools = require('../lib/tools');
+var clusterConfig = require('../config/clusterTestThywillConfig');
 
 var config = clone(clusterConfig);
 config.cacheManager = {
   implementation: {
-    type: "core",
-    name: "lruCacheManager"
+    type: 'core',
+    name: 'lruCacheManager'
   }
 };
 
 // Obtain a test suit that launches Thywill.
-var suite = tools.headless.singleInstanceVowsSuite("Cluster: cacheManager/lruCacheManager", {
+var suite = tools.headless.singleInstanceVowsSuite('Cluster: cacheManager/lruCacheManager', {
   config: config,
   useRedisSocketStore: false,
   useRedisSessionStore: false
 });
-tools.headless.addBatches(suite, "cacheManager", "general");
-tools.headless.addBatches(suite, "lruCacheManager", "cluster");
+tools.headless.addBatches(suite, 'cacheManager', 'general');
+tools.headless.addBatches(suite, 'lruCacheManager', 'cluster');
 
 //-----------------------------------------------------------
 // Exports - Vows test suite

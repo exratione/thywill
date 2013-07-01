@@ -12,7 +12,7 @@
  */
 
 (function () {
-  "use strict";
+  'use strict';
 
   // ------------------------------------------
   // Define a Draw application class.
@@ -44,13 +44,13 @@
     var self = this;
 
     // Populate the DOM from the template.
-    this.templates.uiTemplate = Handlebars.compile(jQuery("#{{{uiTemplateId}}}").html());
-    jQuery("body").append(this.templates.uiTemplate({
-      title: "Thywill: Draw Application"
+    this.templates.uiTemplate = Handlebars.compile(jQuery('#{{{uiTemplateId}}}').html());
+    jQuery('body').append(this.templates.uiTemplate({
+      title: 'Thywill: Draw Application'
     }));
 
     // Add the Paper.js canvas.
-    var canvas = jQuery("#canvas")[0];
+    var canvas = jQuery('#canvas')[0];
     paper.setup(canvas);
 
     // A line drawing listener.
@@ -61,7 +61,7 @@
    * Make the UI disabled - no sending.
    */
   p.uiDisable = function () {
-    jQuery("#canvas").removeClass("enabled");
+    jQuery('#canvas').removeClass('enabled');
 
     // Remove handlers.
     delete this.lineTool.onMouseDown;
@@ -93,18 +93,18 @@
       self.finishCurrentPath();
     };
 
-    jQuery("#canvas").addClass("enabled");
+    jQuery('#canvas').addClass('enabled');
   };
 
   /**
    * Change the status message.
    */
   p.uiStatus = function (text, className) {
-    var status = jQuery("#status");
+    var status = jQuery('#status');
     var speed = 100;
     status.fadeOut(speed, function () {
       status.html(text)
-        .removeClass("connecting connected disconnected")
+        .removeClass('connecting connected disconnected')
         .addClass(className)
         .fadeIn(speed);
     });
@@ -151,7 +151,7 @@
    */
   p.createPath = function () {
     var path = new paper.Path();
-    path.strokeColor = "black";
+    path.strokeColor = 'black';
     return path;
   };
 
@@ -229,35 +229,35 @@
    * @see Thywill.ApplicationInterface#connecting
    */
   p.connecting = function () {
-    this.uiStatus("Connecting...", "connecting");
-    this.log("Client attempting to connect.");
+    this.uiStatus('Connecting...', 'connecting');
+    this.log('Client attempting to connect.');
   };
 
   /**
    * @see Thywill.ApplicationInterface#connected
    */
   p.connected = function () {
-    this.uiStatus("Connected", "connected");
+    this.uiStatus('Connected', 'connected');
     this.uiEnable();
-    this.log("Client connected.");
+    this.log('Client connected.');
   };
 
   /**
    * @see Thywill.ApplicationInterface#connectionFailure
    */
   p.connectionFailure = function () {
-    this.uiStatus("Disconnected", "disconnected");
+    this.uiStatus('Disconnected', 'disconnected');
     this.uiDisable();
-    this.log("Client failed to connect.");
+    this.log('Client failed to connect.');
   };
 
   /**
    * @see Thywill.ApplicationInterface#disconnected
    */
   p.disconnected = function () {
-    this.uiStatus("Disconnected", "disconnected");
+    this.uiStatus('Disconnected', 'disconnected');
     this.uiDisable();
-    this.log("Client disconnected.");
+    this.log('Client disconnected.');
   };
 
   // ----------------------------------------------------------
@@ -267,7 +267,7 @@
   // Create the application instance. The application ID will be populated
   // by the backend via the Handlebars template engine when this Javascript
   // file is prepared as a resource.
-  var app = new DrawApplication("{{{applicationId}}}");
+  var app = new DrawApplication('{{{applicationId}}}');
 
   // Initial UI setup.
   jQuery(document).ready(function () {

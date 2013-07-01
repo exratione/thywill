@@ -19,7 +19,7 @@
 var Thywill;
 
 (function() {
-  "use strict";
+  'use strict';
 
   // -----------------------------------------------------
   // Utility functions.
@@ -103,60 +103,60 @@ var Thywill;
     // Create the socket and connect. The parameters here are provided by
     // Handlebars.js templating when this Javascript file is turned into a
     // resource by the server.
-    this.socket = io.connect("{{{namespace}}}", {{{config}}});
+    this.socket = io.connect('{{{namespace}}}', {{{config}}});
 
     //------------------------------------
     // Interaction with Socket.IO.
     //------------------------------------
 
     // Initial connection succeeds.
-    this.socket.on("connect", function () {
+    this.socket.on('connect', function () {
       self.isConnected = true;
-      self.emit("connected");
+      self.emit('connected');
     });
 
     // Initial connection failed with timeout.
-    this.socket.on("connect_failed", function() {
-      self.emit("connectionFailure");
+    this.socket.on('connect_failed', function() {
+      self.emit('connectionFailure');
     });
 
     // Client is trying to initially connect.
-    this.socket.on("connecting", function (transport_type) {
-      self.emit("connecting");
+    this.socket.on('connecting', function (transport_type) {
+      self.emit('connecting');
     });
 
     // Client is disconnected.
-    this.socket.on("disconnect", function () {
+    this.socket.on('disconnect', function () {
       self.connected = false;
-      self.emit("disconnected");
+      self.emit('disconnected');
     });
 
     // Message received from the server.
-    this.socket.on("toClient", function (applicationId, rawMessage) {
-      if (!rawMessage || typeof rawMessage !== "object") {
+    this.socket.on('toClient', function (applicationId, rawMessage) {
+      if (!rawMessage || typeof rawMessage !== 'object') {
         return;
       }
 
       var message = new Thywill.Message(rawMessage.data, rawMessage._);
       if (message.isValid()) {
-        self.emit("received", applicationId, message);
+        self.emit('received', applicationId, message);
       }
     });
 
     // Client manages to reconnect after disconnection.
-    this.socket.on("reconnect", function (transport_type, reconnectionAttempts) {
+    this.socket.on('reconnect', function (transport_type, reconnectionAttempts) {
       self.isConnected = true;
-      self.emit("connected");
+      self.emit('connected');
     });
 
     // Attempts to reconnect are abandoned, timed out.
-    this.socket.on("reconnect_failed", function() {
-      self.emit("connectionFailure");
+    this.socket.on('reconnect_failed', function() {
+      self.emit('connectionFailure');
     });
 
     // Client is trying to reconnect after disconnection.
-    this.socket.on("reconnecting", function (reconnectionDelay, reconnectionAttempts) {
-      self.emit("connecting");
+    this.socket.on('reconnecting', function (reconnectionDelay, reconnectionAttempts) {
+      self.emit('connecting');
     });
   };
 
@@ -176,7 +176,7 @@ var Thywill;
     if (!(message instanceof Thywill.Message)) {
       message = new Thywill.Message(message);
     }
-    this.socket.emit("fromClient", applicationId, message);
+    this.socket.emit('fromClient', applicationId, message);
   };
 
   // -----------------------------------------------------

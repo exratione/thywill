@@ -6,7 +6,7 @@
  * be present.
  */
 
-var config = require("../../serverConfig/thywill/baseThywillConfig");
+var config = require('../../serverConfig/thywill/baseThywillConfig');
 
 // The port to listen on.
 config.thywill.ports = {
@@ -14,7 +14,7 @@ config.thywill.ports = {
 };
 
 // Local cluster member ID, to match up to the port.
-config.cluster.localClusterMemberId = "alpha";
+config.cluster.localClusterMemberId = 'alpha';
 
 //-----------------------------------------------------------
 // Exports - Configuration

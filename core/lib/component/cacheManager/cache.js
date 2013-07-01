@@ -3,7 +3,7 @@
  * Cache class definition.
  */
 
-var Thywill = require("thywill");
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -29,7 +29,7 @@ var p = Cache.prototype;
  *   The cached value or null.
  */
 p.get = function (key) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -41,7 +41,7 @@ p.get = function (key) {
  *   Any value.
  */
 p.set = function (key, value) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -52,7 +52,7 @@ p.set = function (key, value) {
  *   The key by which the cached item can be retrieved.
  */
 p.clear = function (key) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 //-----------------------------------------------------------

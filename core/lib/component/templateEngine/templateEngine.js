@@ -3,8 +3,8 @@
  * TemplateEngine class definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
+var util = require('util');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -16,9 +16,9 @@ var Thywill = require("thywill");
  */
 function TemplateEngine() {
   TemplateEngine.super_.call(this);
-  this.componentType = "templateEngine";
+  this.componentType = 'templateEngine';
 }
-util.inherits(TemplateEngine, Thywill.getBaseClass("Component"));
+util.inherits(TemplateEngine, Thywill.getBaseClass('Component'));
 var p = TemplateEngine.prototype;
 
 //-----------------------------------------------------------
@@ -31,7 +31,7 @@ var p = TemplateEngine.prototype;
 p._getDependencies = function () {
   return {
     components: [
-      "log"
+      'log'
     ]
   };
 };
@@ -45,7 +45,7 @@ p._getDependencies = function () {
  *
  * @param {string} template
  *   The template string, e.g. something along the lines of
- *   "Insert this value: <%= value %>" - but dependent on the implementation
+ *   'Insert this value: <%= value %>' - but dependent on the implementation
  *   of course.
  * @param {Object} values
  *   An object of key-value pairs to insert into the template.
@@ -53,7 +53,7 @@ p._getDependencies = function () {
  *   The rendered template.
  */
 p.render = function (template, values) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 //-----------------------------------------------------------

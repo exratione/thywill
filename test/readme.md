@@ -46,7 +46,7 @@ Socket.IO has issues on connecting when:
   * The Redis-backed socket store is used.
 
 When this is the case, attempts to connect via Socket.IO hang indefinitely - it
-seems because the "connection" event on the server fails to fire in the correct
+seems because the 'connection' event on the server fails to fire in the correct
 namespace. All the rest of the connection code works.
 
 This is largely why Thywill example application tests run in child processes.

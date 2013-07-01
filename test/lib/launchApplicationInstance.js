@@ -8,7 +8,7 @@
  * node launchApplicationInstance base64encodedArgs
  */
 
-var path = require("path");
+var path = require('path');
 
 // Arguments arrive as a base64 encoded JSON string.
 // {
@@ -16,23 +16,23 @@ var path = require("path");
 //   port: number
 //   clusterMemberId: string
 // };
-var args = new Buffer(process.argv[2], "base64").toString("utf8");
+var args = new Buffer(process.argv[2], 'base64').toString('utf8');
 args = JSON.parse(args);
 
-var service = require(path.join("../../applications", args.application, "lib/service"));
+var service = require(path.join('../../applications', args.application, 'lib/service'));
 var config = service.getConfig(args.port, args.clusterMemberId);
 
 // Alter config to keep test data distinct from ordinary use of example
 // applications.
-if (args.application === "chat") {
-  config.channelManager.redisPrefix = "test:thywill:chat:channel:";
-  config.cluster.redisPrefix = "test:thywill:draw:cluster:";
-  config.resourceManager.redisPrefix = "test:thywill:draw:resource:";
-} else if (args.application === "draw") {
-  config.cluster.redisPrefix = "test:thywill:draw:cluster:";
-  config.resourceManager.redisPrefix = "test:thywill:draw:resource:";
-} else if (args.application === "display") {
-  config.resourceManager.redisPrefix = "test:thywill:draw:resource:";
+if (args.application === 'chat') {
+  config.channelManager.redisPrefix = 'test:thywill:chat:channel:';
+  config.cluster.redisPrefix = 'test:thywill:draw:cluster:';
+  config.resourceManager.redisPrefix = 'test:thywill:draw:resource:';
+} else if (args.application === 'draw') {
+  config.cluster.redisPrefix = 'test:thywill:draw:cluster:';
+  config.resourceManager.redisPrefix = 'test:thywill:draw:resource:';
+} else if (args.application === 'display') {
+  config.resourceManager.redisPrefix = 'test:thywill:draw:resource:';
 }
 
 service.start(config, function (error, thywill) {
@@ -40,9 +40,9 @@ service.start(config, function (error, thywill) {
     if (error instanceof Error) {
       error = error.stack;
     }
-    error = "Thywill launch failed with error: " + error;
+    error = 'Thywill launch failed with error: ' + error;
     console.error(error);
-    process.send("error");
+    process.send('error');
     process.exit(1);
   }
 
@@ -51,6 +51,6 @@ service.start(config, function (error, thywill) {
     thywill.protectRedisClient(config._redisClients[key]);
   }
 
-  thywill.log.info("Thywill is ready to run cluster member [" + config.cluster.localClusterMemberId + "].");
-  process.send("complete");
+  thywill.log.info('Thywill is ready to run cluster member [' + config.cluster.localClusterMemberId + '].');
+  process.send('complete');
 });

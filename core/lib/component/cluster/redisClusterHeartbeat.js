@@ -10,10 +10,10 @@
  * thus subject to any latency that might arise there.
  */
 
-var cluster = require("cluster");
-var redis = require("redis");
-var Thywill = require("thywill");
-var ThywillCluster = Thywill.getBaseClass("Cluster");
+var cluster = require('cluster');
+var redis = require('redis');
+var Thywill = require('thywill');
+var ThywillCluster = Thywill.getBaseClass('Cluster');
 
 // --------------------------------------------------
 // Functions
@@ -42,7 +42,7 @@ function sendLog (message, level) {
     message = message.stack;
   }
   sendMessage({
-    type: "log",
+    type: 'log',
     level: level,
     message: message
   });
@@ -51,16 +51,16 @@ function sendLog (message, level) {
 // Various log level shortcuts.
 var log = {
   debug: function (message) {
-    sendLog(message, "debug");
+    sendLog(message, 'debug');
   },
   info: function (message) {
-    sendLog(message, "info");
+    sendLog(message, 'info');
   },
   warn: function (message) {
-    sendLog(message, "warn");
+    sendLog(message, 'warn');
   },
   error: function (message) {
-    sendLog(message, "error");
+    sendLog(message, 'error');
   }
 };
 
@@ -74,7 +74,7 @@ var log = {
  */
 function sendDown (clusterMemberId, sinceLast) {
   sendMessage({
-    type: "down",
+    type: 'down',
     clusterMemberId: clusterMemberId,
     sinceLast: sinceLast
   });
@@ -90,7 +90,7 @@ function sendDown (clusterMemberId, sinceLast) {
  */
 function sendUp (clusterMemberId) {
   sendMessage({
-    type: "up",
+    type: 'up',
     clusterMemberId: clusterMemberId
   });
 }
@@ -110,7 +110,7 @@ function sendUp (clusterMemberId) {
 //   redisOptions: object,
 //   redisPrefix: string
 // };
-var args = new Buffer(process.argv[2], "base64").toString("utf8");
+var args = new Buffer(process.argv[2], 'base64').toString('utf8');
 args = JSON.parse(args);
 
 // --------------------------------------------------
@@ -129,7 +129,7 @@ thywill.protectRedisClient(publishRedisClient);
 // Heartbeat
 // --------------------------------------------------
 
-var heartbeatChannel = args.redisPrefix + "heartbeat";
+var heartbeatChannel = args.redisPrefix + 'heartbeat';
 var heartbeatTimestamps = {};
 var heartbeatStatus = {};
 // Cluster member status starts out UNKNOWN - no alerting happens unless
@@ -167,8 +167,8 @@ var heartbeatIntervalId = setInterval(function () {
     var since = timestamp - lastHeartbeat;
     if (since > lagDelay) {
       log.debug(
-        "RedisClusterHeartbeat: heartbeat interval is lagging: " +
-        since + "ms since last and should be " + args.heartbeatInterval + "ms."
+        'RedisClusterHeartbeat: heartbeat interval is lagging: ' +
+        since + 'ms since last and should be ' + args.heartbeatInterval + 'ms.'
       );
     }
   }
@@ -179,7 +179,7 @@ var heartbeatIntervalId = setInterval(function () {
 // Listen for heartbeats from other cluster members and update the local
 // timestamps and status accordingly.
 subscribeRedisClient.subscribe(heartbeatChannel);
-subscribeRedisClient.on("message", function (channel, clusterMemberId) {
+subscribeRedisClient.on('message', function (channel, clusterMemberId) {
   // Ignore the heartbeat for this process.
   if (clusterMemberId === args.localClusterMemberId) {
     return;

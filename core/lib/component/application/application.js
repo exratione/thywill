@@ -3,9 +3,9 @@
  * Application class definition.
  */
 
-var util = require("util");
-var async = require("async");
-var Thywill = require("thywill");
+var util = require('util');
+var async = require('async');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -29,12 +29,12 @@ var Thywill = require("thywill");
 function Application (id) {
   Application.super_.call(this);
   if (!id) {
-    throw new Error("Application class constructor requires an id parameter");
+    throw new Error('Application class constructor requires an id parameter');
   }
-  this.componentType = "application";
+  this.componentType = 'application';
   this.id = id;
 }
-util.inherits(Application, Thywill.getBaseClass("Component"));
+util.inherits(Application, Thywill.getBaseClass('Component'));
 var p = Application.prototype;
 
 //-----------------------------------------------------------
@@ -163,8 +163,8 @@ p.storeBootstrapResourceFromFile = function (filePath, attributes, callback) {
  * attributes. The contents of each file will be loaded into memory:
  *
  * {
- *   "/file/system/path/to/file.css": {
- *     clientPath: "/path/to/file.css",
+ *   '/file/system/path/to/file.css': {
+ *     clientPath: '/path/to/file.css',
  *     encoding: encoding,
  *     type: resourceManager.types.CSS,
  *     weight: 0,

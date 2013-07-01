@@ -3,8 +3,8 @@
  * Cluster class definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
+var util = require('util');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -20,11 +20,11 @@ var Thywill = require("thywill");
  *
  * e.g. Process A sends a task to process B:
  *
- * cluster.sendTo("B", "doThisThing", { thing: "stuff" });
+ * cluster.sendTo('B', 'doThisThing', { thing: 'stuff' });
  *
  * Process B listens for such tasks as follows:
  *
- * thywill.cluster.on("doThisThing", function (data) {
+ * thywill.cluster.on('doThisThing', function (data) {
  *   // Do work here.
  * }
  *
@@ -32,32 +32,32 @@ var Thywill = require("thywill");
  * down or come up again. To listen on these events:
  *
  * thywill.cluster.on(thywill.cluster.eventNames.CLUSTER_MEMBER_DOWN, function (data) {
- *   console.log("Cluster process down: " + data.clusterMemberId);
+ *   console.log('Cluster process down: ' + data.clusterMemberId);
  * });
  *
  * thywill.cluster.on(thywill.cluster.eventNames.CLUSTER_MEMBER_UP, function (data) {
- *   console.log("Cluster process up: " + data.clusterMemberId);
+ *   console.log('Cluster process up: ' + data.clusterMemberId);
  * });
  *
  */
 function Cluster() {
   Cluster.super_.call(this);
-  this.componentType = "cluster";
+  this.componentType = 'cluster';
 
   // Useful shortcuts.
   this.clusterMemberStatus = Cluster.CLUSTER_MEMBER_STATUS;
   this.eventNames = Cluster.EVENT_NAMES;
 }
-util.inherits(Cluster, Thywill.getBaseClass("Component"));
+util.inherits(Cluster, Thywill.getBaseClass('Component'));
 var p = Cluster.prototype;
 
 //-----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 //-----------------------------------------------------------
 
 Cluster.EVENT_NAMES = {
-  CLUSTER_MEMBER_DOWN: "thywill.cluster.down",
-  CLUSTER_MEMBER_UP: "thywill.cluster.up"
+  CLUSTER_MEMBER_DOWN: 'thywill.cluster.down',
+  CLUSTER_MEMBER_UP: 'thywill.cluster.up'
 };
 
 Cluster.CLUSTER_MEMBER_STATUS = {
@@ -76,7 +76,7 @@ Cluster.CLUSTER_MEMBER_STATUS = {
 p._getDependencies = function () {
   return {
     components: [
-      "log"
+      'log'
     ]
   };
 };
@@ -91,7 +91,7 @@ p._getDependencies = function () {
  * @return {array}
  */
 p.getClusterMemberIds = function () {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -100,7 +100,7 @@ p.getClusterMemberIds = function () {
  * @return {string}
  */
 p.getLocalClusterMemberId = function () {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -112,7 +112,7 @@ p.getLocalClusterMemberId = function () {
  *   Of the form function (error, status).
  */
 p.getClusterMemberStatus = function (clusterMemberId, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -133,7 +133,7 @@ p.getClusterMemberStatus = function (clusterMemberId, callback) {
  *   Of the form function (error, boolean).
  */
 p.isDesignatedHandlerFor = function (clusterMemberId, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -148,7 +148,7 @@ p.isDesignatedHandlerFor = function (clusterMemberId, callback) {
  *   Data that will be emitted with the event.
  */
 p.sendTo = function (clusterMemberId, taskName, data) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -161,7 +161,7 @@ p.sendTo = function (clusterMemberId, taskName, data) {
  *   Data that will be emitted with the event.
  */
 p.sendToAll = function (taskName, data) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -174,7 +174,7 @@ p.sendToAll = function (taskName, data) {
  *   Data that will be emitted with the event.
  */
 p.sendToOthers = function (taskName, data) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 //-----------------------------------------------------------

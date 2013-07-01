@@ -4,4 +4,4 @@
  * Draw example application.
  */
 
-require("../lib/service").start(10086, "gamma");
+require('../lib/service').start(10086, 'gamma');

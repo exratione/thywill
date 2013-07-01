@@ -3,9 +3,9 @@
  * InMemoryResourceManager class definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
-var Resource = require("./resource");
+var util = require('util');
+var Thywill = require('thywill');
+var Resource = require('./resource');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -20,11 +20,11 @@ function InMemoryResourceManager () {
   // Resources are stashed away as properties of this object.
   this.data = {};
 }
-util.inherits(InMemoryResourceManager, Thywill.getBaseClass("ResourceManager"));
+util.inherits(InMemoryResourceManager, Thywill.getBaseClass('ResourceManager'));
 var p = InMemoryResourceManager.prototype;
 
 //-----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 //-----------------------------------------------------------
 
 InMemoryResourceManager.CONFIG_TEMPLATE = null;

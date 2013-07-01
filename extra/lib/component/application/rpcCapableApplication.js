@@ -3,9 +3,9 @@
  * RpcCapableApplication class definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
-var Message = Thywill.getBaseClass("Message");
+var util = require('util');
+var Thywill = require('thywill');
+var Message = Thywill.getBaseClass('Message');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -50,16 +50,16 @@ function RpcCapableApplication (id) {
   }
 
 }
-util.inherits(RpcCapableApplication, Thywill.getBaseClass("Application"));
+util.inherits(RpcCapableApplication, Thywill.getBaseClass('Application'));
 var p = RpcCapableApplication.prototype;
 
 // ------------------------------------------
-// "Static"
+// 'Static'
 // ------------------------------------------
 
 RpcCapableApplication.RPC_ERRORS = {
-  NO_PERMISSION: "np",
-  NO_FUNCTION: "nf"
+  NO_PERMISSION: 'np',
+  NO_FUNCTION: 'nf'
 };
 
 //-----------------------------------------------------------
@@ -160,18 +160,18 @@ p.getRpcFunctionAndContext = function (name) {
     context: this.rpcContext,
     fn: undefined
   };
-  if (typeof name !== "string") {
+  if (typeof name !== 'string') {
     return functionData;
   }
 
-  var parts = name.split(".");
+  var parts = name.split('.');
   for (var index = 0, length = parts.length; index < length; index++) {
     if (!functionData.context[parts[index]]) {
       break;
     }
     if (index < parts.length - 1) {
       functionData.context = functionData.context[parts[index]];
-    } else if (typeof functionData.context[parts[index]] === "function") {
+    } else if (typeof functionData.context[parts[index]] === 'function') {
       functionData.fn = functionData.context[parts[index]];
     }
   }

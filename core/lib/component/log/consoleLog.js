@@ -3,9 +3,9 @@
  * ConsoleLog class definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
-var dateFormat = require("dateformat");
+var util = require('util');
+var Thywill = require('thywill');
+var dateFormat = require('dateformat');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -17,29 +17,29 @@ var dateFormat = require("dateformat");
  */
 function ConsoleLog() {
   ConsoleLog.super_.call(this);
-  this.level = this.levels.indexOf("debug");
+  this.level = this.levels.indexOf('debug');
 }
-util.inherits(ConsoleLog, Thywill.getBaseClass("Log"));
+util.inherits(ConsoleLog, Thywill.getBaseClass('Log'));
 var p = ConsoleLog.prototype;
 
 //-----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 //-----------------------------------------------------------
 
 ConsoleLog.CONFIG_TEMPLATE = {
   dateFormat: {
     _configInfo: {
-      description: "The date format used in log output.",
-      types: "string",
+      description: 'The date format used in log output.',
+      types: 'string',
       required: true
     }
   },
   level: {
     _configInfo: {
-      description: "The mimimum level of message that will be logged.",
-      types: "string",
+      description: 'The mimimum level of message that will be logged.',
+      types: 'string',
       required: true,
-      allowedValues: ["debug", "info", "warn", "error"]
+      allowedValues: ['debug', 'info', 'warn', 'error']
     }
   }
 };
@@ -52,8 +52,8 @@ ConsoleLog.CONFIG_TEMPLATE = {
  * The config object is expected to have the following form:
  *
  * {
- *   "component": "console",
- *   "level": "debug"
+ *   'component': 'console',
+ *   'level': 'debug'
  * }
  *
  * @see Component#_configure
@@ -67,7 +67,7 @@ p._configure = function (thywill, config, callback) {
     if (this.levels.indexOf(this.config.level) !== -1) {
       this.level = this.levels.indexOf(this.config.level);
     } else {
-      this._announceReady("Invalid log level in configuration: " + this.config.level);
+      this._announceReady('Invalid log level in configuration: ' + this.config.level);
       return;
     }
   }
@@ -86,8 +86,8 @@ p._configure = function (thywill, config, callback) {
  * @see Log#debug
  */
 p.debug = function (message) {
-  if (this.levels.indexOf("debug") >= this.level) {
-    this.log("DEBUG", message);
+  if (this.levels.indexOf('debug') >= this.level) {
+    this.log('DEBUG', message);
   }
 };
 
@@ -95,8 +95,8 @@ p.debug = function (message) {
  * @see Log#info
  */
 p.info = function (message) {
-  if (this.levels.indexOf("info") >= this.level) {
-    this.log("INFO", message);
+  if (this.levels.indexOf('info') >= this.level) {
+    this.log('INFO', message);
   }
 };
 
@@ -104,8 +104,8 @@ p.info = function (message) {
  * @see Log#warning
  */
 p.warn = function (message) {
-  if (this.levels.indexOf("warn") >= this.level) {
-    this.log("WARN", message);
+  if (this.levels.indexOf('warn') >= this.level) {
+    this.log('WARN', message);
   }
 };
 
@@ -113,8 +113,8 @@ p.warn = function (message) {
  * @see Log#error
  */
 p.error = function (message) {
-  if (this.levels.indexOf("error") >= this.level) {
-    this.log("ERROR", message, true);
+  if (this.levels.indexOf('error') >= this.level) {
+    this.log('ERROR', message, true);
   }
 };
 
@@ -126,7 +126,7 @@ p.log = function (level, message, toError) {
   if (message instanceof Error) {
     message = message.stack;
   }
-  var str = "[" + date + "] " + level + " " + message;
+  var str = '[' + date + '] ' + level + ' ' + message;
   if (toError) {
     console.error(str);
   } else {

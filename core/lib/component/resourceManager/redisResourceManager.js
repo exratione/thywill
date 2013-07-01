@@ -3,9 +3,9 @@
  * RedisResourceManager class definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
-var Resource = require("./resource");
+var util = require('util');
+var Thywill = require('thywill');
+var Resource = require('./resource');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -19,32 +19,32 @@ var Resource = require("./resource");
 function RedisResourceManager () {
   RedisResourceManager.super_.call(this);
 }
-util.inherits(RedisResourceManager, Thywill.getBaseClass("ResourceManager"));
+util.inherits(RedisResourceManager, Thywill.getBaseClass('ResourceManager'));
 var p = RedisResourceManager.prototype;
 
 //-----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 //-----------------------------------------------------------
 
 RedisResourceManager.CONFIG_TEMPLATE = {
   cacheSize: {
     _configInfo: {
-      description: "Maximum number of resources that can be cached at one time.",
-      types: "integer",
+      description: 'Maximum number of resources that can be cached at one time.',
+      types: 'integer',
       required: true
     }
   },
   redisPrefix: {
     _configInfo: {
-      description: "A prefix applied to Redis keys.",
-      types: "string",
+      description: 'A prefix applied to Redis keys.',
+      types: 'string',
       required: true
     }
   },
   redisClient: {
     _configInfo: {
-      description: "A Redis client instance from package 'redis'.",
-      types: "object",
+      description: 'A Redis client instance from package "redis".',
+      types: 'object',
       required: true
     }
   }
@@ -64,7 +64,7 @@ p._configure = function (thywill, config, callback) {
   this.readyCallback = callback;
 
   // Set up a cache.
-  this.cache = this.thywill.cacheManager.createCache("thywill.resourceManager.cache", this.config.cacheSize);
+  this.cache = this.thywill.cacheManager.createCache('thywill.resourceManager.cache', this.config.cacheSize);
 
   // There are no asynchronous initialization functions here or in the
   // superclasses. So we can just call them and forge ahead without having
@@ -149,13 +149,13 @@ p.load = function (key, callback) {
 p.resourceToRedisJson = function (resource) {
   var stored = {};
   for (var prop in resource) {
-    if (prop !== "buffer") {
+    if (prop !== 'buffer') {
       stored[prop] = resource[prop];
     }
   }
   // If it has a buffer, encode to base64. It might be binary data.
   if (resource.buffer) {
-    stored.base64 = resource.buffer.toString("base64");
+    stored.base64 = resource.buffer.toString('base64');
   }
 
   return JSON.stringify(stored);
@@ -176,7 +176,7 @@ p.redisJsonToResource = function (json) {
     var buffer = null;
     // If data was encoded, put it back into a buffer.
     if (attributes.base64) {
-      buffer = new Buffer(attributes.base64, "base64");
+      buffer = new Buffer(attributes.base64, 'base64');
       delete attributes.base64;
     }
     resource = this.createResource(buffer, attributes);

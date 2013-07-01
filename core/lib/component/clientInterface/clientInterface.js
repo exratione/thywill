@@ -3,8 +3,8 @@
  * ClientInterface superclass definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
+var util = require('util');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -27,21 +27,21 @@ var Thywill = require("thywill");
  */
 function ClientInterface () {
   ClientInterface.super_.call(this);
-  this.componentType = "clientInterface";
+  this.componentType = 'clientInterface';
   // Convenience reference.
   this.events = ClientInterface.EVENTS;
 }
-util.inherits(ClientInterface, Thywill.getBaseClass("Component"));
+util.inherits(ClientInterface, Thywill.getBaseClass('Component'));
 var p = ClientInterface.prototype;
 
 //-----------------------------------------------------------
-// "Static"
+// 'Static'
 //-----------------------------------------------------------
 
 ClientInterface.EVENTS = {
-  CONNECTION: "connection",
-  DISCONNECTION: "disconnection",
-  FROM_CLIENT: "fromClient"
+  CONNECTION: 'connection',
+  DISCONNECTION: 'disconnection',
+  FROM_CLIENT: 'fromClient'
 };
 
 //-----------------------------------------------------------
@@ -54,12 +54,12 @@ ClientInterface.EVENTS = {
 p._getDependencies = function () {
   return {
     components: [
-      "log",
-      "cluster",
-      "cacheManager",
-      "resourceManager",
-      "templateEngine",
-      "minifier"
+      'log',
+      'cluster',
+      'cacheManager',
+      'resourceManager',
+      'templateEngine',
+      'minifier'
     ]
   };
 };
@@ -76,7 +76,7 @@ p._getDependencies = function () {
  *   Of the form function (error).
  */
 p._startup = function (callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 //-----------------------------------------------------------
@@ -94,7 +94,7 @@ p._startup = function (callback) {
  *   The message data.
  */
 p.sendToConnection = function (applicationId, client, message) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -109,7 +109,7 @@ p.sendToConnection = function (applicationId, client, message) {
  *   The message data.
  */
 p.sendToSession = function (applicationId, client, message) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -125,7 +125,7 @@ p.sendToSession = function (applicationId, client, message) {
  *   Client instances or connection IDs to exclude from the broadcast.
  */
 p.sendToChannel = function (applicationId, channelId, message, excludeClients) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -139,7 +139,7 @@ p.sendToChannel = function (applicationId, channelId, message, excludeClients) {
  *   Of the form function (error).
  */
 p.subscribe = function (clients, channelIds, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -153,7 +153,7 @@ p.subscribe = function (clients, channelIds, callback) {
  *   Of the form function (error).
  */
 p.unsubscribe = function (clients, channelIds, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -165,7 +165,7 @@ p.unsubscribe = function (clients, channelIds, callback) {
  *   Of the form function (error, session).
  */
 p.loadSession = function (client, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -179,7 +179,7 @@ p.loadSession = function (client, callback) {
  *   Of the form function (error).
  */
 p.storeSession = function (client, session, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 //-----------------------------------------------------------
@@ -197,7 +197,7 @@ p.storeSession = function (client, session, callback) {
  *   made by the store.
  */
 p.storeBootstrapResource = function (resource, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -207,7 +207,7 @@ p.storeBootstrapResource = function (resource, callback) {
  *   Of the form function (error, resources), where resources is an array.
  */
 p.getBootstrapResources = function (callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -221,7 +221,7 @@ p.getBootstrapResources = function (callback) {
  *   the store.
  */
 p.storeResource = function (resource, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -235,7 +235,7 @@ p.storeResource = function (resource, callback) {
  *   be returned.
  */
 p.getResource = function (clientPath, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 //-----------------------------------------------------------

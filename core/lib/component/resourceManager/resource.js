@@ -18,7 +18,7 @@
  *   clientPath: undefined,
  *   // The encoding for the resource data, either in the provided buffer, or
  *   // in the originFilePath.
- *   encoding: "utf8",
+ *   encoding: 'utf8',
  *   // The absolute path of a file containing the resource data. Used for
  *   // piped resources or writing out generated resources that are not going
  *   // to be cached in memory.
@@ -46,7 +46,7 @@
  */
 function Resource (buffer, attributes) {
   this.clientPath = undefined;
-  this.encoding = "utf8";
+  this.encoding = 'utf8';
   this.filePath = undefined;
   this.originFilePath = undefined;
   this.type = Resource.TYPES.TEXT;
@@ -66,7 +66,7 @@ function Resource (buffer, attributes) {
 var p = Resource.prototype;
 
 //-----------------------------------------------------------
-// "Static" values
+// 'Static' values
 //-----------------------------------------------------------
 
 /**
@@ -74,13 +74,13 @@ var p = Resource.prototype;
  */
 Resource.TYPES = {
   // Standard MIME types.
-  CSS: "text/css",
-  HTML: "text/html",
-  JAVASCRIPT: "application/javascript",
-  JSON: "application/json",
-  TEXT: "text/plain",
+  CSS: 'text/css',
+  HTML: 'text/html',
+  JAVASCRIPT: 'application/javascript',
+  JSON: 'application/json',
+  TEXT: 'text/plain',
   // For templates used by Underscore.js, Handlebars.js, etc.
-  TEMPLATE: "text/template"
+  TEMPLATE: 'text/template'
 };
 
 /**
@@ -92,12 +92,12 @@ Resource.DEFAULT_TYPE = Resource.TYPES.TEXT;
  * Mapping file extensions to default resource types.
  */
 Resource.TYPE_BY_EXTENSION = {
-  ".css": Resource.TYPES.CSS,
-  ".html": Resource.TYPES.HTML,
-  ".js": Resource.TYPES.JAVASCRIPT,
-  ".json": Resource.TYPES.JSON,
-  ".tpl": Resource.TYPES.TEMPLATE,
-  ".txt": Resource.TEXT
+  '.css': Resource.TYPES.CSS,
+  '.html': Resource.TYPES.HTML,
+  '.js': Resource.TYPES.JAVASCRIPT,
+  '.json': Resource.TYPES.JSON,
+  '.tpl': Resource.TYPES.TEMPLATE,
+  '.txt': Resource.TEXT
 };
 
 //-----------------------------------------------------------

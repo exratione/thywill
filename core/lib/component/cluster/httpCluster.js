@@ -3,13 +3,13 @@
  * HttpCluster class definition.
  */
 
-var util = require("util");
-var path = require("path");
-var async = require("async");
-var express = require("express");
-var http = require("http");
-var request = require("request");
-var Thywill = require("thywill");
+var util = require('util');
+var path = require('path');
+var async = require('async');
+var express = require('express');
+var http = require('http');
+var request = require('request');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -40,68 +40,68 @@ function HttpCluster() {
   // Convenience reference.
   this.paths = HttpCluster.PATHS;
 }
-util.inherits(HttpCluster, Thywill.getBaseClass("Cluster"));
+util.inherits(HttpCluster, Thywill.getBaseClass('Cluster'));
 var p = HttpCluster.prototype;
 
 //-----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 //-----------------------------------------------------------
 
 HttpCluster.CONFIG_TEMPLATE = {
   clusterMembers: {
     _configInfo: {
-      description: "The cluster member data, with cluster member IDs as keys.",
-      types: "object",
+      description: 'The cluster member data, with cluster member IDs as keys.',
+      types: 'object',
       required: true
     }
   },
   upCheck: {
     _configInfo: {
-      description: "Wrapper for configuration for checking status of other cluster members.",
-      types: "object",
+      description: 'Wrapper for configuration for checking status of other cluster members.',
+      types: 'object',
       required: true
     },
     consecutiveFailedChecks: {
       _configInfo: {
-        description: "How many consecutive failures in order to consider a server down?",
-        types: "integer",
+        description: 'How many consecutive failures in order to consider a server down?',
+        types: 'integer',
         required: true
       }
     },
     interval: {
       _configInfo: {
-        description: "Milliseconds between up checks for a cluster member.",
-        types: "integer",
+        description: 'Milliseconds between up checks for a cluster member.',
+        types: 'integer',
         required: true
       }
     },
     requestTimeout: {
       _configInfo: {
-        description: "Milliseconds for timeout of an up check.",
-        types: "integer",
+        description: 'Milliseconds for timeout of an up check.',
+        types: 'integer',
         required: true
       }
     }
   },
   localClusterMemberId: {
     _configInfo: {
-      description: "The cluster member ID for this process.",
-      types: "string",
+      description: 'The cluster member ID for this process.',
+      types: 'string',
       required: true
     }
   },
   taskRequestTimeout: {
     _configInfo: {
-      description: "Milliseconds for timeout of a task request.",
-      types: "integer",
+      description: 'Milliseconds for timeout of a task request.',
+      types: 'integer',
       required: true
     }
   }
 };
 
 HttpCluster.PATHS = {
-  TASK: "/task",
-  UP_CHECK: "/alive"
+  TASK: '/task',
+  UP_CHECK: '/alive'
 };
 
 //-----------------------------------------------------------
@@ -137,11 +137,11 @@ p._configure = function (thywill, config, callback) {
   this.app.use(express.bodyParser());
   // Up check route.
   this.app.get(this.paths.UP_CHECK, function (req, res, next) {
-    res.send(200, "Alive.");
+    res.send(200, 'Alive.');
   });
   // Task delivery route.
   this.app.post(this.paths.TASK, function (req, res, next) {
-    res.send(200, "Acknowledged.");
+    res.send(200, 'Acknowledged.');
     // Body should just be JSON, which is parsed out into req.body by the
     // middleware.
     if (req.body && req.body.taskName) {
@@ -150,12 +150,12 @@ p._configure = function (thywill, config, callback) {
   });
 
   // Catch all.
-  this.app.all("*", function (req, res, next) {
-    res.send(404, "Invalid.");
+  this.app.all('*', function (req, res, next) {
+    res.send(404, 'Invalid.');
   });
 
   // Launch the server, but only after all setup is complete.
-  this.thywill.on("thywill.ready", function () {
+  this.thywill.on('thywill.ready', function () {
     var port = self.config.clusterMembers[self.config.localClusterMemberId].port;
     self.server = http.createServer(self.app).listen(port);
   });
@@ -169,7 +169,7 @@ p._configure = function (thywill, config, callback) {
   // process to proceed at its own pace, and adjust for lag to response for the
   // other cluster member or lateness to get to the request by this cluster
   // member.
-  this.thywill.on("thywill.ready", function () {
+  this.thywill.on('thywill.ready', function () {
     // Start the up checks running against the other cluster members.
     self.clusterMemberIds.forEach(function (clusterMemberId, index, array) {
       if (clusterMemberId !== self.config.localClusterMemberId) {
@@ -250,12 +250,12 @@ p.sendTo = function (clusterMemberId, taskName, data) {
   data.clusterMemberId = this.config.localClusterMemberId;
 
   var self = this;
-  var url = "http://" +
+  var url = 'http://' +
     this.config.clusterMembers[clusterMemberId].host +
-    ":" + this.config.clusterMembers[clusterMemberId].port +
+    ':' + this.config.clusterMembers[clusterMemberId].port +
     this.paths.TASK;
   var options = {
-    method: "POST",
+    method: 'POST',
     url: url,
     json: data,
     timeout: this.config.taskRequestTimeout
@@ -266,11 +266,11 @@ p.sendTo = function (clusterMemberId, taskName, data) {
       // If it's ECONNREFUSED, then the other cluster isn't listening, i.e. we
       // assume it's down. This is expected and shouldn't be logged. Any other
       // sort of error we do want to know about, however.
-      if (error.code !== "ECONNREFUSED") {
+      if (error.code !== 'ECONNREFUSED') {
         self.thywill.log.error(error);
       }
     } else if (response.statusCode !== 200) {
-      self.thywill.log.error(new Error("Status code: " + response.statusCode));
+      self.thywill.log.error(new Error('Status code: ' + response.statusCode));
     }
   });
 };
@@ -312,9 +312,9 @@ p.sendToOthers = function (taskName, data) {
  */
 p._runUpCheck = function (clusterMemberId) {
   var self = this;
-  var url = "http://" +
+  var url = 'http://' +
     this.config.clusterMembers[clusterMemberId].host +
-    ":" + this.config.clusterMembers[clusterMemberId].port +
+    ':' + this.config.clusterMembers[clusterMemberId].port +
     this.paths.UP_CHECK;
   var options = {
     url: url,
@@ -325,14 +325,14 @@ p._runUpCheck = function (clusterMemberId) {
       // If it's ECONNREFUSED, then the other cluster isn't listening, i.e. we
       // assume it's down. This is expected and shouldn't be logged. Any other
       // sort of error we do want to know about, however.
-      if (error.code !== "ECONNREFUSED") {
+      if (error.code !== 'ECONNREFUSED') {
         self.thywill.log.error(error);
       }
       self._upCheckFailure(clusterMemberId);
     }
     // This isn't expected. We should get an error or a 200 response.
     else if (response.statusCode !== 200) {
-      //self.thywill.log.error(new Error("Unexpected status code: " + response.statusCode));
+      //self.thywill.log.error(new Error('Unexpected status code: ' + response.statusCode));
       self._upCheckFailure(clusterMemberId);
     }
     // Success, it's up.
@@ -362,7 +362,7 @@ p._upCheckFailure = function (clusterMemberId) {
     // unknown to down.
     if (this.clusterMemberCurrentStatus[clusterMemberId] === this.clusterMemberStatus.UP) {
       this.clusterMemberCurrentStatus[clusterMemberId] = this.clusterMemberStatus.DOWN;
-      this.thywill.log.warn("HttpCluster: " + clusterMemberId + " is down.");
+      this.thywill.log.warn('HttpCluster: ' + clusterMemberId + ' is down.');
       this.emit(this.eventNames.CLUSTER_MEMBER_DOWN, {
         clusterMemberId: clusterMemberId
       });
@@ -384,7 +384,7 @@ p._upCheckSuccess = function (clusterMemberId) {
   // Notify if we're moving from down to up, but not for unknown to up.
   if (this.clusterMemberCurrentStatus[clusterMemberId] === this.clusterMemberStatus.DOWN) {
     this.clusterMemberCurrentStatus[clusterMemberId] = this.clusterMemberStatus.UP;
-    this.thywill.log.warn("HttpCluster: " + clusterMemberId + " is up.");
+    this.thywill.log.warn('HttpCluster: ' + clusterMemberId + ' is up.');
     this.emit(this.eventNames.CLUSTER_MEMBER_UP, {
       clusterMemberId: clusterMemberId
     });

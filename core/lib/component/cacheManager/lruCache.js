@@ -3,9 +3,9 @@
  * LRUCache class definition.
  */
 
-var util = require("util");
-var LRU = require("lru-cache");
-var Thywill = require("thywill");
+var util = require('util');
+var LRU = require('lru-cache');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -37,7 +37,7 @@ function LRUCache(cacheManager, id, size) {
     max: size
   });
 }
-util.inherits(LRUCache, Thywill.getBaseClass("Cache"));
+util.inherits(LRUCache, Thywill.getBaseClass('Cache'));
 var p = LRUCache.prototype;
 
 //-----------------------------------------------------------

@@ -3,9 +3,9 @@
  * InMemoryClientTracker class definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
-var Client = Thywill.getBaseClass("Client");
+var util = require('util');
+var Thywill = require('thywill');
+var Client = Thywill.getBaseClass('Client');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -28,7 +28,7 @@ var Client = Thywill.getBaseClass("Client");
 function InMemoryClientTracker() {
   InMemoryClientTracker.super_.call(this);
 }
-util.inherits(InMemoryClientTracker, Thywill.getBaseClass("ClientTracker"));
+util.inherits(InMemoryClientTracker, Thywill.getBaseClass('ClientTracker'));
 var p = InMemoryClientTracker.prototype;
 
 //-----------------------------------------------------------
@@ -75,13 +75,13 @@ p._configure = function (thywill, config, callback) {
   // Task names used internally by this clientTracker implementation.
   this.clusterTask = {
     // Delivery of all connected client data for a specific process.
-    connectionData: "thywill:clientTracker:connectedData",
+    connectionData: 'thywill:clientTracker:connectedData',
     // Request for all connected client data for a specific process.
-    connectionDataRequest: "thywill:clientTracker:connectedDataRequest",
+    connectionDataRequest: 'thywill:clientTracker:connectedDataRequest',
     // Client connection notice from another cluster member.
-    connectionTo: "thywill:clientTracker:connectionTo",
+    connectionTo: 'thywill:clientTracker:connectionTo',
     // Client disconnection notice from another cluster member.
-    disconnectionFrom: "thywill:clientTracker:disconnectionFrom"
+    disconnectionFrom: 'thywill:clientTracker:disconnectionFrom'
   };
 
   // A cluster member fails and goes down. Emit the connection data, then clear it.
@@ -112,12 +112,12 @@ p._configure = function (thywill, config, callback) {
   });
   // Delivery of connection data from another server.
   this.thywill.cluster.on(this.clusterTask.connectionData, function (data) {
-    self.thywill.log.debug("InMemoryClientTracker: delivery of connection data from: " + data.clusterMemberId);
+    self.thywill.log.debug('InMemoryClientTracker: delivery of connection data from: ' + data.clusterMemberId);
     self._updateAllConnectionDataForClusterMember(data.clusterMemberId, data.connections);
   });
   // Request for connection data from another server.
   this.thywill.cluster.on(this.clusterTask.connectionDataRequest, function (data) {
-    self.thywill.log.debug("InMemoryClientTracker: request for connection data from: " + data.clusterMemberId);
+    self.thywill.log.debug('InMemoryClientTracker: request for connection data from: ' + data.clusterMemberId);
     self.thywill.cluster.sendTo(data.clusterMemberId, self.clusterTask.connectionData, {
       connections: self.connections[localClusterMemberId]
     });
@@ -128,7 +128,7 @@ p._configure = function (thywill, config, callback) {
   // -----------------------------------------------------------------
 
   // When Thywill launches, after this._setup() is done:
-  this.thywill.on("thywill.ready", function () {
+  this.thywill.on('thywill.ready', function () {
     // Request an update on who is connected from all other cluster members, so
     // as to bring data up to date in the case where a cluster member falls over.
     self.thywill.cluster.sendToOthers(self.clusterTask.connectionDataRequest);

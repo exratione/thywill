@@ -3,8 +3,8 @@
  * Batches for testing the ResourceManager classes.
  */
 
-var assert = require("assert");
-var Thywill = require("thywill");
+var assert = require('assert');
+var Thywill = require('thywill');
 
 /**
  * Obtain a simple Resource instance for testing.
@@ -15,8 +15,8 @@ var Thywill = require("thywill");
  *   A Resource instance.
  */
 exports.createSimpleResource = function (resourceManager) {
-  return resourceManager.createResource("simple text resource", {
-    clientPath: "/test/simple"
+  return resourceManager.createResource('simple text resource', {
+    clientPath: '/test/simple'
   });
 };
 
@@ -30,7 +30,7 @@ exports.createSimpleResource = function (resourceManager) {
  */
 exports.createResourceFromFile = function (resourceManager, callback) {
   var attributes = {
-    clientPath: "/test/file"
+    clientPath: '/test/file'
   };
   resourceManager.createResourceFromFile(__filename, attributes, callback);
 };
@@ -42,12 +42,12 @@ exports.createResourceFromFile = function (resourceManager, callback) {
  * @param {Resource} resource2
  */
 exports.assertResourcesEqual = function (resource1, resource2) {
-  assert.instanceOf(resource1, Thywill.getBaseClass("Resource"));
-  assert.instanceOf(resource2, Thywill.getBaseClass("Resource"));
+  assert.instanceOf(resource1, Thywill.getBaseClass('Resource'));
+  assert.instanceOf(resource2, Thywill.getBaseClass('Resource'));
 
   var prop;
   for (prop in resource1) {
-    if (prop === "buffer") {
+    if (prop === 'buffer') {
       assert.strictEqual(resource1.toString(), resource2.toString());
     } else {
       assert.strictEqual(resource1[prop], resource2[prop]);
@@ -64,12 +64,12 @@ exports.general = function (suite) {
   suite.assertResourcesEqual = exports.assertResourcesEqual;
 
   suite.addBatch({
-    "resourceManager#createResource": {
+    'resourceManager#createResource': {
       topic: function () {
         return suite.createSimpleResource(suite.thywills[0].resourceManager);
       },
-      "resource created successfully": function (resource) {
-        assert.instanceOf(resource, Thywill.getBaseClass("Resource"));
+      'resource created successfully': function (resource) {
+        assert.instanceOf(resource, Thywill.getBaseClass('Resource'));
         suite.resources = {
           simple: resource
         };
@@ -77,55 +77,55 @@ exports.general = function (suite) {
     }
   });
   suite.addBatch({
-    "resourceManager#createResourceFromFile": {
+    'resourceManager#createResourceFromFile': {
       topic: function () {
         suite.createResourceFromFile(suite.thywills[0].resourceManager, this.callback);
       },
-      "resource created successfully": function (resource) {
-        assert.instanceOf(resource, Thywill.getBaseClass("Resource"));
+      'resource created successfully': function (resource) {
+        assert.instanceOf(resource, Thywill.getBaseClass('Resource'));
         suite.resources.file = resource;
       }
     }
   });
   suite.addBatch({
-    "resourceManager#store": {
+    'resourceManager#store': {
       topic: function () {
         suite.thywills[0].resourceManager.store(
           suite.resources.simple.clientPath, suite.resources.simple, this.callback
         );
       },
-      "resource stored successfully": function () {
+      'resource stored successfully': function () {
       }
     }
   });
   suite.addBatch({
-    "resourceManager#load": {
+    'resourceManager#load': {
       topic: function () {
         suite.thywills[0].resourceManager.load(suite.resources.simple.clientPath, this.callback);
       },
-      "resource loaded successfully": function (resource) {
-        assert.instanceOf(resource, Thywill.getBaseClass("Resource"));
+      'resource loaded successfully': function (resource) {
+        assert.instanceOf(resource, Thywill.getBaseClass('Resource'));
         suite.assertResourcesEqual(resource, suite.resources.simple);
       }
     }
   });
   suite.addBatch({
-    "resourceManager#remove": {
+    'resourceManager#remove': {
       topic: function () {
         suite.thywills[0].resourceManager.remove(suite.resources.simple.clientPath, this.callback);
       },
-      "resource removed successfully": function (resource) {
-        assert.instanceOf(resource, Thywill.getBaseClass("Resource"));
+      'resource removed successfully': function (resource) {
+        assert.instanceOf(resource, Thywill.getBaseClass('Resource'));
         suite.assertResourcesEqual(resource, suite.resources.simple);
       }
     }
   });
   suite.addBatch({
-    "resourceManager#load removed resource": {
+    'resourceManager#load removed resource': {
       topic: function () {
         suite.thywills[0].resourceManager.load(suite.resources.simple.clientPath, this.callback);
       },
-      "resource is null": function (resource) {
+      'resource is null': function (resource) {
         assert.isNull(resource);
       }
     }

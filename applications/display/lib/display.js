@@ -3,13 +3,13 @@
  * Display class definition, a trivial example application.
  */
 
-var util = require("util");
-var path = require("path");
-var fs = require("fs");
+var util = require('util');
+var path = require('path');
+var fs = require('fs');
 
-var async = require("async");
-var Thywill = require("thywill");
-var bootstrapManifest = require("./bootstrapManifest");
+var async = require('async');
+var Thywill = require('thywill');
+var bootstrapManifest = require('./bootstrapManifest');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -26,9 +26,9 @@ function Display (id) {
   Display.super_.call(this, id);
 
   // The channel used to broadcast display data.
-  this.channelId = "display";
+  this.channelId = 'display';
 }
-util.inherits(Display, Thywill.getBaseClass("Application"));
+util.inherits(Display, Thywill.getBaseClass('Application'));
 var p = Display.prototype;
 
 //-----------------------------------------------------------
@@ -41,7 +41,7 @@ var p = Display.prototype;
 p._defineBootstrapResources = function (callback) {
   var self = this;
   // Text encoding throughout.
-  var encoding = "utf8";
+  var encoding = 'utf8';
 
   // An array of functions load up bootstrap resources.
   var fns = [
@@ -53,7 +53,7 @@ p._defineBootstrapResources = function (callback) {
     // as a template.
     function (asyncCallback) {
       // Load the file.
-      var originFilePath = path.resolve(__dirname, "../client/js/displayClient.js");
+      var originFilePath = path.resolve(__dirname, '../client/js/displayClient.js');
       var data = fs.readFileSync(originFilePath, encoding);
 
       // A little templating.
@@ -66,14 +66,14 @@ p._defineBootstrapResources = function (callback) {
       data = self.thywill.templateEngine.render(data, {
         applicationId: self.id,
         clusterMembers: clusterMembers,
-        uiTemplateId: "display-template-ui",
-        textTemplateId: "display-template-text",
-        connectionTemplateId: "display-template-connection"
+        uiTemplateId: 'display-template-ui',
+        textTemplateId: 'display-template-text',
+        connectionTemplateId: 'display-template-connection'
       });
 
       // Create and store the resource.
       var resource = self.thywill.resourceManager.createResource(data, {
-        clientPath: "/display/js/displayClient.js",
+        clientPath: '/display/js/displayClient.js',
         encoding: encoding,
         originFilePath: originFilePath,
         weight: 50
@@ -92,18 +92,18 @@ p._setup = function (callback) {
 
   // Start listening on generic cluster events.
   this.thywill.cluster.on(this.thywill.cluster.eventNames.CLUSTER_MEMBER_DOWN, function (data) {
-    self.sendText(data.clusterMemberId + " is down.");
+    self.sendText(data.clusterMemberId + ' is down.');
   });
   this.thywill.cluster.on(this.thywill.cluster.eventNames.CLUSTER_MEMBER_UP, function (data) {
-    self.sendText(data.clusterMemberId + " is up.");
+    self.sendText(data.clusterMemberId + ' is up.');
   });
 
   // Listen in on clientTracker-specific cluster events.
   this.thywill.cluster.on(this.thywill.clientTracker.clusterTask.connectionData, function (data) {
-    self.sendText("Connection data delivered from " + data.clusterMemberId);
+    self.sendText('Connection data delivered from ' + data.clusterMemberId);
   });
   this.thywill.cluster.on(this.thywill.clientTracker.clusterTask.connectionDataRequest, function (data) {
-    self.sendText("Request for connection data from " + data.clusterMemberId);
+    self.sendText('Request for connection data from ' + data.clusterMemberId);
   });
 
   callback();
@@ -127,7 +127,7 @@ p.receivedFromClient = function (client, message) {
  */
 p.sendText = function (text) {
   this.publish({
-    type: "text",
+    type: 'text',
     text: text
   });
 };
@@ -139,7 +139,7 @@ p.sendText = function (text) {
  */
 p.sendConnectionNotice = function (connectionId) {
   this.publish({
-    type: "connection",
+    type: 'connection',
     connectionId: connectionId
   });
 };
@@ -161,7 +161,7 @@ p.sendConnectionList = function (connectionId) {
       connections[clusterMemberId] = Object.keys(data[clusterMemberId].connections);
     }
     var messageData = {
-      type: "connectionList",
+      type: 'connectionList',
       connections: connections
     };
     self.sendToConnection(connectionId, messageData);
@@ -175,7 +175,7 @@ p.sendConnectionList = function (connectionId) {
  */
 p.sendDisconnectionNotice = function (connectionId) {
   this.publish({
-    type: "disconnection",
+    type: 'disconnection',
     connectionId: connectionId
   });
 };
@@ -197,7 +197,7 @@ p.publish = function (data) {
 p.connection = function (client) {
   var self = this;
   var connectionId = client.getConnectionId();
-  this.thywill.log.debug("Display: Client connected: " + connectionId);
+  this.thywill.log.debug('Display: Client connected: ' + connectionId);
   var fns = {
     // Every client is subscribed to the same channel, used to broadcast updates.
     subscribe: function (asyncCallback) {
@@ -218,7 +218,7 @@ p.connection = function (client) {
  */
 p.connectionTo = function (clusterMemberId, client) {
   if (clusterMemberId !== this.thywill.cluster.getLocalClusterMemberId()) {
-    this.sendText(client.getConnectionId() + " connected to " + clusterMemberId + ".");
+    this.sendText(client.getConnectionId() + ' connected to ' + clusterMemberId + '.');
   }
 };
 
@@ -227,7 +227,7 @@ p.connectionTo = function (clusterMemberId, client) {
  */
 p.disconnection = function (client) {
   var connectionId = client.getConnectionId();
-  this.thywill.log.debug("Display: Client disconnected: " + connectionId);
+  this.thywill.log.debug('Display: Client disconnected: ' + connectionId);
   this.sendDisconnectionNotice(connectionId);
 };
 
@@ -236,7 +236,7 @@ p.disconnection = function (client) {
  */
 p.disconnectionFrom = function (clusterMemberId, client) {
   if (clusterMemberId !== this.thywill.cluster.getLocalClusterMemberId()) {
-    this.sendText(client.getConnectionId() + " disconnected from " + clusterMemberId + ".");
+    this.sendText(client.getConnectionId() + ' disconnected from ' + clusterMemberId + '.');
   }
 };
 
@@ -257,7 +257,7 @@ p.clusterMemberDown = function (clusterMemberId, connectionData) {
       var connections = {};
       connections[clusterMemberId] = Object.keys(connectionData.connections);
       var data = {
-        type: "disconnectionList",
+        type: 'disconnectionList',
         connections: connections
       };
       self.sendToChannel(self.channelId, data);

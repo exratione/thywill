@@ -43,14 +43,14 @@
   var p = Thywill.RpcCapableApplicationInterface.prototype;
 
   // ------------------------------------------
-  // "Static" properties.
+  // 'Static' properties.
   // ------------------------------------------
 
   Thywill.RpcCapableApplicationInterface.RPC_ERRORS = {
-    DISCONNECTED: "dc",
-    NO_FUNCTION: "nf",
-    NO_PERMISSION: "np",
-    TIMED_OUT: "to"
+    DISCONNECTED: 'dc',
+    NO_FUNCTION: 'nf',
+    NO_PERMISSION: 'np',
+    TIMED_OUT: 'to'
   };
 
   // ------------------------------------------
@@ -65,7 +65,7 @@
   p._listenForReceived = function () {
     var self = this;
     // Message received from the server.
-    Thywill.on("received", function (applicationId, message) {
+    Thywill.on('received', function (applicationId, message) {
       if (applicationId !== self.applicationId) {
         return;
       }
@@ -74,7 +74,7 @@
         self.rpcResponse(message.getData());
       } else {
         self.received(message);
-        self.emit("received", message);
+        self.emit('received', message);
       }
     });
   };
@@ -91,8 +91,8 @@
    *
    * {
    *   // The name of the function to invoke. This can be a dotted path, and is
-   *   // checked in the scope of "this" in the server Application instance.
-   *   // e.g. "my.function" would be called server-side as this.my.function()
+   *   // checked in the scope of 'this' in the server Application instance.
+   *   // e.g. 'my.function' would be called server-side as this.my.function()
    *   // in the Application instance.
    *   name: string
    *   // True if the servr function has a callback.
@@ -123,7 +123,7 @@
 
     // If there's a callback, then create a local record that will be used to
     // link to the response.
-    if (typeof callback === "function") {
+    if (typeof callback === 'function') {
       this.rpcInProgress[rpcKey] = {
         callback: callback,
         name: data.name
@@ -155,7 +155,7 @@
    */
   p.rpcResponse = function (data) {
     var rpcKey = this.getRpcInProgressKey(data.id);
-    if (this.rpcInProgress[rpcKey] && typeof this.rpcInProgress[rpcKey].callback === "function") {
+    if (this.rpcInProgress[rpcKey] && typeof this.rpcInProgress[rpcKey].callback === 'function') {
       var callback = this.rpcInProgress[rpcKey].callback;
       delete this.rpcInProgress[rpcKey];
       callback.apply(null, data.cbArgs || []);
@@ -169,7 +169,7 @@
    * @return {string}
    */
   p.getRpcInProgressKey = function (count) {
-    return "rpc" + count;
+    return 'rpc' + count;
   };
 
   /**

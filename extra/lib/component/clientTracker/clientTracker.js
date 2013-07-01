@@ -3,8 +3,8 @@
  * ClientTracker class definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
+var util = require('util');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -36,23 +36,23 @@ var Thywill = require("thywill");
  */
 function ClientTracker() {
   ClientTracker.super_.call(this);
-  this.componentType = "clientTracker";
+  this.componentType = 'clientTracker';
   // Convenience reference.
   this.events = ClientTracker.EVENTS;
 }
-util.inherits(ClientTracker, Thywill.getBaseClass("Component"));
+util.inherits(ClientTracker, Thywill.getBaseClass('Component'));
 var p = ClientTracker.prototype;
 
 //-----------------------------------------------------------
-// "Static"
+// 'Static'
 //-----------------------------------------------------------
 
 ClientTracker.EVENTS = {
-  CONNECTION: "connection",
-  CONNECTION_TO: "connectionTo",
-  DISCONNECTION: "disconnection",
-  DISCONNECTION_FROM: "disconnectionFrom",
-  CLUSTER_MEMBER_DOWN: "clusterMemberDown"
+  CONNECTION: 'connection',
+  CONNECTION_TO: 'connectionTo',
+  DISCONNECTION: 'disconnection',
+  DISCONNECTION_FROM: 'disconnectionFrom',
+  CLUSTER_MEMBER_DOWN: 'clusterMemberDown'
 };
 
 //-----------------------------------------------------------
@@ -64,7 +64,7 @@ ClientTracker.EVENTS = {
  */
 p._getDependencies = function () {
   return {
-    components: ["clientInterface"]
+    components: ['clientInterface']
   };
 };
 
@@ -77,7 +77,7 @@ p._getDependencies = function () {
  *   Of the form function (error, boolean).
  */
 p.clientIsConnected = function (client, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -89,7 +89,7 @@ p.clientIsConnected = function (client, callback) {
  *   Of the form function (error, boolean).
  */
 p.clientIsConnectedLocally = function (client, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -102,7 +102,7 @@ p.clientIsConnectedLocally = function (client, callback) {
  *   Of the form function (error, boolean).
  */
 p.clientSessionIsConnected = function (client, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -114,7 +114,7 @@ p.clientSessionIsConnected = function (client, callback) {
  *   Of the form function (error, connectionIds).
  */
 p.connectionIdsForSession = function (sessionId, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -128,7 +128,7 @@ p.connectionIdsForSession = function (sessionId, callback) {
  *   Of the form function (error, data).
  */
 p.getConnectionData = function (callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 //-----------------------------------------------------------

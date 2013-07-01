@@ -18,7 +18,7 @@ are using, expecting you to have followed the instructions in
 /doc/server-setup.md:
 
   * You have installed Node.js on some variety of Linux
-  * There is a user "node" with a home directory /home/node
+  * There is a user 'node' with a home directory /home/node
   * Node.js is installed in /home/node/local/node
   * You have installed Forever globally (see below)
 

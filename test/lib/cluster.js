@@ -3,7 +3,7 @@
  * Batches for testing Cluster class implementations.
  */
 
-var assert = require("assert");
+var assert = require('assert');
 
 /**
  * Add Cluster cluster-specific tests to the suite.
@@ -12,49 +12,49 @@ var assert = require("assert");
  */
 exports.cluster = function (suite) {
   suite.addBatch({
-    "cluster#sendTo": {
+    'cluster#sendTo': {
       topic: function () {
         var self = this;
         var taskData = {
-          data: "test"
+          data: 'test'
         };
-        var taskName = "testTask";
+        var taskName = 'testTask';
         suite.thywills[1].cluster.once(taskName, function (receivedTaskData) {
           self.callback(null, receivedTaskData);
         });
-        suite.thywills[0].cluster.sendTo("beta", taskName, taskData);
+        suite.thywills[0].cluster.sendTo('beta', taskName, taskData);
       },
-      "task data received": function (taskData) {
-        assert.strictEqual(taskData.data, "test");
+      'task data received': function (taskData) {
+        assert.strictEqual(taskData.data, 'test');
       }
     }
   });
   suite.addBatch({
-    "cluster#sendToOthers": {
+    'cluster#sendToOthers': {
       topic: function () {
         var self = this;
         var taskData = {
-          data: "test"
+          data: 'test'
         };
-        var taskName = "testTask";
+        var taskName = 'testTask';
         suite.thywills[1].cluster.once(taskName, function (receivedTaskData) {
           self.callback(null, receivedTaskData);
         });
         suite.thywills[0].cluster.sendToOthers(taskName, taskData);
       },
-      "task data received": function (taskData) {
-        assert.strictEqual(taskData.data, "test");
+      'task data received': function (taskData) {
+        assert.strictEqual(taskData.data, 'test');
       }
     }
   });
   suite.addBatch({
-    "cluster#sendToAll": {
+    'cluster#sendToAll': {
       topic: function () {
         var self = this;
         var taskData = {
-          data: "test"
+          data: 'test'
         };
-        var taskName = "testTask";
+        var taskName = 'testTask';
         var received = suite.thywills.map(function (thywill, index, array) {
           return false;
         });
@@ -75,9 +75,9 @@ exports.cluster = function (suite) {
           }
         }, 50);
       },
-      "task data received": function (received) {
+      'task data received': function (received) {
         received.forEach(function (taskData, index, array) {
-          assert.strictEqual(taskData.data, "test");
+          assert.strictEqual(taskData.data, 'test');
         });
       }
     }

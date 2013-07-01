@@ -12,7 +12,7 @@ object.
 Thywill is typically launched from a Node.js script in this way:
 
     // Load configuration.
-    var config = require("./path/to/config/file");
+    var config = require('./path/to/config/file');
     // Add, at minimum, a server, but more likely an Express application
     // and some other odds and ends to the configuration:
     config.clientInterface.server.server = http.createServer().listen(10080);
@@ -38,7 +38,7 @@ The normal format for specifying a /core component implementation is as follows:
 
     componentName: {
       implementation: {
-        type: "core",
+        type: 'core',
         name: implementationName
       }
     }
@@ -47,8 +47,8 @@ So for the default log:
 
     log: {
       implementation: {
-        type: "core",
-        name: "console"
+        type: 'core',
+        name: 'console'
       }
     }
 
@@ -56,24 +56,24 @@ Implementations under /extra are loaded as follows:
 
     componentName: {
       implementation: {
-        type: "extra",
+        type: 'extra',
         name: implementationName
       }
     }
 
 But what about an implementation provided by some other package or file? That
-is specified as follows, where the "property" property is optional:
+is specified as follows, where the 'property' property is optional:
 
     componentName: {
       implementation: {
-        type: "require",
+        type: 'require',
         path: path,
         property: property
       }
     }
 
 Under the hood, Thywill expects a constructor for the component class from one
-of the following, depending on whether or not "property" is specified.
+of the following, depending on whether or not 'property' is specified.
 
     // No property specified.
     require(path);

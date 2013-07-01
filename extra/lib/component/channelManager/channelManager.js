@@ -3,8 +3,8 @@
  * ChannelManager class definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
+var util = require('util');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -27,20 +27,20 @@ var Thywill = require("thywill");
  */
 function ChannelManager() {
   ChannelManager.super_.call(this);
-  this.componentType = "channelManager";
+  this.componentType = 'channelManager';
   // Convenience reference.
   this.events = ChannelManager.EVENTS;
 }
-util.inherits(ChannelManager, Thywill.getBaseClass("Component"));
+util.inherits(ChannelManager, Thywill.getBaseClass('Component'));
 var p = ChannelManager.prototype;
 
 //-----------------------------------------------------------
-// "Static"
+// 'Static'
 //-----------------------------------------------------------
 
 ChannelManager.EVENTS = {
-  SESSIONS_ADDED: "sessionsAdded",
-  SESSIONS_REMOVED: "sessionsRemoved"
+  SESSIONS_ADDED: 'sessionsAdded',
+  SESSIONS_REMOVED: 'sessionsRemoved'
 };
 
 //-----------------------------------------------------------
@@ -52,7 +52,7 @@ ChannelManager.EVENTS = {
  */
 p._getDependencies = function () {
   return {
-    components: ["clientInterface"]
+    components: ['clientInterface']
   };
 };
 
@@ -66,7 +66,7 @@ p._getDependencies = function () {
  *   Of the form function (error, channels), where channels is an array.
  */
 p.getChannelIdsForSession = function (sessionId, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -80,7 +80,7 @@ p.getChannelIdsForSession = function (sessionId, callback) {
  *   Of the form function (error).
  */
 p.addSessionIds = function (channelId, sessionIds, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -94,7 +94,7 @@ p.addSessionIds = function (channelId, sessionIds, callback) {
  *   Of the form function (error).
  */
 p.removeSessionIds = function (channelId, sessionIds, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -107,7 +107,7 @@ p.removeSessionIds = function (channelId, sessionIds, callback) {
  *   Of the form function (error, sessionIds).
  */
 p.clear = function (channelId, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -119,7 +119,7 @@ p.clear = function (channelId, callback) {
  *   Of the form function (error, sessionIds), where sessionIds is an array.
  */
 p.getSessionIds = function (channelId, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 //-----------------------------------------------------------

@@ -3,10 +3,10 @@
  * HandlebarsTemplateEngine class definition, a template implementation.
  */
 
-var crypto = require("crypto");
-var util = require("util");
-var handlebars = require("handlebars");
-var Thywill = require("thywill");
+var crypto = require('crypto');
+var util = require('util');
+var handlebars = require('handlebars');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -22,18 +22,18 @@ function HandlebarsTemplateEngine() {
   // A cache to hold compiled templates.
   this.cache = null;
 }
-util.inherits(HandlebarsTemplateEngine, Thywill.getBaseClass("TemplateEngine"));
+util.inherits(HandlebarsTemplateEngine, Thywill.getBaseClass('TemplateEngine'));
 var p = HandlebarsTemplateEngine.prototype;
 
 //-----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 //-----------------------------------------------------------
 
 HandlebarsTemplateEngine.CONFIG_TEMPLATE = {
   templateCacheLength: {
     _configInfo: {
-      description: "The maximum number of compiled templates retained in an LRU cache.",
-      types: "integer",
+      description: 'The maximum number of compiled templates retained in an LRU cache.',
+      types: 'integer',
       required: true
     }
   }
@@ -49,8 +49,8 @@ HandlebarsTemplateEngine.CONFIG_TEMPLATE = {
 p._getDependencies = function () {
   return {
     components: [
-      "log",
-      "cacheManager"
+      'log',
+      'cacheManager'
     ]
   };
 };
@@ -65,7 +65,7 @@ p._configure = function (thywill, config, callback) {
   this.readyCallback = callback;
 
   // Create a cache with no timeout for compiled templates.
-  this.cache = this.thywill.cacheManager.createCache("handlebars", config.templateCacheLength);
+  this.cache = this.thywill.cacheManager.createCache('handlebars', config.templateCacheLength);
 
   // There are no asynchronous initialization functions here or in the
   // superclasses. So we can just call them and forge ahead without having

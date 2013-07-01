@@ -3,13 +3,13 @@
  * Echo class definition, a trivial example application.
  */
 
-var util = require("util");
-var path = require("path");
-var fs = require("fs");
+var util = require('util');
+var path = require('path');
+var fs = require('fs');
 
-var async = require("async");
-var Thywill = require("thywill");
-var bootstrapManifest = require("./bootstrapManifest");
+var async = require('async');
+var Thywill = require('thywill');
+var bootstrapManifest = require('./bootstrapManifest');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -23,7 +23,7 @@ var bootstrapManifest = require("./bootstrapManifest");
 function Echo (id) {
   Echo.super_.call(this, id);
 }
-util.inherits(Echo, Thywill.getBaseClass("Application"));
+util.inherits(Echo, Thywill.getBaseClass('Application'));
 var p = Echo.prototype;
 
 //-----------------------------------------------------------
@@ -36,7 +36,7 @@ var p = Echo.prototype;
 p._defineBootstrapResources = function (callback) {
   var self = this;
   // Text encoding throughout.
-  var encoding = "utf8";
+  var encoding = 'utf8';
 
   // An array of functions load up bootstrap resources.
   var fns = [
@@ -48,16 +48,16 @@ p._defineBootstrapResources = function (callback) {
     // template.
     function (asyncCallback) {
       // Load the file.
-      var originFilePath = path.resolve(__dirname, "../client/js/echoClient.js");
+      var originFilePath = path.resolve(__dirname, '../client/js/echoClient.js');
       var data = fs.readFileSync(originFilePath, encoding);
       // A little templating to insert the application ID.
       data = self.thywill.templateEngine.render(data, {
         applicationId: self.id,
-        messageTemplateId: "echo-template-message"
+        messageTemplateId: 'echo-template-message'
       });
       // Create and store the resource.
       var resource = self.thywill.resourceManager.createResource(data, {
-        clientPath: "/echo/js/echoClient.js",
+        clientPath: '/echo/js/echoClient.js',
         encoding: encoding,
         originFilePath: originFilePath,
         weight: 50
@@ -84,7 +84,7 @@ p._setup = function (callback) {
  * @see Application#receivedFromClient
  */
 p.receivedFromClient = function (client, message) {
-  this.thywill.log.debug("Echo.receivedFromClient(): Message for echoing: " + message);
+  this.thywill.log.debug('Echo.receivedFromClient(): Message for echoing: ' + message);
   // Sending the same data back to whence it came.
   this.sendToConnection(client, message);
 };
@@ -97,7 +97,7 @@ p.receivedFromClient = function (client, message) {
  */
 p.connection = function (client) {
   // Do nothing except log it.
-  this.thywill.log.debug("Echo: Client connected: " + client.getConnectionId());
+  this.thywill.log.debug('Echo: Client connected: ' + client.getConnectionId());
 };
 
 /**
@@ -108,7 +108,7 @@ p.connection = function (client) {
  */
 p.disconnection = function (client) {
   // Do nothing except log it.
-  this.thywill.log.debug("Echo: Client disconnected: " + client.getConnectionId());
+  this.thywill.log.debug('Echo: Client disconnected: ' + client.getConnectionId());
 };
 
 //-----------------------------------------------------------

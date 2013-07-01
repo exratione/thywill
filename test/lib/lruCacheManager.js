@@ -3,8 +3,8 @@
  * Batches for testing the LruCacheManager class.
  */
 
-var assert = require("assert");
-var Thywill = require("thywill");
+var assert = require('assert');
+var Thywill = require('thywill');
 
 /**
  * Add LruCacheManager cluster-specific tests to the suite.
@@ -14,28 +14,28 @@ var Thywill = require("thywill");
  */
 exports.cluster = function (suite) {
   suite.addBatch({
-    "create cluster caches": {
+    'create cluster caches': {
       topic: function () {
         // Create an array of caches with matching Ids and room for two items.
         return suite.thywills.map(function (thywill, index, array) {
-          return thywill.cacheManager.createCache("clusterCache", 2);
+          return thywill.cacheManager.createCache('clusterCache', 2);
         });
       },
-      "caches created successfully": function (caches) {
+      'caches created successfully': function (caches) {
         caches.forEach(function (cache, index, array) {
-          assert.instanceOf(cache, Thywill.getBaseClass("Cache"));
+          assert.instanceOf(cache, Thywill.getBaseClass('Cache'));
         });
         suite.caches = caches;
       }
     }
   });
   suite.addBatch({
-    "propagate cache clear": {
+    'propagate cache clear': {
       topic: function () {
-        var key = "key1";
+        var key = 'key1';
         suite.caches.forEach(function (cache, index, array) {
-          cache.set(key, "value1");
-          cache.set("key2", "value2");
+          cache.set(key, 'value1');
+          cache.set('key2', 'value2');
         });
         // Clear one of them.
         suite.caches[0].clear(key);
@@ -45,20 +45,20 @@ exports.cluster = function (suite) {
           self.callback(null, key);
         }, 200);
       },
-      "all caches cleared": function (key) {
+      'all caches cleared': function (key) {
         // All should be cleared for just that value.
         suite.caches.forEach(function (cache, index, array) {
           assert.isUndefined(cache.get(key));
-          assert.strictEqual("value2", cache.get("key2"));
+          assert.strictEqual('value2', cache.get('key2'));
         });
       }
     }
   });
   suite.addBatch({
-    "propagate clear on cache overwrite": {
+    'propagate clear on cache overwrite': {
       topic: function () {
-        var key = "key1";
-        var value = "value1";
+        var key = 'key1';
+        var value = 'value1';
         suite.caches.forEach(function (cache, index, array) {
           cache.set(key, value);
         });
@@ -70,21 +70,21 @@ exports.cluster = function (suite) {
           self.callback(null, key);
         }, 200);
       },
-      "other caches cleared": function (key) {
+      'other caches cleared': function (key) {
         // All except the first should be cleared, for just that value.
         suite.caches.forEach(function (cache, index, array) {
           if (index === 0) {
-            assert.strictEqual("value1", cache.get(key));
+            assert.strictEqual('value1', cache.get(key));
           } else {
             assert.isUndefined(cache.get(key));
           }
-          assert.strictEqual("value2", cache.get("key2"));
+          assert.strictEqual('value2', cache.get('key2'));
         });
       }
     }
   });
   suite.addBatch({
-    "propagate general clear": {
+    'propagate general clear': {
       topic: function () {
         // Overwrite one of them.
         suite.caches[0].clear();
@@ -94,10 +94,10 @@ exports.cluster = function (suite) {
           self.callback();
         }, 200);
       },
-      "all caches cleared": function () {
+      'all caches cleared': function () {
         // All except the first should be cleared, for just that value.
         suite.caches.forEach(function (cache, index, array) {
-          assert.isUndefined(cache.get("key2"));
+          assert.isUndefined(cache.get('key2'));
         });
       }
     }

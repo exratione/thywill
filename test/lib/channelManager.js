@@ -3,64 +3,64 @@
  * Batches for testing ChannelManager classes.
  */
 
-var assert = require("assert");
-var Thywill = require("thywill");
+var assert = require('assert');
+var Thywill = require('thywill');
 
 /**
  * Add ChannelManager general tests to the suite.
  */
 exports.general = function (suite) {
-  var testChannelId = "test-channel";
-  var testSessionIds = ["a", "b", "c", "d"];
+  var testChannelId = 'test-channel';
+  var testSessionIds = ['a', 'b', 'c', 'd'];
 
   suite.addBatch({
-    "channelManager#getChannelIdsForSession empty": {
+    'channelManager#getChannelIdsForSession empty': {
       topic: function () {
-        suite.thywills[0].channelManager.getChannelIdsForSession("no-session", this.callback);
+        suite.thywills[0].channelManager.getChannelIdsForSession('no-session', this.callback);
       },
-      "empty array returned": function (error, channelIds) {
+      'empty array returned': function (error, channelIds) {
         assert.equal(error, null);
         assert.deepEqual(channelIds, []);
       }
     }
   });
   suite.addBatch({
-    "channelManager#getSessionIds empty": {
+    'channelManager#getSessionIds empty': {
       topic: function () {
-        suite.thywills[0].channelManager.getSessionIds("not-a-channel", this.callback);
+        suite.thywills[0].channelManager.getSessionIds('not-a-channel', this.callback);
       },
-      "empty array returned": function (error, sessionIds) {
+      'empty array returned': function (error, sessionIds) {
         assert.equal(error, null);
         assert.deepEqual(sessionIds, []);
       }
     }
   });
   suite.addBatch({
-    "channelManager#addSessionIds": {
+    'channelManager#addSessionIds': {
       topic: function () {
         suite.thywills[0].channelManager.addSessionIds(testChannelId, testSessionIds, this.callback);
       },
-      "add successful": function (error) {
+      'add successful': function (error) {
         assert.equal(error, null);
       }
     }
   });
   suite.addBatch({
-    "channelManager#addSessionIds again": {
+    'channelManager#addSessionIds again': {
       topic: function () {
         suite.thywills[0].channelManager.addSessionIds(testChannelId, testSessionIds, this.callback);
       },
-      "add successful": function (error) {
+      'add successful': function (error) {
         assert.equal(error, null);
       }
     }
   });
   suite.addBatch({
-    "channelManager#getSessionIds": {
+    'channelManager#getSessionIds': {
       topic: function () {
         suite.thywills[0].channelManager.getSessionIds(testChannelId, this.callback);
       },
-      "correct sessions returned": function (error, sessionIds) {
+      'correct sessions returned': function (error, sessionIds) {
         assert.equal(error, null);
         assert.isArray(sessionIds);
         assert.deepEqual(sessionIds.sort(), testSessionIds);
@@ -68,35 +68,35 @@ exports.general = function (suite) {
     }
   });
   suite.addBatch({
-    "channelManager#removeSessionIds": {
+    'channelManager#removeSessionIds': {
       topic: function () {
         suite.thywills[0].channelManager.removeSessionIds(testChannelId, testSessionIds, this.callback);
       },
-      "remove successful": function (error) {
+      'remove successful': function (error) {
         assert.equal(error, null);
       }
     }
   });
   suite.addBatch({
-    "channelManager#getSessionIds empty again": {
+    'channelManager#getSessionIds empty again': {
       topic: function () {
         suite.thywills[0].channelManager.getSessionIds(testChannelId, this.callback);
       },
-      "empty array returned": function (error, sessionIds) {
+      'empty array returned': function (error, sessionIds) {
         assert.equal(error, null);
         assert.deepEqual(sessionIds, []);
       }
     }
   });
   suite.addBatch({
-    "channelManager#clear": {
+    'channelManager#clear': {
       topic: function () {
         var self = this;
         suite.thywills[0].channelManager.addSessionIds(testChannelId, testSessionIds, function (error) {
           suite.thywills[0].channelManager.clear(testChannelId, self.callback);
         });
       },
-      "correct sessions returned": function (error, sessionIds) {
+      'correct sessions returned': function (error, sessionIds) {
         assert.equal(error, null);
         assert.isArray(sessionIds);
         assert.deepEqual(sessionIds.sort(), testSessionIds);
@@ -109,11 +109,11 @@ exports.general = function (suite) {
  * Add ChannelManager cluster tests to the suite.
  */
 exports.cluster = function (suite) {
-  var testChannelId = "test-channel";
-  var testSessionIds = ["a", "b", "c", "d"];
+  var testChannelId = 'test-channel';
+  var testSessionIds = ['a', 'b', 'c', 'd'];
 
   suite.addBatch({
-    "emit on add": {
+    'emit on add': {
       topic: function () {
         var self = this;
         var channelManager = suite.thywills[1].channelManager;
@@ -124,7 +124,7 @@ exports.cluster = function (suite) {
           // Do nothing.
         });
       },
-      "emit happened": function (channelId, sessionIds) {
+      'emit happened': function (channelId, sessionIds) {
         assert.isArray(sessionIds);
         assert.deepEqual(sessionIds.sort(), testSessionIds);
         assert.strictEqual(channelId, testChannelId);
@@ -132,18 +132,18 @@ exports.cluster = function (suite) {
     }
   });
   suite.addBatch({
-    "channelManager#getSessionIds from other process": {
+    'channelManager#getSessionIds from other process': {
       topic: function () {
         suite.thywills[1].channelManager.getSessionIds(testChannelId, this.callback);
       },
-      "session IDs returned correctly": function (error, sessionIds) {
+      'session IDs returned correctly': function (error, sessionIds) {
         assert.equal(error, null);
         assert.deepEqual(sessionIds.sort(), testSessionIds);
       }
     }
   });
   suite.addBatch({
-    "emit on remove": {
+    'emit on remove': {
       topic: function () {
         var self = this;
         var channelManager = suite.thywills[1].channelManager;
@@ -154,7 +154,7 @@ exports.cluster = function (suite) {
           // Do nothing.
         });
       },
-      "emit happened": function (channelId, sessionIds) {
+      'emit happened': function (channelId, sessionIds) {
         assert.isArray(sessionIds);
         assert.deepEqual(sessionIds.sort(), testSessionIds);
         assert.strictEqual(channelId, testChannelId);
@@ -162,11 +162,11 @@ exports.cluster = function (suite) {
     }
   });
   suite.addBatch({
-    "channelManager#getSessionIds empty in other process": {
+    'channelManager#getSessionIds empty in other process': {
       topic: function () {
         suite.thywills[1].channelManager.getSessionIds(testChannelId, this.callback);
       },
-      "empty array returned": function (error, sessionIds) {
+      'empty array returned': function (error, sessionIds) {
         assert.equal(error, null);
         assert.deepEqual(sessionIds, []);
       }
@@ -174,7 +174,7 @@ exports.cluster = function (suite) {
   });
   suite.addBatch({
     // Clearing should still emit for removing the session IDs in the channel.
-    "emit on clear": {
+    'emit on clear': {
       topic: function () {
         var self = this;
         var channelManager = suite.thywills[1].channelManager;
@@ -187,7 +187,7 @@ exports.cluster = function (suite) {
           });
         });
       },
-      "emit happened": function (channelId, sessionIds) {
+      'emit happened': function (channelId, sessionIds) {
         assert.isArray(sessionIds);
         assert.deepEqual(sessionIds.sort(), testSessionIds);
         assert.strictEqual(channelId, testChannelId);
@@ -195,11 +195,11 @@ exports.cluster = function (suite) {
     }
   });
   suite.addBatch({
-    "channelManager#getSessionIds still empty in other process": {
+    'channelManager#getSessionIds still empty in other process': {
       topic: function () {
         suite.thywills[1].channelManager.getSessionIds(testChannelId, this.callback);
       },
-      "empty array returned": function (error, sessionIds) {
+      'empty array returned': function (error, sessionIds) {
         assert.equal(error, null);
         assert.deepEqual(sessionIds, []);
       }

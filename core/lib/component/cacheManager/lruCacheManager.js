@@ -3,9 +3,9 @@
  * LRUCacheManager class definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
-var LRUCache = require("./lruCache");
+var util = require('util');
+var Thywill = require('thywill');
+var LRUCache = require('./lruCache');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -22,11 +22,11 @@ function LRUCacheManager() {
   LRUCacheManager.super_.call(this);
   this.caches = {};
 }
-util.inherits(LRUCacheManager, Thywill.getBaseClass("CacheManager"));
+util.inherits(LRUCacheManager, Thywill.getBaseClass('CacheManager'));
 var p = LRUCacheManager.prototype;
 
 //-----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 //-----------------------------------------------------------
 
 LRUCacheManager.CONFIG_TEMPLATE = null;
@@ -44,7 +44,7 @@ p._configure = function (thywill, config, callback) {
   this.config = config;
   this.readyCallback = callback;
 
-  this.clearClusterTask = "thywill.cacheManager.clear";
+  this.clearClusterTask = 'thywill.cacheManager.clear';
 
   // Listen on the cluster instance for cache clearing messages.
   var self = this;

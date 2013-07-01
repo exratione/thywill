@@ -3,14 +3,14 @@
  * Calculations class definition, a trivial example application.
  */
 
-var util = require("util");
-var path = require("path");
-var fs = require("fs");
+var util = require('util');
+var path = require('path');
+var fs = require('fs');
 
-var async = require("async");
-var Thywill = require("thywill");
-var bootstrapManifest = require("./bootstrapManifest");
-var rpcFunctions = require("./rpcFunctions");
+var async = require('async');
+var Thywill = require('thywill');
+var bootstrapManifest = require('./bootstrapManifest');
+var rpcFunctions = require('./rpcFunctions');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -26,7 +26,7 @@ var rpcFunctions = require("./rpcFunctions");
 function Calculations (id) {
   Calculations.super_.call(this, id);
 }
-util.inherits(Calculations, Thywill.getBaseClass("RpcCapableApplication"));
+util.inherits(Calculations, Thywill.getBaseClass('RpcCapableApplication'));
 var p = Calculations.prototype;
 
 //-----------------------------------------------------------
@@ -39,7 +39,7 @@ var p = Calculations.prototype;
 p._defineBootstrapResources = function (callback) {
   var self = this;
   // Text encoding throughout.
-  var encoding = "utf8";
+  var encoding = 'utf8';
 
   // An array of functions load up bootstrap resources.
   var fns = [
@@ -51,16 +51,16 @@ p._defineBootstrapResources = function (callback) {
     // template.
     function (asyncCallback) {
       // Load the file.
-      var originFilePath = path.resolve(__dirname, "../client/js/calculationsClient.js");
+      var originFilePath = path.resolve(__dirname, '../client/js/calculationsClient.js');
       var data = fs.readFileSync(originFilePath, encoding);
       // A little templating to insert the application ID.
       data = self.thywill.templateEngine.render(data, {
         applicationId: self.id,
-        uiTemplateId: "calculations-template-ui"
+        uiTemplateId: 'calculations-template-ui'
       });
       // Create and store the resource.
       var resource = self.thywill.resourceManager.createResource(data, {
-        clientPath: "/calculations/js/calculationsClient.js",
+        clientPath: '/calculations/js/calculationsClient.js',
         encoding: encoding,
         originFilePath: originFilePath,
         weight: 50
@@ -105,7 +105,7 @@ p.receivedFromClient = function (client, message) {
  */
 p.connection = function (client) {
   // Do nothing except log it.
-  this.thywill.log.debug("Calculations: Client connected: " + client.getConnectionId());
+  this.thywill.log.debug('Calculations: Client connected: ' + client.getConnectionId());
 };
 
 /**
@@ -116,7 +116,7 @@ p.connection = function (client) {
  */
 p.disconnection = function (client) {
   // Do nothing except log it.
-  this.thywill.log.debug("Calculations: Client disconnected: " + client.getConnectionId());
+  this.thywill.log.debug('Calculations: Client disconnected: ' + client.getConnectionId());
 };
 
 //-----------------------------------------------------------

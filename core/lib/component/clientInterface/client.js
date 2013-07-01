@@ -24,7 +24,7 @@
  *   A set of client properties.
  */
 function Client (data) {
-  if (data && typeof data === "object") {
+  if (data && typeof data === 'object') {
     for (var prop in data) {
       this[prop] = data[prop];
     }
@@ -33,13 +33,13 @@ function Client (data) {
 var p = Client.prototype;
 
 //-----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 //-----------------------------------------------------------
 
 Client.DATA = {
-  CONNECTION_ID: "connectionId",
-  SESSION_ID: "sessionId",
-  SESSION: "session"
+  CONNECTION_ID: 'connectionId',
+  SESSION_ID: 'sessionId',
+  SESSION: 'session'
 };
 
 //-----------------------------------------------------------

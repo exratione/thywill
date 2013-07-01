@@ -3,13 +3,13 @@
  * Draw class definition, a trivial example application.
  */
 
-var util = require("util");
-var path = require("path");
-var fs = require("fs");
+var util = require('util');
+var path = require('path');
+var fs = require('fs');
 
-var async = require("async");
-var Thywill = require("thywill");
-var bootstrapManifest = require("./bootstrapManifest");
+var async = require('async');
+var Thywill = require('thywill');
+var bootstrapManifest = require('./bootstrapManifest');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -25,9 +25,9 @@ var bootstrapManifest = require("./bootstrapManifest");
 function Draw (id) {
   Draw.super_.call(this, id);
   // The channel used to broadcast draw data.
-  this.channelId = "draw";
+  this.channelId = 'draw';
 }
-util.inherits(Draw, Thywill.getBaseClass("Application"));
+util.inherits(Draw, Thywill.getBaseClass('Application'));
 var p = Draw.prototype;
 
 //-----------------------------------------------------------
@@ -40,7 +40,7 @@ var p = Draw.prototype;
 p._defineBootstrapResources = function (callback) {
   var self = this;
   // Text encoding throughout.
-  var encoding = "utf8";
+  var encoding = 'utf8';
 
   // An array of functions load up bootstrap resources.
   var fns = [
@@ -52,16 +52,16 @@ p._defineBootstrapResources = function (callback) {
     // template.
     function (asyncCallback) {
       // Load the file.
-      var originFilePath = path.resolve(__dirname, "../client/js/drawClient.js");
+      var originFilePath = path.resolve(__dirname, '../client/js/drawClient.js');
       var data = fs.readFileSync(originFilePath, encoding);
       // A little templating to insert the application ID.
       data = self.thywill.templateEngine.render(data, {
         applicationId: self.id,
-        uiTemplateId: "draw-template-ui"
+        uiTemplateId: 'draw-template-ui'
       });
       // Create and store the resource.
       var resource = self.thywill.resourceManager.createResource(data, {
-        clientPath: "/draw/js/drawClient.js",
+        clientPath: '/draw/js/drawClient.js',
         encoding: encoding,
         originFilePath: originFilePath,
         weight: 50
@@ -87,7 +87,7 @@ p.receivedFromClient = function (client, message) {
   // clients won't error. Since this is an example only, no need to check
   // everything.
   if (!data || !Array.isArray(data.segments)) {
-    this.thywill.log.warn("Draw: invalid data received from client." + message);
+    this.thywill.log.warn('Draw: invalid data received from client.' + message);
     return;
   }
 
@@ -101,7 +101,7 @@ p.receivedFromClient = function (client, message) {
  */
 p.connection = function (client) {
   var self = this;
-  this.thywill.log.debug("Draw: Client connected: " + client.getConnectionId());
+  this.thywill.log.debug('Draw: Client connected: ' + client.getConnectionId());
   // Every client is subscribed to the same channel, used to broadcast updates.
   this.subscribe(client, this.channelId, function (error) {
     if (error) {
@@ -115,7 +115,7 @@ p.connection = function (client) {
  */
 p.disconnection = function (client) {
   // Do nothing except log it.
-  this.thywill.log.debug("Draw: Client disconnected: " + client.getConnectionId());
+  this.thywill.log.debug('Draw: Client disconnected: ' + client.getConnectionId());
 };
 
 //-----------------------------------------------------------

@@ -3,9 +3,9 @@
  * RedisChannelManager class definition.
  */
 
-var async = require("async");
-var util = require("util");
-var Thywill = require("thywill");
+var async = require('async');
+var util = require('util');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -28,25 +28,25 @@ function RedisChannelManager() {
   RedisChannelManager.super_.call(this);
   this.channels = {};
 }
-util.inherits(RedisChannelManager, Thywill.getBaseClass("ChannelManager"));
+util.inherits(RedisChannelManager, Thywill.getBaseClass('ChannelManager'));
 var p = RedisChannelManager.prototype;
 
 //-----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 //-----------------------------------------------------------
 
 RedisChannelManager.CONFIG_TEMPLATE = {
   redisPrefix: {
     _configInfo: {
-      description: "A prefix applied to Redis keys.",
-      types: "string",
+      description: 'A prefix applied to Redis keys.',
+      types: 'string',
       required: true
     }
   },
   redisClient: {
     _configInfo: {
-      description: "A Redis client instance from package 'redis'.",
-      types: "object",
+      description: 'A Redis client instance from package "redis".',
+      types: 'object',
       required: true
     }
   }
@@ -61,7 +61,7 @@ RedisChannelManager.CONFIG_TEMPLATE = {
  */
 p._getDependencies = function () {
   return {
-    components: ["clientInterface", "clientTracker"]
+    components: ['clientInterface', 'clientTracker']
   };
 };
 
@@ -83,9 +83,9 @@ p._configure = function (thywill, config, callback) {
   // Listen on the cluster for various communications.
   this.clusterTask = {
     // Delivery of all connected client data for a specific process.
-    sessionsAdded: "thywill:channelManager:sessionsAdded",
+    sessionsAdded: 'thywill:channelManager:sessionsAdded',
     // Request for all connected client data for a specific process.
-    sessionsRemoved: "thywill:channelManager:sessionsRemoved"
+    sessionsRemoved: 'thywill:channelManager:sessionsRemoved'
   };
   this.thywill.cluster.on(this.clusterTask.sessionsAdded, function (task) {
     self.emit(self.events.SESSIONS_ADDED, task.channelId, task.sessionIds);
@@ -231,7 +231,7 @@ p.getSessionIds = function (channelId, callback) {
  * @return {string}
  */
 p.getKeyForChannelsBySession = function (sessionId) {
-  return this.config.redisPrefix + "sessionchannelids:" + sessionId;
+  return this.config.redisPrefix + 'sessionchannelids:' + sessionId;
 };
 
 /**
@@ -241,7 +241,7 @@ p.getKeyForChannelsBySession = function (sessionId) {
  * @return {string}
  */
 p.getKeyForSessionsByChannel = function (channelId) {
-  return this.config.redisPrefix + "channelsessionids:" + channelId;
+  return this.config.redisPrefix + 'channelsessionids:' + channelId;
 };
 
 /**

@@ -3,14 +3,14 @@
  * Thywill class definition, the main controlling class for Thywill.
  */
 
-var exec = require("child_process").exec;
-var fs = require("fs");
-var util = require("util");
-var async = require("async");
-var http = require("http");
-var toposort = require("toposort");
+var exec = require('child_process').exec;
+var fs = require('fs');
+var util = require('util');
+var async = require('async');
+var http = require('http');
+var toposort = require('toposort');
 
-var Component = require("./component/component");
+var Component = require('./component/component');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -25,14 +25,14 @@ var Component = require("./component/component");
  */
 function Thywill() {
   Thywill.super_.call(this);
-  this.componentType = "thywill";
+  this.componentType = 'thywill';
   this.applications = {};
 }
 util.inherits(Thywill, Component);
 var p = Thywill.prototype;
 
 //-----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 //-----------------------------------------------------------
 
 /**
@@ -42,15 +42,15 @@ Thywill.CONFIG_TEMPLATE = {
   process: {
     groupId: {
       _configInfo: {
-        description: "The group name or ID to own the Node process after startup.",
-        types: "string",
+        description: 'The group name or ID to own the Node process after startup.',
+        types: 'string',
         required: false
       }
     },
     userId: {
       _configInfo: {
-        description: "The user name or ID to own the Node process after startup.",
-        types: "string",
+        description: 'The user name or ID to own the Node process after startup.',
+        types: 'string',
         required: false
       }
     }
@@ -58,7 +58,7 @@ Thywill.CONFIG_TEMPLATE = {
 };
 
 //-----------------------------------------------------------
-// "Static" methods
+// 'Static' methods
 //-----------------------------------------------------------
 
 /**
@@ -81,7 +81,7 @@ Thywill.launch = function (config, applications, callback) {
   var thywill = new Thywill();
 
   if (!config || !config.thywill) {
-    throw new Error("Null, undefined, or incomplete configuration object.");
+    throw new Error('Null, undefined, or incomplete configuration object.');
   }
   thywill._checkConfiguration(config.thywill);
   thywill.config = config;
@@ -89,13 +89,13 @@ Thywill.launch = function (config, applications, callback) {
   // Start thywill running.
   //
   // We can either pass thywill.startup() a callback function that will be
-  // invoked when startup is complete, or we can listen for the "thywill.ready"
+  // invoked when startup is complete, or we can listen for the 'thywill.ready'
   // event elsewhere in our code. Here we are passing a callback.
   thywill.startup(applications, function (error) {
     // Drop the permissions of the process now that all ports are bound by
     // switching ownership to another user who still has sufficient permissions
     // to access the needed scripts.
-    if (process.platform !== "win32") {
+    if (process.platform !== 'win32') {
       if (thywill.config.thywill.process && thywill.config.thywill.process.groupId) {
         process.setgid(thywill.config.thywill.process.groupId);
       }
@@ -115,9 +115,9 @@ Thywill.launch = function (config, applications, callback) {
  * Obtain one of the Thywill base class constructors.
  *
  * Various base classes must be easily available as a result of using
- * require("thywill"), so that other packages can build on them. We can't
+ * require('thywill'), so that other packages can build on them. We can't
  * just attach them to the Thywill constructor because the base class
- * definitions also have require("thywill") in them - that would create
+ * definitions also have require('thywill') in them - that would create
  * circular references.
  *
  * So instead, allow loading through this function.
@@ -135,47 +135,47 @@ Thywill.getBaseClass = (function () {
     if (!baseClasses[className]) {
       switch (className) {
         // Core classes under /core/lib/component.
-        case "Component":
+        case 'Component':
           baseClasses[className] = Component;
           break;
-        case "Application":
-        case "CacheManager":
-        case "ClientInterface":
-        case "Cluster":
-        case "Log":
-        case "Minifier":
-        case "ResourceManager":
-        case "TemplateEngine":
+        case 'Application':
+        case 'CacheManager':
+        case 'ClientInterface':
+        case 'Cluster':
+        case 'Log':
+        case 'Minifier':
+        case 'ResourceManager':
+        case 'TemplateEngine':
           pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
-          baseClasses[className] = require("./component/" + pathElement + "/" + pathElement);
+          baseClasses[className] = require('./component/' + pathElement + '/' + pathElement);
           break;
-        case "Cache":
-          baseClasses[className] = require("./component/cacheManager/cache");
+        case 'Cache':
+          baseClasses[className] = require('./component/cacheManager/cache');
           break;
-        case "Client":
-          baseClasses[className] = require("./component/clientInterface/client");
+        case 'Client':
+          baseClasses[className] = require('./component/clientInterface/client');
           break;
-        case "Message":
-          baseClasses[className] = require("./component/clientInterface/message");
+        case 'Message':
+          baseClasses[className] = require('./component/clientInterface/message');
           break;
-        case "Resource":
-          baseClasses[className] = require("./component/resourceManager/resource");
+        case 'Resource':
+          baseClasses[className] = require('./component/resourceManager/resource');
           break;
-        case "RpcCapableApplication":
+        case 'RpcCapableApplication':
           pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
-          baseClasses[className] = require("../../extra/lib/component/application/" + pathElement);
+          baseClasses[className] = require('../../extra/lib/component/application/' + pathElement);
           break;
         default:
           // Look for classes under /extra/lib/component.
           try {
             pathElement = className.substr(0, 1).toLowerCase() + className.substr(1);
-            baseClasses[className] = require("../../extra/lib/component/" + pathElement + "/" + pathElement);
-            if (typeof baseClasses[className] !== "function") {
+            baseClasses[className] = require('../../extra/lib/component/' + pathElement + '/' + pathElement);
+            if (typeof baseClasses[className] !== 'function') {
               throw new Error();
             }
           } catch (e) {
             // Out of luck, found nothing.
-            throw new Error("No such base class: " + className);
+            throw new Error('No such base class: ' + className);
           }
           break;
       }
@@ -189,7 +189,7 @@ Thywill.getBaseClass = (function () {
 //-----------------------------------------------------------
 
 /**
- * Redis clients from the "redis" package can emit "end" events and then
+ * Redis clients from the 'redis' package can emit 'end' events and then
  * silently block on all future method calls. This happens if the Redis server
  * has a client timeout set, but can happen intermittently even without that
  * being the case. The Redis client should reconnect, but sometimes doesn't -
@@ -201,7 +201,7 @@ Thywill.getBaseClass = (function () {
  * This function ensures that a Redis client will be replaced if this happens.
  *
  * @param {RedisClient} client
- *   A RedisClient instances from the "redis" package.
+ *   A RedisClient instance from the 'redis' package.
  */
 p.protectRedisClient = function (client) {
   if (client.protectedByThywill) {
@@ -214,7 +214,7 @@ p.protectRedisClient = function (client) {
   // subscriptions without relying on existing client internals.
   var psubscribe = function () {
     for (var i = 0, l = arguments.length; i < l; i++) {
-      if (typeof arguments[i] === "string") {
+      if (typeof arguments[i] === 'string') {
         this._psubscriptions[arguments[i]] = true;
       }
     }
@@ -222,7 +222,7 @@ p.protectRedisClient = function (client) {
   };
   var punsubscribe = function () {
     for (var i = 0, l = arguments.length; i < l; i++) {
-      if (typeof arguments[i] === "string") {
+      if (typeof arguments[i] === 'string') {
         delete this._psubscriptions[arguments[i]];
       }
     }
@@ -230,7 +230,7 @@ p.protectRedisClient = function (client) {
   };
   var subscribe = function () {
     for (var i = 0, l = arguments.length; i < l; i++) {
-      if (typeof arguments[i] === "string") {
+      if (typeof arguments[i] === 'string') {
         this._subscriptions[arguments[i]] = true;
       }
     }
@@ -238,7 +238,7 @@ p.protectRedisClient = function (client) {
   };
   var unsubscribe = function () {
     for (var i = 0, l = arguments.length; i < l; i++) {
-      if (typeof arguments[i] === "string") {
+      if (typeof arguments[i] === 'string') {
         delete this._subscriptions[arguments[i]];
       }
     }
@@ -261,7 +261,7 @@ p.protectRedisClient = function (client) {
   client.unsubscribe = unsubscribe;
 
   var self = this;
-  var redis = require("redis");
+  var redis = require('redis');
   function replace (client) {
     var subscriptions = Object.keys(client._subscriptions);
     var psubscriptions = Object.keys(client._psubscriptions);
@@ -273,16 +273,16 @@ p.protectRedisClient = function (client) {
 
     // Resubscribe where needed.
     if (subscriptions.length) {
-      self.log.debug("Resubscribing Redis client:" + subscriptions);
+      self.log.debug('Resubscribing Redis client:' + subscriptions);
       client.subscribe.apply(client, subscriptions);
     }
     if (psubscriptions.length) {
-      self.log.debug("Resubscribing Redis client to patterns:" + subscriptions);
+      self.log.debug('Resubscribing Redis client to patterns:' + subscriptions);
       client.psubscribe.apply(client, psubscriptions);
     }
   }
-  client.once("end", function () {
-    self.log.debug("Replacing Redis connection on end.");
+  client.once('end', function () {
+    self.log.debug('Replacing Redis connection on end.');
     replace(client);
   });
 };
@@ -293,7 +293,7 @@ p.protectRedisClient = function (client) {
  * to privileged ports and then downgraded on completion of setup.
  */
 p.getFinalUid = function () {
-  if (process.platform === "win32") {
+  if (process.platform === 'win32') {
     return undefined;
   }
 
@@ -310,7 +310,7 @@ p.getFinalUid = function () {
  * to privileged ports and then downgraded on completion of setup.
  */
 p.getFinalGid = function () {
-  if (process.platform === "win32") {
+  if (process.platform === 'win32') {
     return undefined;
   }
 
@@ -336,7 +336,7 @@ p.getFinalGid = function () {
  */
 p.startup = function (applications, callback) {
   if (!this.config) {
-    this.announceReady(new Error("Thywill not configured. Use Thywill.launch(config, application, callback) to create and launch a Thywill instance."));
+    this.announceReady(new Error('Thywill not configured. Use Thywill.launch(config, application, callback) to create and launch a Thywill instance.'));
     return;
   }
 
@@ -365,7 +365,7 @@ p.startup = function (applications, callback) {
  */
 p._convertUserIdAndGroupId = function (callback) {
   // Don't try this on windows, as it's specific to *nix systems.
-  if (process.platform === "win32") {
+  if (process.platform === 'win32') {
     callback();
     return;
   }
@@ -374,9 +374,9 @@ p._convertUserIdAndGroupId = function (callback) {
   var fns = [];
 
   if (this.config.thywill.process && this.config.thywill.process.userId) {
-    if (typeof this.config.thywill.process.userId === "string") {
+    if (typeof this.config.thywill.process.userId === 'string') {
       fns.push(function (asyncCallback) {
-        var childProcess = exec("id -u " + self.config.thywill.process.userId, function (error, stdoutBuffer, stderrBuffer) {
+        var childProcess = exec('id -u ' + self.config.thywill.process.userId, function (error, stdoutBuffer, stderrBuffer) {
           var response = stdoutBuffer.toString().trim();
           if (/^\d+$/.test(response)) {
             self.config.thywill.process.numericUserId = parseInt(response, 10);
@@ -387,9 +387,9 @@ p._convertUserIdAndGroupId = function (callback) {
     }
   }
   if (this.config.thywill.process && this.config.thywill.process.groupId) {
-    if (typeof this.config.thywill.process.groupId === "string") {
+    if (typeof this.config.thywill.process.groupId === 'string') {
       fns.push(function (asyncCallback) {
-        var childProcess = exec("id -u " + self.config.thywill.process.groupId, function (error, stdoutBuffer, stderrBuffer) {
+        var childProcess = exec('id -u ' + self.config.thywill.process.groupId, function (error, stdoutBuffer, stderrBuffer) {
           var response = stdoutBuffer.toString().trim();
           if (/^\d+$/.test(response)) {
             self.config.thywill.process.numericGroupId = parseInt(response, 10);
@@ -412,7 +412,7 @@ p._convertUserIdAndGroupId = function (callback) {
  */
 p._isComponentDefinition = function (componentDefinition) {
   try {
-    if (typeof componentDefinition.implementation.type === "string") {
+    if (typeof componentDefinition.implementation.type === 'string') {
       return true;
     } else {
       return false;
@@ -445,7 +445,7 @@ p._checkDependenciesAndSortComponentNames = function (componentNames) {
     if (dependencies && Array.isArray(dependencies.components)) {
       dependencies.components.forEach(function (dependency, index, array) {
         if (componentNames.indexOf(dependency) === -1) {
-          throw new Error("Dependency " + dependency + " for component " + name + " is not present as a configured component.");
+          throw new Error('Dependency ' + dependency + ' for component ' + name + ' is not present as a configured component.');
         }
         dependencyMap.push([name, dependency]);
       });
@@ -475,7 +475,7 @@ p._initializeComponents = function (callback) {
 
   // Get all the defined components from the configuration.
   var componentNames = Object.keys(this.config).filter(function (name, index, array) {
-    if (name === "thywill") {
+    if (name === 'thywill') {
       return false;
     }
     // See if this looks like a component definition.
@@ -574,7 +574,7 @@ p._initializeComponent = function (componentType, callback) {
   // If there is no instance configured, then set it up. But do we have the
   // necessary configuration?
   if (!this._isComponentDefinition(this.config[componentType])) {
-    callback(new Error("Missing or invalid " + componentType + " component definition in configuration."));
+    callback(new Error('Missing or invalid ' + componentType + ' component definition in configuration.'));
     return;
   }
 
@@ -601,23 +601,23 @@ p._initializeComponent = function (componentType, callback) {
  * There are three types of definition, core, extra, and require:
  *
  * implementation: {
- *   type: "core",
- *   name: "someImplementationName"
+ *   type: 'core',
+ *   name: 'someImplementationName'
  * }
  *
  * implementation: {
- *   type: "extra",
- *   name: "someImplementationName"
+ *   type: 'extra',
+ *   name: 'someImplementationName'
  * }
  *
  * implementation: {
- *   type: "require",
- *   path: "some package name or path/to/desired/implementation",
- *   property: "optionalProperty"
+ *   type: 'require',
+ *   path: 'some package name or path/to/desired/implementation',
+ *   property: 'optionalProperty'
  * }
  *
  * @param {string} componentType
- *   The type name of the component, e.g. "resourceManager".
+ *   The type name of the component, e.g. 'resourceManager'.
  * @param {object} implementation
  *   The implementation description.
  * @return {function}
@@ -629,33 +629,29 @@ p._loadComponentConstructor = function (componentType) {
   var ComponentConstructor;
 
   // Loading a constructor for a core component implementation.
-  if (implementation.type === "core") {
-    componentPath = "./component/" + componentType + "/" + implementation.name;
+  if (implementation.type === 'core') {
+    componentPath = './component/' + componentType + '/' + implementation.name;
     try {
       ComponentConstructor = require(componentPath);
     } catch (e) {
-      var message = "Unsupported core component implementation '" +
-        implementation.name +
-        "' of type '" + componentType +
-        "'. Error: " + e.toString();
+      var message = 'Unsupported core component implementation ' + implementation.name +
+        ' of type ' + componentType + '. Error: ' + e.toString();
       throw new Error(message);
     }
   }
   // Loading a constructor for an extra component implementation.
-  else if (implementation.type === "extra") {
-    componentPath = "../../extra/lib/component/" + componentType + "/" + implementation.name;
+  else if (implementation.type === 'extra') {
+    componentPath = '../../extra/lib/component/' + componentType + '/' + implementation.name;
     try {
       ComponentConstructor = require(componentPath);
     } catch (e) {
-      var message = "Unsupported extra component implementation '" +
-        implementation.name +
-        "' of type '" + componentType +
-        "'. Error: " + e.toString();
+      var message = 'Unsupported extra component implementation ' + implementation.name +
+        ' of type ' + componentType + '. Error: ' + e.toString();
       throw new Error(message);
     }
   }
   // Loading a constructor for a component implementation provided by another package.
-  else if (implementation.type === "require") {
+  else if (implementation.type === 'require') {
     try {
       // Optionally, the constructor is in a property of this package export.
       if (implementation.property) {
@@ -664,21 +660,19 @@ p._loadComponentConstructor = function (componentType) {
         ComponentConstructor = require(implementation.path);
       }
     } catch (e) {
-      var message = "Missing require component implementation '" +
-        implementation.path +
-        "' of type '" + componentType +
-        "'. Error: " + e.toString();
+      var message = 'Missing require component implementation ' + implementation.name +
+        ' of type ' + componentType + '. Error: ' + e.toString();
       throw new Error(message);
     }
   }
   // Not a valid type of implementation declaration.
   else {
-    throw new Error("Invalid implementation type '" + implementation.type + "' for " + componentType + " component definition.");
+    throw new Error('Invalid implementation type ' + implementation.type + ' for ' + componentType + ' component definition.');
   }
 
   // Did we get a function? I hope so.
-  if (typeof ComponentConstructor !== "function") {
-    throw new Error("Component implementation definition for " + componentType + " did not yield a constructor function.");
+  if (typeof ComponentConstructor !== 'function') {
+    throw new Error('Component implementation definition for ' + componentType + ' did not yield a constructor function.');
   }
 
   return ComponentConstructor;

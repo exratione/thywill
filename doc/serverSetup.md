@@ -64,7 +64,7 @@ Node User Permissions
 
 Depending on what you want to do with Node.js (e.g. bind to privileged
 ports < 1024), you may want to allow the node user to be able to use sudo. In
-Ubuntu, add a file "node" into /etc/sudoers.d which should contain the
+Ubuntu, add a file 'node' into /etc/sudoers.d which should contain the
 following line:
 
     node        ALL=(ALL)       NOPASSWD: ALL

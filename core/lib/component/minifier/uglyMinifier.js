@@ -3,13 +3,13 @@
  * UglyMinifier class definition, an ad-hoc minifier for CSS and Javascript.
  */
 
-var crypto = require("crypto");
-var util = require("util");
-var path = require("path");
-var async = require("async");
-var cleanCss = require("clean-css");
-var uglify = require("uglify-js");
-var Thywill = require("thywill");
+var crypto = require('crypto');
+var util = require('util');
+var path = require('path');
+var async = require('async');
+var cleanCss = require('clean-css');
+var uglify = require('uglify-js');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -23,25 +23,25 @@ var Thywill = require("thywill");
 function UglyMinifier() {
   UglyMinifier.super_.call(this);
 }
-util.inherits(UglyMinifier, Thywill.getBaseClass("Minifier"));
+util.inherits(UglyMinifier, Thywill.getBaseClass('Minifier'));
 var p = UglyMinifier.prototype;
 
 //-----------------------------------------------------------
-//"Static" parameters
+//'Static' parameters
 //-----------------------------------------------------------
 
 UglyMinifier.CONFIG_TEMPLATE = {
   jsBaseClientPath: {
     _configInfo: {
-      description: "The base path for client access to merged Javascript resources.",
-      types: "string",
+      description: 'The base path for client access to merged Javascript resources.',
+      types: 'string',
       required: true
     }
   },
   cssBaseClientPath: {
     _configInfo: {
-      description: "The base path for client access to merged CSS resources.",
-      types: "string",
+      description: 'The base path for client access to merged CSS resources.',
+      types: 'string',
       required: true
     }
   }
@@ -96,9 +96,9 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
   // Build a new array of resources in which all of the CSS and JS is
   // merged down into one resource.
   var cssResource = null;
-  var minifiedCss = "";
+  var minifiedCss = '';
   var jsResource = null;
-  var minifiedJs = "";
+  var minifiedJs = '';
 
   // The mapSeries function operates in series on each element in the passed
   // resources array, and builds a new array with the transformed resources.
@@ -129,12 +129,12 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
         if (self.isMinified(resource)) {
           // Have to put in a semicolon at the end because of things like Bootstrap
           // which leave off the trailing semicolon.
-          minifiedJs += resource.toString() + ";\n";
+          minifiedJs += resource.toString() + ';\n';
         } else {
           try {
             // Have to put in a semicolon at the end because of things like Bootstrap
             // which leave off the trailing semicolon.
-            minifiedJs += self._minifyJavascript(resource) + ";\n";
+            minifiedJs += self._minifyJavascript(resource) + ';\n';
           } catch (e) {
             self.thywill.log.error(e);
           }
@@ -156,11 +156,11 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
         }
 
         if (self.isMinified(resource)) {
-          minifiedCss += resource.toString() + "\n";
+          minifiedCss += resource.toString() + '\n';
         } else {
           try {
             // CSS minification.
-            minifiedCss += self._minifyCss(resource) + "\n";
+            minifiedCss += self._minifyCss(resource) + '\n';
           } catch (e) {
             self.thywill.log.error(e);
           }
@@ -186,14 +186,14 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
       var md5;
       if (jsResource) {
         jsResource.buffer = new Buffer(minifiedJs, jsResource.encoding);
-        md5 = crypto.createHash("md5").update(minifiedJs).digest("hex");
-        jsResource.clientPath = self.config.jsBaseClientPath + "/" + md5 + ".min.js";
+        md5 = crypto.createHash('md5').update(minifiedJs).digest('hex');
+        jsResource.clientPath = self.config.jsBaseClientPath + '/' + md5 + '.min.js';
         addedResources.push(jsResource);
       }
       if (cssResource) {
         cssResource.buffer = new Buffer(minifiedCss, cssResource.encoding);
-        md5 = crypto.createHash("md5").update(minifiedCss).digest("hex");
-        cssResource.clientPath = self.config.cssBaseClientPath + "/" + md5 + ".min.css";
+        md5 = crypto.createHash('md5').update(minifiedCss).digest('hex');
+        cssResource.clientPath = self.config.cssBaseClientPath + '/' + md5 + '.min.css';
         addedResources.push(cssResource);
       }
 
@@ -217,11 +217,11 @@ p.minifyResources = function (resources, minifyJavascript, minifyCss, callback) 
  *   Return minimized Javascript code.
  */
 p._minifyJavascript = function (resource) {
-  var code = "";
+  var code = '';
   if (resource.buffer && resource.encoding) {
     code = resource.buffer.toString(resource.encoding);
   } else {
-    this.thywill.log.error(new Error("Trying to minify Javascript resource that is missing either its buffer or encoding: " + resource.clientPath));
+    this.thywill.log.error(new Error('Trying to minify Javascript resource that is missing either its buffer or encoding: ' + resource.clientPath));
   }
 
   // Parse code and get the initial AST.
@@ -243,11 +243,11 @@ p._minifyJavascript = function (resource) {
  *   Return minimized CSS.
  */
 p._minifyCss = function(resource) {
-  var css = "";
+  var css = '';
   if (resource.buffer && resource.encoding) {
     css = resource.buffer.toString(resource.encoding);
   } else {
-    this.thywill.log.error(new Error("Trying to minify Javascript resource that is missing either its buffer or encoding: " + resource.clientPath));
+    this.thywill.log.error(new Error('Trying to minify Javascript resource that is missing either its buffer or encoding: ' + resource.clientPath));
   }
   css = this._updateCssUrls(css, resource.clientPath);
   return cleanCss.process(css);
@@ -265,9 +265,9 @@ p._minifyCss = function(resource) {
  *   CSS with altered url() paths.
  */
 p._updateCssUrls = function (css, clientPath) {
-  return css.replace(/url\("?'?([^\/)"'][^)"']+)'?"?\)/g, function (match, url) {
+  return css.replace(/url\("?'?([^\/)"'][^)"']+)"?'?\)/g, function (match, url) {
     url = path.join(path.dirname(clientPath), url);
-    return "url(" + url + ")";
+    return 'url(' + url + ')';
   });
 };
 

@@ -3,14 +3,14 @@
  * Chat class definition, a trivial example application.
  */
 
-var crypto = require("crypto");
-var util = require("util");
-var path = require("path");
-var fs = require("fs");
+var crypto = require('crypto');
+var util = require('util');
+var path = require('path');
+var fs = require('fs');
 
-var async = require("async");
-var Thywill = require("thywill");
-var bootstrapManifest = require("./bootstrapManifest");
+var async = require('async');
+var Thywill = require('thywill');
+var bootstrapManifest = require('./bootstrapManifest');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -41,7 +41,7 @@ function Chat (id, config) {
   Chat.super_.call(this, id);
   this.config = config;
 }
-util.inherits(Chat, Thywill.getBaseClass("Application"));
+util.inherits(Chat, Thywill.getBaseClass('Application'));
 var p = Chat.prototype;
 
 //-----------------------------------------------------------
@@ -54,7 +54,7 @@ var p = Chat.prototype;
 p._defineBootstrapResources = function (callback) {
   var self = this;
   // Text encoding throughout.
-  var encoding = "utf8";
+  var encoding = 'utf8';
 
   // An array of functions load up bootstrap resources.
   var fns = [
@@ -66,20 +66,20 @@ p._defineBootstrapResources = function (callback) {
     // as a template.
     function (asyncCallback) {
       // Load the file.
-      var originFilePath = path.resolve(__dirname, "../client/js/chatClient.js");
+      var originFilePath = path.resolve(__dirname, '../client/js/chatClient.js');
       var data = fs.readFileSync(originFilePath, encoding);
       // A little templating to insert the application ID.
       data = self.thywill.templateEngine.render(data, {
         applicationId: self.id,
-        uiTemplateId: "chat-template-ui",
-        messageTemplateId: "chat-template-message",
-        disconnectMessageTemplateId: "chat-template-disconnect-message",
-        reconnectMessageTemplateId: "chat-template-reconnect-message",
-        channelTemplateId: "chat-template-channel"
+        uiTemplateId: 'chat-template-ui',
+        messageTemplateId: 'chat-template-message',
+        disconnectMessageTemplateId: 'chat-template-disconnect-message',
+        reconnectMessageTemplateId: 'chat-template-reconnect-message',
+        channelTemplateId: 'chat-template-channel'
       });
       // Create and store the resource.
       var resource = self.thywill.resourceManager.createResource(data, {
-        clientPath: "/chat/js/chatClient.js",
+        clientPath: '/chat/js/chatClient.js',
         encoding: encoding,
         originFilePath: originFilePath,
         weight: 50
@@ -94,7 +94,7 @@ p._defineBootstrapResources = function (callback) {
  * @see Application#_setup
  */
 p._setup = function (callback) {
-  this.queueKey = this.config.redis.prefix + "queue";
+  this.queueKey = this.config.redis.prefix + 'queue';
   callback(this.NO_ERRORS);
 };
 
@@ -111,16 +111,16 @@ p.receivedFromClient = function (client, message) {
 
   // This is a chat message for the channel that this user is joined to.
   // {
-  //   action: "message"
+  //   action: 'message'
   //   // The typed text message.
   //   message: string
   // }
-  if (data.action === "message") {
+  if (data.action === 'message') {
     this.publishMessageToCurrentChannel(client, message);
   }
   // This user kicked the current chat partner.
-  else if (data.action === "kick") {
-    this.thywill.log.debug("Session " + client.getSessionId() + " kicked its chat partner.");
+  else if (data.action === 'kick') {
+    this.thywill.log.debug('Session ' + client.getSessionId() + ' kicked its chat partner.');
     this.unpairClientSessionsViaKick(client.getSessionId(), function (error) {
       if (error) {
         self.thywill.log.error(error);
@@ -128,8 +128,8 @@ p.receivedFromClient = function (client, message) {
     });
   }
   // The client is looking for a chat partner.
-  else if (data.action === "findPartner") {
-    this.thywill.log.debug("Session " + client.getSessionId() + " requests a new chat partner.");
+  else if (data.action === 'findPartner') {
+    this.thywill.log.debug('Session ' + client.getSessionId() + ' requests a new chat partner.');
     this.checkQueue(client.getSessionId(), function (error) {
       if (error) {
         self.thywill.log.error(error);
@@ -156,7 +156,7 @@ p.publishMessageToCurrentChannel = function (client, message) {
     // Should only be one channel we're sending to here.
     if (channelIds.length) {
       self.sendToChannel(channelIds[0], {
-        action: "message",
+        action: 'message',
         message: message.getData().message
       });
     }
@@ -185,7 +185,7 @@ p.unpairClientSessionsViaKick = function (sessionId, callback) {
         if (!error) {
           // If there are no channels, why are we here? Get out by calling the main callback.
           if (!channelIds.length) {
-            self.thywill.log.warn("No channel when processing a kick issued by session:" + sessionId);
+            self.thywill.log.warn('No channel when processing a kick issued by session:' + sessionId);
             callback();
             return;
           } else {
@@ -211,7 +211,7 @@ p.unpairClientSessionsViaKick = function (sessionId, callback) {
     // Send out the kick notices.
     sendKickMessages: function (asyncCallback) {
       var outgoingData = {
-        action: "kicked"
+        action: 'kicked'
       };
       sessionIds.forEach(function (id, index, array) {
         self.sendToSession(id, outgoingData);
@@ -234,12 +234,12 @@ p.unpairClientSessionsViaKick = function (sessionId, callback) {
  */
 p.pairClientSessions = function (localSessionId, otherSessionId, callback) {
   var self = this;
-  this.thywill.log.debug("Chat: Pairing " + localSessionId + " with " + otherSessionId);
+  this.thywill.log.debug('Chat: Pairing ' + localSessionId + ' with ' + otherSessionId);
 
   // Create a channel and add these sessions to it. Ensure the channel name
   // is the same whichever way around the two sessions are.
   var str = [localSessionId, otherSessionId].sort().join();
-  var channelId = crypto.createHash("md5").update(str).digest("hex");
+  var channelId = crypto.createHash('md5').update(str).digest('hex');
   this.thywill.channelManager.addSessionIds(channelId, [localSessionId, otherSessionId], function (error) {
     if (error) {
       self.thywill.log.error(error);
@@ -260,7 +260,7 @@ p.pairClientSessions = function (localSessionId, otherSessionId, callback) {
  */
 p.setClientToChat = function (sessionId, channelId) {
   this.sendToSession(sessionId, {
-    action: "startChat",
+    action: 'startChat',
     channelId: channelId
   });
 };
@@ -353,7 +353,7 @@ p.notifyOfReconnectionIfNecessary = function (channelId, sessionId) {
     // Tell the other client session about the reconnection by this session.
     informOtherClient: function (asyncCallback) {
       var outgoingData = {
-        action: "reconnected"
+        action: 'reconnected'
       };
       sessionIds.forEach(function (id, index, array) {
         self.sendToSession(id, outgoingData);
@@ -382,13 +382,13 @@ p.connection = function (client) {
     } else if (channelIds.length) {
       // The channelManager will ensure that this client connection is
       // resubscribed to receive messages via the channel.
-      self.thywill.log.debug("Chat: Client session " + sessionId + " connected, already has a chat channel: " + channelIds[0]);
+      self.thywill.log.debug('Chat: Client session ' + sessionId + ' connected, already has a chat channel: ' + channelIds[0]);
       // But we have to tell the client that the chat is on.
       self.setClientToChat(sessionId, channelIds[0]);
       // Notify other side of the conversation of a reconnection.
       self.notifyOfReconnectionIfNecessary(channelIds[0], sessionId);
     } else {
-      self.thywill.log.debug("Chat: Client session " + sessionId + " connected, needs to be given a chat channel.");
+      self.thywill.log.debug('Chat: Client session ' + sessionId + ' connected, needs to be given a chat channel.');
       // See if we can pair this client up with another one.
       self.checkQueue(sessionId, function (error) {
         if (error) {
@@ -417,13 +417,13 @@ p.disconnection = function (client) {
         if (error) {
           asyncCallback(error);
         } else if (!isConnected) {
-          self.thywill.log.debug("Chat: Client session " + sessionId + " disconnected last connection: " + connectionId);
+          self.thywill.log.debug('Chat: Client session ' + sessionId + ' disconnected last connection: ' + connectionId);
           asyncCallback();
         } else {
           // If no error and showing as connected, just end here and don't
           // continue. The user closed one of multiple browser panes and is
           // still connected.
-          self.thywill.log.debug("Chat: Client session " + sessionId + " disconnected one of its established connections: " + connectionId);
+          self.thywill.log.debug('Chat: Client session ' + sessionId + ' disconnected one of its established connections: ' + connectionId);
         }
       });
     },
@@ -457,7 +457,7 @@ p.disconnection = function (client) {
     // Tell the other client session about the disconnection by this session.
     informOtherClient: function (asyncCallback) {
       var outgoingData = {
-        action: "disconnected"
+        action: 'disconnected'
       };
       sessionIds.forEach(function (id, index, array) {
         self.sendToSession(id, outgoingData);

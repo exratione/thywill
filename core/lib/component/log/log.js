@@ -3,8 +3,8 @@
  * Log class definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
+var util = require('util');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -12,15 +12,15 @@ var Thywill = require("thywill");
 
 function Log() {
   Log.super_.call(this);
-  this.componentType = "log";
+  this.componentType = 'log';
   this.levels = [
-    "debug",
-    "info",
-    "warn",
-    "error"
+    'debug',
+    'info',
+    'warn',
+    'error'
   ];
 }
-util.inherits(Log, Thywill.getBaseClass("Component"));
+util.inherits(Log, Thywill.getBaseClass('Component'));
 var p = Log.prototype;
 
 //-----------------------------------------------------------
@@ -28,16 +28,16 @@ var p = Log.prototype;
 //-----------------------------------------------------------
 
 p.debug = function (message) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 p.info = function (message) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 p.warn = function (message) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 p.error = function (message) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 //-----------------------------------------------------------

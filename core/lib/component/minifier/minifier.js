@@ -3,8 +3,8 @@
  * Minifier class definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
+var util = require('util');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -16,9 +16,9 @@ var Thywill = require("thywill");
  */
 function Minifier() {
   Minifier.super_.call(this);
-  this.componentType = "minify";
+  this.componentType = 'minify';
 }
-util.inherits(Minifier, Thywill.getBaseClass("Component"));
+util.inherits(Minifier, Thywill.getBaseClass('Component'));
 var p = Minifier.prototype;
 
 
@@ -32,11 +32,11 @@ var p = Minifier.prototype;
 p._getDependencies = function () {
   return {
     components: [
-      "log",
-      "cluster",
-      "cacheManager",
-      "resourceManager",
-      "templateEngine"
+      'log',
+      'cluster',
+      'cacheManager',
+      'resourceManager',
+      'templateEngine'
     ]
   };
 };
@@ -63,7 +63,7 @@ p.isMinified = function (resource) {
  *   The path with minified name.
  */
 p.generateMinifiedClientPath = function (clientPath) {
-  return clientPath.replace(/\.(\w+)$/, ".min.$1", "i");
+  return clientPath.replace(/\.(\w+)$/, '.min.$1', 'i');
 };
 
 //-----------------------------------------------------------
@@ -82,7 +82,7 @@ p.generateMinifiedClientPath = function (clientPath) {
  *   not be minified.
  */
 p.minifyResource = function (resource, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -108,7 +108,7 @@ p.minifyResource = function (resource, callback) {
  *   this function call, but not stored anywhere yet.
  */
 p.minifyResources = function(resources, minifyJavascript, minifyCSS, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 //-----------------------------------------------------------

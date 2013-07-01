@@ -3,9 +3,9 @@
  * EJSTemplateEngine class definition, a template implementation.
  */
 
-var ejs = require("ejs");
-var util = require("util");
-var Thywill = require("thywill");
+var ejs = require('ejs');
+var util = require('util');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -19,11 +19,11 @@ var Thywill = require("thywill");
 function EJSTemplateEngine() {
   EJSTemplateEngine.super_.call(this);
 }
-util.inherits(EJSTemplateEngine, Thywill.getBaseClass("TemplateEngine"));
+util.inherits(EJSTemplateEngine, Thywill.getBaseClass('TemplateEngine'));
 var p = EJSTemplateEngine.prototype;
 
 //-----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 //-----------------------------------------------------------
 
 EJSTemplateEngine.CONFIG_TEMPLATE = null;

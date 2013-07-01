@@ -3,17 +3,17 @@
  * Class definition for the SocketIO-based clientInterface implementation.
  */
 
-var util = require("util");
-var fs = require("fs");
-var urlHelpers = require("url");
-var pathHelpers = require("path");
-var async = require("async");
-var handlebars = require("handlebars");
-var io = require("socket.io");
-var send = require("send");
-var Thywill = require("thywill");
-var Message = require("./message");
-var Client = require("./client");
+var util = require('util');
+var fs = require('fs');
+var urlHelpers = require('url');
+var pathHelpers = require('path');
+var async = require('async');
+var handlebars = require('handlebars');
+var io = require('socket.io');
+var send = require('send');
+var Thywill = require('thywill');
+var Message = require('./message');
+var Client = require('./client');
 
 // -----------------------------------------------------------
 // Class Definition
@@ -43,90 +43,90 @@ function SocketIoClientInterface () {
   // Convenience reference.
   this.templates = SocketIoClientInterface.TEMPLATES;
 }
-util.inherits(SocketIoClientInterface, Thywill.getBaseClass("ClientInterface"));
+util.inherits(SocketIoClientInterface, Thywill.getBaseClass('ClientInterface'));
 var p = SocketIoClientInterface.prototype;
 
 // -----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 // -----------------------------------------------------------
 
 SocketIoClientInterface.CONFIG_TEMPLATE = {
   baseClientPath: {
     _configInfo: {
-      description: "The base path for all Thywill URLs with a leading but no trailing slash. e.g. '/thywill'.",
-      types: "string",
+      description: 'The base path for all Thywill URLs with a leading but no trailing slash. e.g. "/thywill".',
+      types: 'string',
       required: true
     }
   },
   minifyCss: {
     _configInfo: {
-      description: "If true, merge and minify CSS resources.",
-      types: "boolean",
+      description: 'If true, merge and minify CSS resources.',
+      types: 'boolean',
       required: true
     }
   },
   minifyJavascript : {
     _configInfo: {
-      description: "If true, merge and minify Javascript resources.",
-      types: "boolean",
+      description: 'If true, merge and minify Javascript resources.',
+      types: 'boolean',
       required: true
     }
   },
   namespace : {
     _configInfo: {
-      description: "Socket.IO allows connection multiplexing by assigning a namespace; this is generally a good idea.",
-      types: "string",
+      description: 'Socket.IO allows connection multiplexing by assigning a namespace; this is generally a good idea.',
+      types: 'string',
       required: true
     }
   },
   pageEncoding: {
     _configInfo: {
-      description: "The content encoding for the web page provided by the client interface.",
-      types: "string",
+      description: 'The content encoding for the web page provided by the client interface.',
+      types: 'string',
       required: true
     }
   },
   server: {
     server: {
       _configInfo: {
-        description: "An http.Server instance.",
-        types: "object",
+        description: 'An http.Server instance.',
+        types: 'object',
         required: true
       }
     }
   },
   socketClientConfig: {
     _configInfo: {
-      description: "Container object for Socket.IO client configuration parameters.",
-      types: "object",
+      description: 'Container object for Socket.IO client configuration parameters.',
+      types: 'object',
       required: false
     }
   },
   socketConfig: {
     _configInfo: {
-      description: "Container object for environment-specific Socket.IO configuration objects.",
-      types: "object",
+      description: 'Container object for environment-specific Socket.IO configuration objects.',
+      types: 'object',
       required: false
     }
   },
   textEncoding: {
     _configInfo: {
-      description: "The content encoding for text resources.",
-      types: "string",
+      description: 'The content encoding for text resources.',
+      types: 'string',
       required: true
     }
   },
   upCheckClientPath: {
     _configInfo: {
-      description: "The client path for a page that declares the process running - for use with proxy and monitoring checks.",
-      types: "string",
+      description: 'The client path for a page that declares the process running - for use with proxy and monitoring checks.',
+      types: 'string',
       required: true
     }
   },
   usePubSubForSending: {
     _configInfo: {
-      description: "If true each connection is signed up for its own pub/sub channel and messages are sent that way. This and configuring Socket.IO to use a RedisStore is usually necessary for applications with multiple backend Node.js processes.",
-      types: "boolean",
+      description: 'If true each connection is signed up for its own pub/sub channel and messages are sent that way. This and configuring Socket.IO to use a RedisStore is usually necessary for applications with multiple backend Node.js processes.',
+      types: 'boolean',
       required: true
     }
   }
@@ -140,7 +140,7 @@ SocketIoClientInterface.TEMPLATES = {
     '  </style>',
   bootstrapJs: '{{#each resources.[application/javascript]}}' +
     '<script type="text/javascript" src="{{{clientPath}}}"></script>\n  {{/each}}',
-  // "this" gives you the template Resource object and calls toString() on it.
+  // 'this' gives you the template Resource object and calls toString() on it.
   bootstrapTemplates: '{{#each resources.[text/template]}}' +
     '<script type="text/template" id="{{{id}}}">\n    {{{this}}}  </script>\n  {{/each}}'
 };
@@ -166,7 +166,7 @@ p._configure = function (thywill, config, callback) {
   this.thywill = thywill;
   this.config = config;
   // Create this once; it'll see a lot of use.
-  this.config.baseClientPathRegExp = new RegExp("^" + this.config.baseClientPath.replace("/", "\\/") + "\\/?");
+  this.config.baseClientPathRegExp = new RegExp('^' + this.config.baseClientPath.replace('/', '\\/') + '\\/?');
 
   // Make sure there's an object present for the <html> and <body> attributes.
   this.config.elementAttributesBody = this.config.elementAttributesBody || {};
@@ -176,12 +176,12 @@ p._configure = function (thywill, config, callback) {
   var name;
   for (name in this.config.elementAttributesBody) {
     if (Array.isArray(this.config.elementAttributesBody[name])) {
-      this.config.elementAttributesBody[name] = this.config.elementAttributesBody[name].join(" ");
+      this.config.elementAttributesBody[name] = this.config.elementAttributesBody[name].join(' ');
     }
   }
   for (name in this.config.elementAttributesHtml) {
     if (Array.isArray(this.config.elementAttributesHtml[name])) {
-      this.config.elementAttributesHtml[name] = this.config.elementAttributesHtml[name].join(" ");
+      this.config.elementAttributesHtml[name] = this.config.elementAttributesHtml[name].join(' ');
     }
   }
 
@@ -192,9 +192,9 @@ p._configure = function (thywill, config, callback) {
   // Task names used internally by this clientInterface implementation.
   this.clusterTask = {
     // Request to subscribe a client if they exist locally.
-    subscribe: "thywill:clientInterface:subscribeClient",
+    subscribe: 'thywill:clientInterface:subscribeClient',
     // Request to unsubscribe a client if they exist locally.
-    unsubscribe: "thywill:clientInterface:unsubscribeClient"
+    unsubscribe: 'thywill:clientInterface:unsubscribeClient'
   };
   // Subscribe a connectionId if it exists locally.
   this.thywill.cluster.on(this.clusterTask.subscribe, function (data) {
@@ -271,12 +271,12 @@ p._setupBootstrapResources = function (callback) {
     // Create a bootstrap Resource for the socket.IO client code. Make sure it's
     // first.
     createSocketIoJSResource: function (asyncCallback) {
-      var path = "../../../../node_modules/socket.io-client/dist/socket.io.min.js";
+      var path = '../../../../node_modules/socket.io-client/dist/socket.io.min.js';
       var originFilePath = pathHelpers.resolve(__dirname, path);
       var data = fs.readFileSync(originFilePath, self.config.textEncoding);
       // Generate a resource.
       var resource = resourceManager.createResource(data, {
-        clientPath: self.config.baseClientPath + "/js/socket.io.js",
+        clientPath: self.config.baseClientPath + '/js/socket.io.js',
         encoding: self.config.textEncoding,
         originFilePath: originFilePath,
         type: resourceManager.types.JAVASCRIPT,
@@ -288,13 +288,13 @@ p._setupBootstrapResources = function (callback) {
     // Create a Resource for the main client-side Thywill Javascript. We are
     // passing in some additional code and values via templating.
     createMainThywillJsResource: function (asyncCallback) {
-      var path = "../../../client/socketIoClientInterface/thywill.js";
+      var path = '../../../client/socketIoClientInterface/thywill.js';
       var originFilePath = pathHelpers.resolve(__dirname, path);
       var data = fs.readFileSync(originFilePath, self.config.textEncoding);
       var thywillTemplate = handlebars.compile(data);
       // Template parameters.
       var params = {
-        messageClass: self.classToCodeString(Message, "  ", "  "),
+        messageClass: self.classToCodeString(Message, '  ', '  '),
         namespace: self.config.namespace,
         config: JSON.stringify({})
       };
@@ -303,7 +303,7 @@ p._setupBootstrapResources = function (callback) {
       }
       // Generate a Resource from the rendered template.
       var resource = resourceManager.createResource(thywillTemplate(params), {
-        clientPath: self.config.baseClientPath + "/js/thywill.js",
+        clientPath: self.config.baseClientPath + '/js/thywill.js',
         encoding: self.config.textEncoding,
         originFilePath: originFilePath,
         type: resourceManager.types.JAVASCRIPT,
@@ -314,9 +314,9 @@ p._setupBootstrapResources = function (callback) {
 
     // Client-side Javascript for the ApplicationInterface.
     createClientInterfaceJsResource: function (asyncCallback) {
-      var path = "../../../client/socketIoClientInterface/socketIoApplicationInterface.js";
+      var path = '../../../client/socketIoClientInterface/socketIoApplicationInterface.js';
       createBootstrapResourceFromFile(path, {
-        clientPath: self.config.baseClientPath + "/js/applicationInterface.js",
+        clientPath: self.config.baseClientPath + '/js/applicationInterface.js',
         encoding: self.config.textEncoding,
         type: resourceManager.types.JAVASCRIPT,
         weight: 1
@@ -385,7 +385,7 @@ p._setupBootstrapResources = function (callback) {
       // do here. This shouldn't happen: every service setup should provide at
       // least one text/html page as a bootstrap Resource.
       if (!resourcesByType[resourceManager.types.HTML]) {
-        self.thywill.log.warn("No text/html bootstrap Resource is defined. There should be at least one to act as the landing page.");
+        self.thywill.log.warn('No text/html bootstrap Resource is defined. There should be at least one to act as the landing page.');
         asyncCallback();
         return;
       }
@@ -414,7 +414,7 @@ p._setupBootstrapResources = function (callback) {
 
     // Create a trivial resource to be used for up-checks by a proxy server.
     createUpCheckResource: function (asyncCallback) {
-      var resource = new Buffer ("{ alive: true }", self.config.textEncoding);
+      var resource = new Buffer ('{ alive: true }', self.config.textEncoding);
       resource = resourceManager.createResource(resource, {
         clientPath: self.config.baseClientPath + self.config.upCheckClientPath,
         encoding: self.config.textEncoding,
@@ -439,7 +439,7 @@ p._setHttpServerToServeResources = function () {
 
   // Remove all existing listeners from the server, while keeping a copy of
   // them.
-  this.serverListeners = this.config.server.server.listeners("request").splice(0);
+  this.serverListeners = this.config.server.server.listeners('request').splice(0);
   this.config.server.server.removeAllListeners('request');
 
   /**
@@ -452,7 +452,7 @@ p._setHttpServerToServeResources = function () {
   }
 
   // Set our own listener to manage resource requests.
-  this.config.server.server.on("request", function (req, res) {
+  this.config.server.server.on('request', function (req, res) {
     // Is this request in the right base path?
     if (!req.url.match(self.config.baseClientPathRegExp)) {
       passToOtherListeners(req, res);
@@ -485,7 +485,7 @@ p._initializeSocketIo = function () {
   // configuration is provided in the configuration object. These
   // configuration properties will override the general ones, but will
   // only be used if the NODE_ENV environment variable matches the
-  // environmentName - e.g. "production", "development", etc.
+  // environmentName - e.g. 'production', 'development', etc.
   var environmentConfig = this.config.socketConfig[process.env.NODE_ENV];
   if (environmentConfig) {
     for (var property in environmentConfig) {
@@ -495,7 +495,7 @@ p._initializeSocketIo = function () {
 
   // Tell socket.io what to do when a connection starts - this will kick off the
   // necessary setup for an ongoing connection with a client.
-  this.socketFactory.of(this.config.namespace).on("connection", function (socket) {
+  this.socketFactory.of(this.config.namespace).on('connection', function (socket) {
     self.initializeNewSocketConnection(socket);
   });
 };
@@ -526,9 +526,9 @@ p.initializeNewSocketConnection = function (socket) {
   /**
    * A message arrives and the raw data object from Socket.IO code is passed in.
    */
-  socket.on("fromClient", function (applicationId, rawMessage) {
-    if (!applicationId || !rawMessage || typeof rawMessage !== "object") {
-      self.thywill.log.debug("Invalid message emit arguments from connection: " + data.connectionId + " for application " + applicationId + " with contents: " + JSON.stringify(arguments));
+  socket.on('fromClient', function (applicationId, rawMessage) {
+    if (!applicationId || !rawMessage || typeof rawMessage !== 'object') {
+      self.thywill.log.debug('Invalid message emit arguments from connection: ' + data.connectionId + ' for application ' + applicationId + ' with contents: ' + JSON.stringify(arguments));
       return;
     }
     var message = new Message(rawMessage.data, rawMessage._);
@@ -541,7 +541,7 @@ p.initializeNewSocketConnection = function (socket) {
       });
       self.emit(self.events.FROM_CLIENT, client, applicationId, message);
     } else {
-      self.thywill.log.debug("Empty or broken message received from connection: " + data.connectionId + " for application " + applicationId + " with contents: " + JSON.stringify(rawMessage));
+      self.thywill.log.debug('Empty or broken message received from connection: ' + data.connectionId + ' for application ' + applicationId + ' with contents: ' + JSON.stringify(rawMessage));
     }
   });
 
@@ -549,7 +549,7 @@ p.initializeNewSocketConnection = function (socket) {
    * The socket disconnects. Note that in practice this event is unreliable -
    * it works nearly all of the time, but not all of the time.
    */
-  socket.on("disconnect", function() {
+  socket.on('disconnect', function() {
     // Don't pass the session from the data, as it'll be out of date.
     var client = new Client({
       connectionId: data.connectionId,
@@ -561,8 +561,8 @@ p.initializeNewSocketConnection = function (socket) {
   // Socket.ioconnections will try to reconnect automatically if configured
   // to do so, and emit this event on successful reconnection.
   /*
-  socket.on("reconnect", function() {
-    // Do nothing here, as a reconnection also emits "connect", and so it'll
+  socket.on('reconnect', function() {
+    // Do nothing here, as a reconnection also emits 'connect', and so it'll
     // be handled. This code is left as a reminder that this happens.
   });
   */
@@ -609,18 +609,18 @@ p.handleResourceRequest = function (req, res, error, resource) {
     this._send500ResourceResponse(req, res, error);
     return;
   } else if (!resource) {
-    this._send500ResourceResponse(req, res, new Error("Missing resource."));
+    this._send500ResourceResponse(req, res, new Error('Missing resource.'));
     return;
   }
 
   if (resource.isInMemory()) {
-    res.setHeader("Content-Type", resource.type);
+    res.setHeader('Content-Type', resource.type);
     // TODO: Using the buffer length is only going to be correct if people
     // always use right-sized buffers for the content they contain.
-    res.setHeader("Content-Length", resource.buffer.length);
+    res.setHeader('Content-Length', resource.buffer.length);
     res.end(resource.buffer);
   } else if (resource.isPiped()) {
-    res.setHeader("Content-Type", resource.type);
+    res.setHeader('Content-Type', resource.type);
     // Define an error handler.
     var errorHandler = function (error) {
       self.thywill.log.error(error);
@@ -629,16 +629,16 @@ p.handleResourceRequest = function (req, res, error, resource) {
       // TODO: maxage
       //.maxage(options.maxAge || 0)
       // Add an error handler.
-      .on("error", errorHandler)
+      .on('error', errorHandler)
       // And remove the error handler once done.
-      .on("finish", function () {
-        req.socket.removeListener("error", errorHandler);
+      .on('finish', function () {
+        req.socket.removeListener('error', errorHandler);
       })
       .pipe(res);
   } else {
     // This resource is probably not set up correctly. It should either have
     // data in memory or be set up to be piped.
-    this._send500ResourceResponse(req, res, new Error("Resource incorrectly configured: " + req.path));
+    this._send500ResourceResponse(req, res, new Error('Resource incorrectly configured: ' + req.path));
   }
 };
 
@@ -656,7 +656,7 @@ p._send500ResourceResponse = function (req, res, error) {
   // TODO: better error responses, actual HTML would be nice.
   this.thywill.log.error(error);
   res.statusCode = 500;
-  res.end("Error loading resource.");
+  res.end('Error loading resource.');
 };
 
 /**
@@ -671,11 +671,11 @@ p.sendToConnection = function (applicationId, client, message) {
   message = this._wrapAsMessage(message);
   var destinationSocket = this.socketFactory.of(this.config.namespace).socket(connectionId);
   if (destinationSocket) {
-    destinationSocket.emit("toClient", applicationId, message);
+    destinationSocket.emit('toClient', applicationId, message);
   } else if (this.config.usePubSubForSending) {
-    this.socketFactory.of(this.config.namespace).to(connectionId).emit("toClient", applicationId, message);
+    this.socketFactory.of(this.config.namespace).to(connectionId).emit('toClient', applicationId, message);
   } else {
-    this.thywill.log.debug("No socket connected to this process with id: " + connectionId);
+    this.thywill.log.debug('No socket connected to this process with id: ' + connectionId);
   }
 };
 
@@ -686,7 +686,7 @@ p.sendToSession = function (applicationId, client, message) {
   // ClientTracker functionality is required to send to a session, as we
   // need to determine all of the associated connections.
   if (!this.thywill.clientTracker) {
-    this.thywill.log.error(new Error("Sending a message to all the connections for a session requires a clientTracker component."));
+    this.thywill.log.error(new Error('Sending a message to all the connections for a session requires a clientTracker component.'));
     return;
   }
   var sessionId = this._clientOrSessionIdToSessionId(client);
@@ -723,7 +723,7 @@ p.sendToChannel = function (applicationId, channelId, message, excludeClients) {
       s = s.except(self._clientOrConnectionIdToConnectionId(client));
     });
   }
-  s.emit("toClient", applicationId, message);
+  s.emit('toClient', applicationId, message);
 };
 
 /**
@@ -950,24 +950,24 @@ p._clientOrSessionIdToSessionId = function (clientOrSessionId) {
  * @param {function} classFunction
  *   A class definition.
  * @param {string} [indent]
- *   Indent string, e.g. two spaces: "  "
+ *   Indent string, e.g. two spaces: '  '
  * @param {string} [extraIndent]
  *   An additional indent to apply to all rows to get them to line up with
- *   whatever output they are put into. e.g. an extra two spaces "  ";
+ *   whatever output they are put into. e.g. an extra two spaces '  ';
  * @return {string}
  *   Javascript code.
  */
 p.classToCodeString = function (classFunction, indent, extraIndent) {
-  indent = indent || "  ";
-  var code = "";
+  indent = indent || '  ';
+  var code = '';
   if (extraIndent) {
     code += extraIndent;
   }
   code += classFunction.toString();
-  code += "\n\n";
+  code += '\n\n';
 
   function getPropertyCode(property) {
-    if (typeof property === "function") {
+    if (typeof property === 'function') {
       return property.toString();
     } else {
       return JSON.stringify(property, null, indent);
@@ -976,23 +976,23 @@ p.classToCodeString = function (classFunction, indent, extraIndent) {
 
   var prop, propCode;
 
-  // "Static" items.
+  // 'Static' items.
   for (prop in classFunction) {
     propCode = getPropertyCode(classFunction[prop]);
-    code += classFunction.name + "." + prop + " = " + propCode + ";\n";
+    code += classFunction.name + '.' + prop + ' = ' + propCode + ';\n';
   }
 
-  code += "\n";
+  code += '\n';
 
   // Prototype functions.
   for (prop in classFunction.prototype) {
     propCode = getPropertyCode(classFunction.prototype[prop]);
-    code += classFunction.name + ".prototype." + prop + " = " + propCode + ";\n\n";
+    code += classFunction.name + '.prototype.' + prop + ' = ' + propCode + ';\n\n';
   }
 
   // Add the extraIndent.
   if (extraIndent) {
-    code = code.replace(/\n/g, "\n" + extraIndent);
+    code = code.replace(/\n/g, '\n' + extraIndent);
   }
 
   return code;

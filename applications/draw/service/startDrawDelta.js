@@ -4,4 +4,4 @@
  * Draw example application.
  */
 
-require("../lib/service").start(10085, "delta");
+require('../lib/service').start(10085, 'delta');

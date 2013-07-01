@@ -3,8 +3,8 @@
  * CacheManager class definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
+var util = require('util');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -16,9 +16,9 @@ var Thywill = require("thywill");
  */
 function CacheManager() {
   CacheManager.super_.call(this);
-  this.componentType = "cacheManager";
+  this.componentType = 'cacheManager';
 }
-util.inherits(CacheManager, Thywill.getBaseClass("Component"));
+util.inherits(CacheManager, Thywill.getBaseClass('Component'));
 var p = CacheManager.prototype;
 
 //-----------------------------------------------------------
@@ -30,7 +30,7 @@ var p = CacheManager.prototype;
  */
 p._getDependencies = function () {
   return {
-    components: ["log", "cluster"]
+    components: ['log', 'cluster']
   };
 };
 
@@ -50,7 +50,7 @@ p._getDependencies = function () {
  *   A Cache instance.
  */
 p.createCache = function (id, size) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -60,7 +60,7 @@ p.createCache = function (id, size) {
  *   An identifier for this cache.
  */
 p.destroyCache = function (id) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -72,7 +72,7 @@ p.destroyCache = function (id) {
  *   A Cache instance.
  */
 p.getCache = function (id) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 //-----------------------------------------------------------

@@ -3,8 +3,8 @@
  * NoCluster class definition.
  */
 
-var util = require("util");
-var Thywill = require("thywill");
+var util = require('util');
+var Thywill = require('thywill');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -20,18 +20,18 @@ var Thywill = require("thywill");
 function NoCluster() {
   NoCluster.super_.call(this);
 }
-util.inherits(NoCluster, Thywill.getBaseClass("Cluster"));
+util.inherits(NoCluster, Thywill.getBaseClass('Cluster'));
 var p = NoCluster.prototype;
 
 //-----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 //-----------------------------------------------------------
 
 NoCluster.CONFIG_TEMPLATE = {
   localClusterMemberId: {
     _configInfo: {
-      description: "The cluster member ID for this process.",
-      types: "string",
+      description: 'The cluster member ID for this process.',
+      types: 'string',
       required: true
     }
   }

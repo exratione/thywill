@@ -8,7 +8,7 @@
  */
 
 (function () {
-  "use strict";
+  'use strict';
 
   /**
    * @class
@@ -55,48 +55,48 @@
   p._listenForConnected = function () {
     var self = this;
     // Initial connection succeeds.
-    Thywill.on("connected", function () {
+    Thywill.on('connected', function () {
       self.connected();
-      self.emit("connected");
+      self.emit('connected');
     });
   };
 
   p._listenForConnectionFailure = function () {
     var self = this;
     // Initial connection failed with timeout.
-    Thywill.on("connectionFailure", function() {
+    Thywill.on('connectionFailure', function() {
       self.connectionFailure();
-      self.emit("connectionFailure");
+      self.emit('connectionFailure');
     });
   };
 
   p._listenForConnecting = function () {
     var self = this;
     // Client is trying to connect or reconnect.
-    Thywill.on("connecting", function (transport_type) {
+    Thywill.on('connecting', function (transport_type) {
       self.connecting();
-      self.emit("connecting");
+      self.emit('connecting');
     });
   };
 
   p._listenForDisconnected = function () {
     var self = this;
     // Client is disconnected.
-    Thywill.on("disconnected", function () {
+    Thywill.on('disconnected', function () {
       self.disconnected();
-      self.emit("disconnected");
+      self.emit('disconnected');
     });
   };
 
   p._listenForReceived = function () {
     var self = this;
     // Message received from the server.
-    Thywill.on("received", function (applicationId, message) {
+    Thywill.on('received', function (applicationId, message) {
       if (applicationId !== self.applicationId) {
         return;
       }
       self.received(message);
-      self.emit("received", message);
+      self.emit('received', message);
     });
   };
 

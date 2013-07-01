@@ -10,7 +10,7 @@
  */
 
 (function () {
-  "use strict";
+  'use strict';
 
   // ------------------------------------------
   // Define a Display application class.
@@ -43,14 +43,14 @@
     // Populate the DOM from the template. Note the values inserted when
     // this client-side Javascript file is itself run through the template
     // engine.
-    this.templates.uiTemplate = Handlebars.compile(jQuery("#{{{uiTemplateId}}}").html());
-    this.templates.textTemplate = Handlebars.compile(jQuery("#{{{textTemplateId}}}").html());
-    this.templates.connectionTemplate = Handlebars.compile(jQuery("#{{{connectionTemplateId}}}").html());
-    jQuery("body").append(this.templates.uiTemplate({
+    this.templates.uiTemplate = Handlebars.compile(jQuery('#{{{uiTemplateId}}}').html());
+    this.templates.textTemplate = Handlebars.compile(jQuery('#{{{textTemplateId}}}').html());
+    this.templates.connectionTemplate = Handlebars.compile(jQuery('#{{{connectionTemplateId}}}').html());
+    jQuery('body').append(this.templates.uiTemplate({
       // Putting this in as JSON.parse rather than just the plain JSON at least
       // means the IDE doesn't flag it as an error.
       clusterMembers: JSON.parse('{{{clusterMembers}}}'),
-      title: "Thywill: Display Application"
+      title: 'Thywill: Display Application'
     }));
   };
 
@@ -59,8 +59,8 @@
    */
   p.uiDisable = function () {
     // Remove all of the displayed data.
-    var data = jQuery(".cluster-member ul").children();
-    data.fadeOut("fast", function () {
+    var data = jQuery('.cluster-member ul').children();
+    data.fadeOut('fast', function () {
       data.remove();
     });
   };
@@ -76,11 +76,11 @@
    * Change the status message.
    */
   p.uiStatus = function (text, className) {
-    var status = jQuery("#status");
+    var status = jQuery('#status');
     var speed = 100;
     status.fadeOut(speed, function () {
       status.html(text)
-        .removeClass("connecting connected disconnected")
+        .removeClass('connecting connected disconnected')
         .addClass(className)
         .fadeIn(speed);
     });
@@ -95,15 +95,15 @@
    *   Text of the message.
    */
   p.displayMessage = function(clusterMemberId, text) {
-    var messages = jQuery("#" + clusterMemberId + " .messages");
+    var messages = jQuery('#' + clusterMemberId + ' .messages');
     var html = this.templates.textTemplate({
-      timestamp: dateFormat(Date.now(), "HH:MM:ss"),
+      timestamp: dateFormat(Date.now(), 'HH:MM:ss'),
       text: text
     });
-    // Convert to DOM. The filter("*") gets rid of newline text nodes, which
+    // Convert to DOM. The filter('*') gets rid of newline text nodes, which
     // cause jQuery issues.
     html = jQuery.parseHTML(html);
-    jQuery(html).filter("*").hide().appendTo(messages).slideDown("fast", function () {
+    jQuery(html).filter('*').hide().appendTo(messages).slideDown('fast', function () {
       messages.scrollTop(messages.height());
     });
   };
@@ -120,18 +120,18 @@
     var self = this;
     // Filter out any already shown.
     connectionIds = connectionIds.filter(function (connectionId, index, array) {
-      return (jQuery("#" + connectionId).length === 0);
+      return (jQuery('#' + connectionId).length === 0);
     });
-    var connections = jQuery("#" + clusterMemberId + " .connections");
+    var connections = jQuery('#' + clusterMemberId + ' .connections');
     var html = connectionIds.map(function (connectionId, index, array) {
       return self.templates.connectionTemplate({
         connectionId: connectionId
       });
-    }).join("\n");
-    // Convert to DOM. The filter("*") gets rid of newline text nodes, which
+    }).join('\n');
+    // Convert to DOM. The filter('*') gets rid of newline text nodes, which
     // cause jQuery issues.
     html = jQuery.parseHTML(html);
-    jQuery(html).filter("*").hide().appendTo("#" + clusterMemberId + " .connections").slideDown("fast", function () {
+    jQuery(html).filter('*').hide().appendTo('#' + clusterMemberId + ' .connections').slideDown('fast', function () {
       connections.scrollTop(connections.height());
     });
   };
@@ -146,10 +146,10 @@
    */
   p.removeConnections = function(clusterMemberId, connectionIds) {
     var selector = connectionIds.map(function (connectionId, index, array) {
-      return "#" + connectionId;
-    }).join(", ");
+      return '#' + connectionId;
+    }).join(', ');
     var selected = jQuery(selector);
-    selected.fadeOut("fast", function () {
+    selected.fadeOut('fast', function () {
       selected.remove();
     });
   };
@@ -176,25 +176,25 @@
     var clusterMemberId;
 
     switch (data.type) {
-      case "connection":
-        this.displayMessage(data.clusterMemberId, data.connectionId + " connected.");
+      case 'connection':
+        this.displayMessage(data.clusterMemberId, data.connectionId + ' connected.');
         this.displayConnections(data.clusterMemberId, [data.connectionId]);
         break;
-      case "connectionList":
+      case 'connectionList':
         for (clusterMemberId in data.connections) {
           this.displayConnections(clusterMemberId, data.connections[clusterMemberId]);
         }
         break;
-      case "disconnection":
-        this.displayMessage(data.clusterMemberId, data.connectionId + " disconnected.");
+      case 'disconnection':
+        this.displayMessage(data.clusterMemberId, data.connectionId + ' disconnected.');
         this.removeConnections(data.clusterMemberId, [data.connectionId]);
         break;
-      case "disconnectionList":
+      case 'disconnectionList':
         for (clusterMemberId in data.connections) {
           this.removeConnections(clusterMemberId, data.connections[clusterMemberId]);
         }
         break;
-      case "text":
+      case 'text':
         this.displayMessage(data.clusterMemberId, data.text);
         break;
     }
@@ -204,35 +204,35 @@
    * @see Thywill.ApplicationInterface#connecting
    */
   p.connecting = function () {
-    this.uiStatus("Connecting...", "connecting");
-    this.log("Client attempting to connect.");
+    this.uiStatus('Connecting...', 'connecting');
+    this.log('Client attempting to connect.');
   };
 
   /**
    * @see Thywill.ApplicationInterface#connected
    */
   p.connected = function () {
-    this.uiStatus("Connected", "connected");
+    this.uiStatus('Connected', 'connected');
     this.uiEnable();
-    this.log("Client connected.");
+    this.log('Client connected.');
   };
 
   /**
    * @see Thywill.ApplicationInterface#connectionFailure
    */
   p.connectionFailure = function () {
-    this.uiStatus("Disconnected", "disconnected");
+    this.uiStatus('Disconnected', 'disconnected');
     this.uiDisable();
-    this.log("Client failed to connect.");
+    this.log('Client failed to connect.');
   };
 
   /**
    * @see Thywill.ApplicationInterface#disconnected
    */
   p.disconnected = function () {
-    this.uiStatus("Disconnected", "disconnected");
+    this.uiStatus('Disconnected', 'disconnected');
     this.uiDisable();
-    this.log("Client disconnected.");
+    this.log('Client disconnected.');
   };
 
   // ----------------------------------------------------------
@@ -242,7 +242,7 @@
   // Create the application instance. The application ID will be populated
   // by the backend via the Handlebars template engine when this Javascript
   // file is prepared as a resource.
-  var app = new DisplayApplication("{{{applicationId}}}");
+  var app = new DisplayApplication('{{{applicationId}}}');
 
   // Initial UI setup.
   jQuery(document).ready(function () {

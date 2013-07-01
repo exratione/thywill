@@ -7,7 +7,7 @@
  * server to be in place.
  */
 
-var config = require("../../serverConfig/thywill/baseThywillConfig");
+var config = require('../../serverConfig/thywill/baseThywillConfig');
 
 // The ports for cluster members to listen on.
 config.thywill.ports = {
@@ -18,11 +18,11 @@ config.thywill.ports = {
 // The cluster implementation is backed by Redis.
 config.cluster = {
   implementation: {
-    type: "core",
-    name: "redisCluster"
+    type: 'core',
+    name: 'redisCluster'
   },
   // The cluster has two members.
-  clusterMemberIds: ["alpha", "beta"],
+  clusterMemberIds: ['alpha', 'beta'],
   communication: {
     publishRedisClient: undefined,
     subscribeRedisClient: undefined
@@ -33,17 +33,17 @@ config.cluster = {
   },
   // Undefined values will be set in the start script.
   localClusterMemberId: undefined,
-  redisPrefix: "test:thywill:cluster:"
+  redisPrefix: 'test:thywill:cluster:'
 };
 
 // Use the Express implementation.
-config.clientInterface.implementation.name = "socketIoExpressClientInterface";
+config.clientInterface.implementation.name = 'socketIoExpressClientInterface';
 // Set the http.Server instance and Express in the start script, not here.
 config.clientInterface.server.app = null;
 config.clientInterface.server.server = null;
 config.clientInterface.sessions = {
-  cookieSecret: "some long random string",
-  cookieKey: "sid",
+  cookieSecret: 'some long random string',
+  cookieKey: 'sid',
   // Will be set in the start script.
   store: undefined
 };
@@ -57,11 +57,11 @@ config.resourceManager = {
   // Here we specify a very trivial resource manager implementation that
   // does little more than keep track of resources in memory.
   implementation: {
-    type: "core",
-    name: "redisResourceManager"
+    type: 'core',
+    name: 'redisResourceManager'
   },
   cacheSize: 100,
-  redisPrefix: "test:thywill:resource:",
+  redisPrefix: 'test:thywill:resource:',
   // This will be set in the start script.
   redisClient: undefined
 };

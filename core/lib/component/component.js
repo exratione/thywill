@@ -3,8 +3,8 @@
  * Component class definition.
  */
 
-var EventEmitter = require("events").EventEmitter;
-var util = require("util");
+var EventEmitter = require('events').EventEmitter;
+var util = require('util');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -16,7 +16,7 @@ var util = require("util");
  */
 function Component() {
   Component.super_.call(this);
-  this.componentType = "component";
+  this.componentType = 'component';
   this.config = null;
   this.ready = false;
   this.readyCallback = null;
@@ -31,7 +31,7 @@ util.inherits(Component, EventEmitter);
 var p = Component.prototype;
 
 //-----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 //-----------------------------------------------------------
 
 /**
@@ -58,21 +58,21 @@ p._announceReady = function (error) {
     this.ready = true;
   }
   var eventName, log;
-  if (this.componentType === "thywill") {
+  if (this.componentType === 'thywill') {
     // Set a suitable event name.
-    eventName = "thywill.ready";
+    eventName = 'thywill.ready';
     log = this.log;
   } else {
-    eventName = "thywill." + this.componentType + ".ready";
+    eventName = 'thywill.' + this.componentType + '.ready';
     log = this.thywill.log;
   }
   // Log if there is a log to log to.
   if (log && !error) {
-    log.info("Initialized component: " + this.componentType);
+    log.info('Initialized component: ' + this.componentType);
   }
   // Emit and invoke the callback.
   this.emit(eventName, error);
-  if (typeof this.readyCallback === "function") {
+  if (typeof this.readyCallback === 'function') {
     this.readyCallback(error);
   }
 };
@@ -98,7 +98,7 @@ p._checkConfiguration = function (config) {
  * {
  *  value1: {
  *    _configInfo: {
- *      types: array or one of "object", "array", "boolean", "string", "number", "integer"
+ *      types: array or one of 'object', 'array', 'boolean', 'string', 'number', 'integer'
  *      required: true or false
  *      allowedValues: array or null
  *    }
@@ -118,7 +118,7 @@ p._checkConfigurationRecursively = function (configObj, templateObj, propertyCha
 
     var thisPropertyChain;
     if (propertyChain) {
-      thisPropertyChain = propertyChain + "." + property;
+      thisPropertyChain = propertyChain + '.' + property;
     } else {
       thisPropertyChain = property;
     }
@@ -141,7 +141,7 @@ p._checkConfigurationRecursively = function (configObj, templateObj, propertyCha
     // Is this property required and/or missing?
     if (configValue === undefined || configValue === null) {
       if (configInfo.required) {
-        this._throwConfigurationError(thisPropertyChain, "required, but missing");
+        this._throwConfigurationError(thisPropertyChain, 'required, but missing');
       } else {
         // Permitted not to exist, so continue on to the next property.
         continue;
@@ -158,7 +158,7 @@ p._checkConfigurationRecursively = function (configObj, templateObj, propertyCha
         return (configValueType === type);
       });
       if (!isValidType) {
-        this._throwConfigurationError(thisPropertyChain, "invalid type, found " + configValueType + " expecting one of [" + configInfo.types + "]");
+        this._throwConfigurationError(thisPropertyChain, 'invalid type, found ' + configValueType + ' expecting one of [' + configInfo.types + ']');
       }
     }
 
@@ -168,7 +168,7 @@ p._checkConfigurationRecursively = function (configObj, templateObj, propertyCha
         return (allowedValue === configValue);
       });
       if (!isAllowed) {
-        this._throwConfigurationError(thisPropertyChain, "invalid value, found " + configValue + " expecting one of [" + configInfo.allowedValues + "]");
+        this._throwConfigurationError(thisPropertyChain, 'invalid value, found ' + configValue + ' expecting one of [' + configInfo.allowedValues + ']');
       }
     }
 
@@ -181,26 +181,26 @@ p._checkConfigurationRecursively = function (configObj, templateObj, propertyCha
  * @param value
  *   Any value.
  * @return {string}
- *   One of: "object", "array", "boolean", "string", "number", "integer",
- *   "undefined", "null", "function".
+ *   One of: 'object', 'array', 'boolean', 'string', 'number', 'integer',
+ *   'undefined', 'null', 'function'.
  */
 p._getType = function (value) {
   var type = typeof value;
-  if (type === "object") {
+  if (type === 'object') {
     if (Array.isArray(value)) {
-      type = "array";
+      type = 'array';
     } else if (value === null) {
-      type = "null";
+      type = 'null';
     }
-  } else if (type === "number") {
+  } else if (type === 'number') {
     if (value % 1 === 0) {
-      type = "integer";
+      type = 'integer';
     }
-  } else if (type === "string") {
+  } else if (type === 'string') {
     if (value.match(/^\d+$/)) {
-      type = "integer";
+      type = 'integer';
     } else if (value.match(/^\d*\.?\d*$/)) {
-      type = "number";
+      type = 'number';
     }
   }
   return type;
@@ -216,7 +216,7 @@ p._getType = function (value) {
  */
 p._throwConfigurationError = function (propertyChain, error) {
   throw new Error(
-    "Configuration error for constructor " + this.constructor.name + " and configuration property " + propertyChain + ": " + error
+    'Configuration error for constructor ' + this.constructor.name + ' and configuration property ' + propertyChain + ': ' + error
   );
 };
 

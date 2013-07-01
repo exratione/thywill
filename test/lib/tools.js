@@ -3,22 +3,22 @@
  * Various utility functions for testing Thywill.
  */
 
-var childProcess = require("child_process");
-var path = require("path");
-var http = require("http");
-var async = require("async");
-var vows = require("vows");
-var assert = require("assert");
-var clone = require("clone");
-var express = require("express");
-var redis = require("redis");
-var Client = require("work-already").Client;
-var MemorySocketStore = require("socket.io/lib/stores/memory");
-var RedisSocketStore = require("socket.io/lib/stores/redis");
-var RedisSessionStore = require("connect-redis")(express);
-var MemorySessionStore = require("connect/lib/middleware/session/memory");
-var Thywill = require("thywill");
-var Message = Thywill.getBaseClass("Message");
+var childProcess = require('child_process');
+var path = require('path');
+var http = require('http');
+var async = require('async');
+var vows = require('vows');
+var assert = require('assert');
+var clone = require('clone');
+var express = require('express');
+var redis = require('redis');
+var Client = require('work-already').Client;
+var MemorySocketStore = require('socket.io/lib/stores/memory');
+var RedisSocketStore = require('socket.io/lib/stores/redis');
+var RedisSessionStore = require('connect-redis')(express);
+var MemorySessionStore = require('connect/lib/middleware/session/memory');
+var Thywill = require('thywill');
+var Message = Thywill.getBaseClass('Message');
 
 
 // ------------------------------------------------------------
@@ -35,7 +35,7 @@ exports.headless = {};
  */
 function createRedisClient () {
   var options = {};
-  var client = redis.createClient(6379, "127.0.0.1", options);
+  var client = redis.createClient(6379, '127.0.0.1', options);
 
   // This is fairly hacky, but needed to exercise the protection code. Create
   // a dummy Thywill instance, stick a dummy log into it, and run the protect
@@ -91,7 +91,7 @@ function setupConfig (baseConfig, options) {
   var port = config.thywill.ports[options.localClusterMemberId];
 
   // If using Express, set it up.
-  if (config.clientInterface.implementation.name === "socketIoExpressClientInterface") {
+  if (config.clientInterface.implementation.name === 'socketIoExpressClientInterface') {
     // Create servers.
     var app = express();
     config.clientInterface.server.app = app;
@@ -123,9 +123,9 @@ function setupConfig (baseConfig, options) {
     // Middleware and routes might be added here or after Thywill launches. Either
     // way is just fine and won't interfere with Thywill's use of Express to serve
     // resources. e.g. adding a catch-all here is acceptable:
-    app.all("*", function (req, res, next) {
+    app.all('*', function (req, res, next) {
       res.statusCode = 404;
-      res.send("No such resource.");
+      res.send('No such resource.');
     });
   }
   // Not using Express, so a vanilla http.Server with no session management is
@@ -157,7 +157,7 @@ function setupConfig (baseConfig, options) {
   // ------------------------------------------------------------
 
   config.cluster.localClusterMemberId = options.localClusterMemberId;
-  if (config.cluster.implementation.name === "redisCluster") {
+  if (config.cluster.implementation.name === 'redisCluster') {
     setupRedisClients();
     config.cluster.communication.publishRedisClient = redisClients.pub;
     config.cluster.communication.subscribeRedisClient = redisClients.sub;
@@ -167,7 +167,7 @@ function setupConfig (baseConfig, options) {
   // Set up resourceManager.
   // ------------------------------------------------------------
 
-  if (config.resourceManager.implementation.name === "redisResourceManager") {
+  if (config.resourceManager.implementation.name === 'redisResourceManager') {
     setupRedisClients();
     config.resourceManager.redisClient = redisClients.other;
   }
@@ -176,7 +176,7 @@ function setupConfig (baseConfig, options) {
   // Set up channelManager.
   // ------------------------------------------------------------
 
-  if (config.channelManager && config.channelManager.implementation.name === "redisChannelManager") {
+  if (config.channelManager && config.channelManager.implementation.name === 'redisChannelManager') {
     setupRedisClients();
     config.channelManager.redisClient = redisClients.other;
   }
@@ -200,11 +200,11 @@ exports.headless.addThywillLaunchBatch = function (suite, options) {
   var config = setupConfig(options.config, options);
 
   suite.addBatch({
-    "Launch Thywill": {
+    'Launch Thywill': {
       topic: function () {
         Thywill.launch(config, null, this.callback);
       },
-      "successful launch": function (error, thywill) {
+      'successful launch': function (error, thywill) {
         assert.isNull(error);
         suite.thywills.push(thywill);
         assert.isTrue(suite.thywills[0] instanceof Thywill);
@@ -238,7 +238,7 @@ exports.headless.addThywillLaunchBatch = function (suite, options) {
  */
 exports.headless.singleInstanceVowsSuite = function (name, options) {
   var suite = vows.describe(name);
-  options.localClusterMemberId = options.localClusterMemberId || "alpha";
+  options.localClusterMemberId = options.localClusterMemberId || 'alpha';
   exports.headless.addThywillLaunchBatch(suite, options);
   return suite;
 };
@@ -259,11 +259,11 @@ exports.headless.clusterVowsSuite = function (name, options) {
   var suite = vows.describe(name);
 
   var optionsAlpha = clone(options);
-  optionsAlpha.localClusterMemberId = "alpha";
+  optionsAlpha.localClusterMemberId = 'alpha';
   exports.headless.addThywillLaunchBatch(suite, optionsAlpha);
 
   var optionsBeta = clone(options);
-  optionsBeta.localClusterMemberId = "beta";
+  optionsBeta.localClusterMemberId = 'beta';
   exports.headless.addThywillLaunchBatch(suite, optionsBeta);
 
   return suite;
@@ -281,7 +281,7 @@ exports.headless.clusterVowsSuite = function (name, options) {
  *   The property that will contain the batch-adding function.
  */
 exports.headless.addBatches = function (suite, name, property) {
-  var fn = require("./" + name)[property];
+  var fn = require('./' + name)[property];
   fn(suite);
 };
 
@@ -321,10 +321,10 @@ exports.application = {};
  */
 function launchApplicationInChildProcess (data, callback) {
   var args = JSON.stringify(data);
-  args = new Buffer(args, "utf8").toString("base64");
+  args = new Buffer(args, 'utf8').toString('base64');
 
   var child = childProcess.fork(
-    path.join(__dirname, "launchApplicationInstance.js"),
+    path.join(__dirname, 'launchApplicationInstance.js'),
     [args],
     {
       // Pass over all of the environment.
@@ -336,38 +336,38 @@ function launchApplicationInChildProcess (data, callback) {
 
   // Helper functions added to the child process instance.
   child.onUnexpectedExit = function (code, signal) {
-    throw new Error("Child process running application terminated with code: " + code);
+    throw new Error('Child process running application terminated with code: ' + code);
   };
   child.shutdown = function () {
-    this.removeListener("exit", this.onUnexpectedExit);
-    this.kill("SIGTERM");
+    this.removeListener('exit', this.onUnexpectedExit);
+    this.kill('SIGTERM');
   };
 
   // Make sure the child process dies along with this parent process insofar
   // as is possible. SIGTERM listener shouldn't be needed here for Vows test
   // processes, but leave it in anyway.
-  process.on("SIGTERM", function () {
+  process.on('SIGTERM', function () {
     child.shutdown();
   });
-  process.on("exit", function () {
+  process.on('exit', function () {
     child.shutdown();
   });
   // Kind of ugly. TODO: replace with Domains or something better.
-  process.once("uncaughtException", function (error) {
+  process.once('uncaughtException', function (error) {
     child.shutdown();
     // If this was the last of the listeners, then rethrow the error.
-    if (process.listeners("uncaughtException").length === 0) {
+    if (process.listeners('uncaughtException').length === 0) {
       throw error;
     }
   });
 
   // If the child process dies, then we have a problem.
-  child.on("exit", child.onUnexpectedExit);
+  child.on('exit', child.onUnexpectedExit);
 
   // Listen for one message from the application child process - used to wait
   // for its Thywill startup to be done.
-  child.once("message", function (message) {
-    if (message === "complete") {
+  child.once('message', function (message) {
+    if (message === 'complete') {
       callback(null, child);
     } else {
       callback(message);
@@ -396,7 +396,7 @@ exports.application.vowsSuitePendingConnections = function (name, options) {
       topic: function () {
         launchApplicationInChildProcess(data, this.callback);
       },
-      "child process launched": function (error, child) {
+      'child process launched': function (error, child) {
         assert.isNull(error);
         assert.isObject(child);
         suite.childProcesses = suite.childProcesses || [];
@@ -405,7 +405,7 @@ exports.application.vowsSuitePendingConnections = function (name, options) {
         suite.childProcessData.push(data);
       }
     };
-    var batchName = "Launch application: " + options.applicationName + " port: " + data.port + " clusterMemberId: " + data.clusterMemberId;
+    var batchName = 'Launch application: ' + options.applicationName + ' port: ' + data.port + ' clusterMemberId: ' + data.clusterMemberId;
     var batch = {};
     batch[batchName] = batchContent;
     suite.addBatch(batch);
@@ -420,22 +420,22 @@ exports.application.vowsSuitePendingConnections = function (name, options) {
       topic: function () {
         return new Client({
           server: {
-            host: "localhost",
+            host: 'localhost',
             port: data.port,
-            protocol: "http"
+            protocol: 'http'
           },
           sockets: {
-            defaultNamespace: "/" + options.applicationName,
+            defaultNamespace: '/' + options.applicationName,
             defaultTimeout: options.defaultTimeout
           }
         });
       },
-      "client created": function (client) {
+      'client created': function (client) {
         suite.clients = suite.clients || [];
         suite.clients[index] = client;
       }
     };
-    batchName = "Create work-already client for clusterMemberId: " + data.clusterMemberId;
+    batchName = 'Create work-already client for clusterMemberId: ' + data.clusterMemberId;
     batch = {};
     batch[batchName] = batchContent;
     suite.addBatch(batch);
@@ -443,9 +443,9 @@ exports.application.vowsSuitePendingConnections = function (name, options) {
     // 2) Get application page.
     batchContent = {
       topic: function () {
-        suite.clients[index].action("/" + options.applicationName + "/", this.callback);
+        suite.clients[index].action('/' + options.applicationName + '/', this.callback);
       },
-      "page fetched": function (error, page) {
+      'page fetched': function (error, page) {
         assert.isNull(error);
         assert.isObject(page);
         assert.strictEqual(page.statusCode, 200);
@@ -455,7 +455,7 @@ exports.application.vowsSuitePendingConnections = function (name, options) {
         });
       }
     };
-    batchName = "Load application page from clusterMemberId: " + data.clusterMemberId;
+    batchName = 'Load application page from clusterMemberId: ' + data.clusterMemberId;
     batch = {};
     batch[batchName] = batchContent;
     suite.addBatch(batch);
@@ -486,11 +486,11 @@ exports.application.vowsSuitePendingConnections = function (name, options) {
  *   processData: [
  *     {
  *       port: 10078,
- *       clusterMemberId: "alpha"
+ *       clusterMemberId: 'alpha'
  *     },
  *     {
  *       port: 10079,
- *       clusterMemberId: "beta"
+ *       clusterMemberId: 'beta'
  *     },
  *     ...
  *   ]
@@ -510,20 +510,20 @@ exports.application.vowsSuite = function(name, options) {
     var batchContent = {
       topic: function () {
         suite.clients[index].action({
-          type: "connect",
+          type: 'connect',
           socketConfig: {
-            "resource": options.applicationName + "/socket.io"
+            'resource': options.applicationName + '/socket.io'
           }
         }, this.callback);
       },
-      "connected": function (error, page) {
+      'connected': function (error, page) {
         var client = suite.clients[index];
         assert.isNull(error);
         assert.isObject(client.page.sockets);
         assert.isObject(client.page.sockets[client.config.sockets.defaultNamespace]);
       }
     };
-    var batchName = "Connect via Socket.IO to clusterMemberId: " + data.clusterMemberId;
+    var batchName = 'Connect via Socket.IO to clusterMemberId: ' + data.clusterMemberId;
     var batch = {};
     batch[batchName] = batchContent;
     suite.addBatch(batch);
@@ -542,23 +542,23 @@ exports.application.vowsSuite = function(name, options) {
  */
 exports.application.closeVowsSuite = function (suite) {
   suite.addBatch({
-    "Close clients": {
+    'Close clients': {
       topic: function () {
         if (Array.isArray(suite.clients) && suite.clients.length) {
           async.forEach(suite.clients, function (client, asyncCallback) {
-            client.action({ type: "unload" }, asyncCallback);
+            client.action({ type: 'unload' }, asyncCallback);
           }, this.callback);
         } else {
           this.callback();
         }
       },
-      "clients unloaded": function (error) {
-        assert.typeOf(error, "undefined");
+      'clients unloaded': function (error) {
+        assert.typeOf(error, 'undefined');
       }
     }
   });
   suite.addBatch({
-    "Shut down application child processes": {
+    'Shut down application child processes': {
       topic: function () {
         if (Array.isArray(suite.childProcesses)) {
           suite.childProcesses.forEach(function (child, index, array) {
@@ -568,7 +568,7 @@ exports.application.closeVowsSuite = function (suite) {
         }
         return true;
       },
-      "shutdown complete": function () {}
+      'shutdown complete': function () {}
     }
   });
 };
@@ -612,14 +612,14 @@ exports.application.addActionAndAwaitResponsesBatch = function (batchName, suite
   // probably miss the emitted response.
   //
   // This requires further if-statements further down in this message as well.
-  if (options.action.type === "connect" && options.responseIndexes.indexOf(options.actionIndex) !== -1) {
-    options.action.type = "connectAndAwaitEmit";
-    options.action.eventType = "toClient";
+  if (options.action.type === 'connect' && options.responseIndexes.indexOf(options.actionIndex) !== -1) {
+    options.action.type = 'connectAndAwaitEmit';
+    options.action.eventType = 'toClient';
   }
 
   // Put the default vow in place.
   options.vows = options.vows || {
-    "expected responses emitted": function (unusedError, results) {
+    'expected responses emitted': function (unusedError, results) {
       var args = [
         options.applicationId,
         exports.wrapAsMessage(options.responseMessage).toObject()
@@ -650,7 +650,7 @@ exports.application.addActionAndAwaitResponsesBatch = function (batchName, suite
           socketEvent: socketEvent
         };
         var incomplete = options.responseIndexes.some(function (responseIndex, index, array) {
-          return (typeof results[responseIndex] !== "object");
+          return (typeof results[responseIndex] !== 'object');
         });
         if (!incomplete) {
           self.callback(null, results);
@@ -662,11 +662,11 @@ exports.application.addActionAndAwaitResponsesBatch = function (batchName, suite
       // responseIndexes. We're already waiting on an emitted event in that
       // case.
       options.responseIndexes.filter(function (responseIndex, index, array) {
-        return (options.action.type !== "connectAndAwaitEmit" || responseIndex !== options.actionIndex);
+        return (options.action.type !== 'connectAndAwaitEmit' || responseIndex !== options.actionIndex);
       }).forEach(function (responseIndex, index, array) {
         suite.clients[responseIndex].action({
-          type: "awaitEmit",
-          eventType: "toClient"
+          type: 'awaitEmit',
+          eventType: 'toClient'
         }, function (error, socketEvent) {
           addResult(responseIndex, error, socketEvent);
         });
@@ -675,7 +675,7 @@ exports.application.addActionAndAwaitResponsesBatch = function (batchName, suite
       // If this is connectAndAwaitEmit, and the actionIndex is one of the
       // responseIndexes, then we have to pass the result along. Otherwise we
       // discard the callback for the action.
-      if (options.action.type === "connectAndAwaitEmit" && options.responseIndexes.indexOf(options.actionIndex) !== -1) {
+      if (options.action.type === 'connectAndAwaitEmit' && options.responseIndexes.indexOf(options.actionIndex) !== -1) {
         suite.clients[options.actionIndex].action(options.action, function (error, socketEvent) {
           addResult(options.actionIndex, error, socketEvent);
         });
@@ -728,8 +728,8 @@ exports.application.addActionAndAwaitResponsesBatch = function (batchName, suite
 exports.application.addSendAndAwaitResponsesBatch = function (batchName, suite, options) {
   var message = exports.wrapAsMessage(options.sendMessage);
   options.action = {
-    type: "emit",
-    args: ["fromClient", options.applicationId, message]
+    type: 'emit',
+    args: ['fromClient', options.applicationId, message]
   };
   exports.application.addActionAndAwaitResponsesBatch(batchName, suite, options);
 };
@@ -764,7 +764,7 @@ exports.application.addSendAndAwaitResponsesBatch = function (batchName, suite, 
 exports.application.addDisconnectAndAwaitResponsesBatch = function (batchName, suite, options) {
   var message = exports.wrapAsMessage(options.sendMessage);
   options.action = {
-    type: "unload"
+    type: 'unload'
   };
   exports.application.addActionAndAwaitResponsesBatch(batchName, suite, options);
 };
@@ -798,9 +798,9 @@ exports.application.addDisconnectAndAwaitResponsesBatch = function (batchName, s
  */
 exports.application.addConnectAndAwaitResponsesBatch = function (batchName, suite, options) {
   options.action = {
-    type: "connect",
+    type: 'connect',
     socketConfig: {
-      "resource": options.applicationId + "/socket.io"
+      'resource': options.applicationId + '/socket.io'
     }
   };
   exports.application.addActionAndAwaitResponsesBatch(batchName, suite, options);
@@ -890,9 +890,9 @@ exports.addDelayBatch = function (suite, delay) {
     topic: function () {
       setTimeout(this.callback, delay);
     },
-    "delayed": function () {}
+    'delayed': function () {}
   };
-  var batchName = "Delay by " + delay + "ms";
+  var batchName = 'Delay by ' + delay + 'ms';
   var batch = {};
   batch[batchName] = batchContents;
   suite.addBatch(batch);

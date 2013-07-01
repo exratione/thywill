@@ -9,7 +9,7 @@
  */
 
 (function () {
-  "use strict";
+  'use strict';
 
   // ------------------------------------------
   // Define an Echo application class.
@@ -38,18 +38,18 @@
    * Create the application user interface and its event listeners.
    */
   p.uiSetup = function () {
-    this.templates.messageTemplate = Handlebars.compile(jQuery("#{{{messageTemplateId}}}").html());
-    jQuery("#sender textarea").focus();
-    jQuery("#echo-wrapper").append('');
+    this.templates.messageTemplate = Handlebars.compile(jQuery('#{{{messageTemplateId}}}').html());
+    jQuery('#sender textarea').focus();
+    jQuery('#echo-wrapper').append('');
   };
 
   /**
    * Make the UI disabled - no sending.
    */
   p.uiDisable = function () {
-    jQuery("textarea").val("").prop("disabled", true);
-    jQuery("#echo-wrapper").removeClass("enabled");
-    jQuery("#sender button").off("click");
+    jQuery('textarea').val('').prop('disabled', true);
+    jQuery('#echo-wrapper').removeClass('enabled');
+    jQuery('#sender button').off('click');
   };
 
   /**
@@ -57,16 +57,16 @@
    */
   p.uiEnable = function () {
     var self = this;
-    jQuery("textarea").prop("disabled", false);
-    jQuery("#echo-wrapper").addClass("enabled");
-    jQuery("#sender button").on("click", function () {
-      var textarea = jQuery("#sender textarea");
+    jQuery('textarea').prop('disabled', false);
+    jQuery('#echo-wrapper').addClass('enabled');
+    jQuery('#sender button').on('click', function () {
+      var textarea = jQuery('#sender textarea');
       var inputData = textarea.val();
       if (inputData) {
         // Sending this user-entered data as a message to the server side of the
         // this application.
         self.send(inputData);
-        textarea.val("");
+        textarea.val('');
       }
     });
   };
@@ -75,11 +75,11 @@
    * Change the status message.
    */
   p.uiStatus = function (text, className) {
-    var status = jQuery("#status");
+    var status = jQuery('#status');
     var speed = 100;
     status.fadeOut(speed, function () {
       status.html(text)
-        .removeClass("connecting connected disconnected")
+        .removeClass('connecting connected disconnected')
         .addClass(className)
         .fadeIn(speed);
     });
@@ -105,50 +105,50 @@
   p.received = function (message) {
     // Set scroll top, or else the new message might not push down content
     // correctly.
-    jQuery("#echo-output").scrollTop(0);
+    jQuery('#echo-output').scrollTop(0);
     // Render the message HTML.
     var rendered = this.templates.messageTemplate({
       data: message.getData()
     });
-    // Convert to DOM. The filter("*") gets rid of newline text nodes, which
+    // Convert to DOM. The filter('*') gets rid of newline text nodes, which
     // cause jQuery issues.
     rendered = jQuery.parseHTML(rendered);
-    jQuery(rendered).filter("*").hide().prependTo("#echo-output").slideDown();
+    jQuery(rendered).filter('*').hide().prependTo('#echo-output').slideDown();
   };
 
   /**
    * @see Thywill.ApplicationInterface#connecting
    */
   p.connecting = function () {
-    this.uiStatus("Connecting...", "connecting");
-    this.log("Client attempting to connect.");
+    this.uiStatus('Connecting...', 'connecting');
+    this.log('Client attempting to connect.');
   };
 
   /**
    * @see Thywill.ApplicationInterface#connected
    */
   p.connected = function () {
-    this.uiStatus("Connected", "connected");
+    this.uiStatus('Connected', 'connected');
     this.uiEnable();
-    this.log("Client connected.");
+    this.log('Client connected.');
   };
 
   /**
    * @see Thywill.ApplicationInterface#connectionFailure
    */
   p.connectionFailure = function () {
-    this.uiStatus("Disconnected", "disconnected");
+    this.uiStatus('Disconnected', 'disconnected');
     this.uiDisable();
-    this.log("Client failed to connect.");
+    this.log('Client failed to connect.');
   };
 
   /**
    * @see Thywill.ApplicationInterface#disconnected
    */
   p.disconnected = function () {
-    this.uiStatus("Disconnected", "disconnected");
+    this.uiStatus('Disconnected', 'disconnected');
     this.uiDisable();
-    this.log("Client disconnected.");
+    this.log('Client disconnected.');
   };
 
   // ----------------------------------------------------------
@@ -158,7 +158,7 @@
   // Create the application instance. The application ID will be populated
   // by the backend via the Handlebars template engine when this Javascript
   // file is prepared as a resource.
-  var app = new EchoApplication("{{{applicationId}}}");
+  var app = new EchoApplication('{{{applicationId}}}');
 
   // Initial UI setup.
   jQuery(document).ready(function () {

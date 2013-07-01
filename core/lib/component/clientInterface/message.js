@@ -23,7 +23,7 @@ var window;
  */
 function Message (data, metadata) {
   this.data = data;
-  if (metadata && typeof metadata === "object") {
+  if (metadata && typeof metadata === 'object') {
     this._ = metadata;
   } else {
     this._ = {};
@@ -32,17 +32,17 @@ function Message (data, metadata) {
 var p = Message.prototype;
 
 //-----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 //-----------------------------------------------------------
 
 Message.METADATA = {
   // The type of the message.
-  TYPE: "type"
+  TYPE: 'type'
 };
 
 Message.TYPES = {
   NONE: undefined,
-  RPC: "rpc"
+  RPC: 'rpc'
 };
 
 //-----------------------------------------------------------
@@ -70,7 +70,7 @@ p.setData = function (data) {
  * getMetadata(name) => value
  */
 p.getMetadata = function () {
-  if (typeof arguments[0] === "string") {
+  if (typeof arguments[0] === 'string') {
     return this._[arguments[0]];
   } else {
     return this._;
@@ -88,9 +88,9 @@ p.setMetadata = function () {
     return;
   }
   var type = typeof arguments[0];
-  if (type === "object") {
+  if (type === 'object') {
     this._ = arguments[0];
-  } else if (type === "string" && arguments.length > 1) {
+  } else if (type === 'string' && arguments.length > 1) {
     this._[arguments[0]] = arguments[1];
   }
 };

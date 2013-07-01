@@ -3,11 +3,11 @@
  * SocketIoExpressClientInterface class definition.
  */
 
-var util = require("util");
-var async = require("async");
-var clone = require("clone");
-var Thywill = require("thywill");
-var SocketIoClientInterface = require("./socketIoClientInterface");
+var util = require('util');
+var async = require('async');
+var clone = require('clone');
+var Thywill = require('thywill');
+var SocketIoClientInterface = require('./socketIoClientInterface');
 
 // -----------------------------------------------------------
 // Class Definition
@@ -27,15 +27,15 @@ util.inherits(SocketIoExpressClientInterface, SocketIoClientInterface);
 var p = SocketIoExpressClientInterface.prototype;
 
 // -----------------------------------------------------------
-// "Static" parameters
+// 'Static' parameters
 // -----------------------------------------------------------
 
 SocketIoExpressClientInterface.CONFIG_TEMPLATE = clone(SocketIoClientInterface.CONFIG_TEMPLATE);
 
 SocketIoExpressClientInterface.CONFIG_TEMPLATE.server.app = {
   _configInfo: {
-    description: "An Express application instance.",
-    types: "function",
+    description: 'An Express application instance.',
+    types: 'function',
     required: false
   }
 };
@@ -43,22 +43,22 @@ SocketIoExpressClientInterface.CONFIG_TEMPLATE.server.app = {
 SocketIoExpressClientInterface.CONFIG_TEMPLATE.sessions = {
   store: {
     _configInfo: {
-      description: "For Express sessions: the session store instance.",
-      types: "object",
+      description: 'For Express sessions: the session store instance.',
+      types: 'object',
       required: false
     }
   },
   cookieKey: {
     _configInfo: {
-      description: "For Express sessions: The name used for session cookies.",
-      types: "string",
+      description: 'For Express sessions: The name used for session cookies.',
+      types: 'string',
       required: false
     }
   },
   cookieSecret: {
     _configInfo: {
-      description: "For Express sessions: The secret value used for session cookies.",
-      types: "string",
+      description: 'For Express sessions: The secret value used for session cookies.',
+      types: 'string',
       required: false
     }
   }
@@ -86,7 +86,7 @@ p._startup = function (callback) {
  */
 p._setExpressToServeResources = function () {
   var self = this;
-  var express = require("express");
+  var express = require('express');
 
   // This middleware essentially performs the action of a route. This is a way
   // to ensure that Thywill routes will run no matter the order in which
@@ -169,16 +169,16 @@ p._setExpressToServeResources = function () {
  */
 p._attachExpressSessionsToSockets = function () {
   var self = this;
-  var express = require("express");
+  var express = require('express');
   var cookieParser = express.cookieParser(this.config.sessions.cookieSecret);
   // We're using the authorization hook, but there is no authorizing going on
   // here - we're only attaching the session to the socket handshake.
-  this.socketFactory.set("authorization", function (data, callback) {
+  this.socketFactory.set('authorization', function (data, callback) {
     if (data && data.headers && data.headers.cookie) {
       cookieParser(data, {}, function (error) {
         if (error) {
           self.thywill.log.debug(error);
-          callback("COOKIE_PARSE_ERROR", false);
+          callback('COOKIE_PARSE_ERROR', false);
           return;
         }
 
@@ -193,9 +193,9 @@ p._attachExpressSessionsToSockets = function () {
           data.sessionId = sessionId;
           if (error) {
             self.thywill.log.debug(error);
-            callback("ERROR", false);
+            callback('ERROR', false);
           } else if (!session) {
-            callback("NO_SESSION", false);
+            callback('NO_SESSION', false);
           } else {
             // Add the session. This will show up in
             // socket.handshake.session.
@@ -205,7 +205,7 @@ p._attachExpressSessionsToSockets = function () {
         });
       });
     } else {
-      callback("NO_COOKIE", false);
+      callback('NO_COOKIE', false);
     }
   });
 };
@@ -259,15 +259,15 @@ p.handleResourceRequest = function (req, res, next, error, resource) {
     this._send500ResourceResponse(req, res, next, error);
     return;
   } else if (!resource) {
-    this._send500ResourceResponse(req, res, next, new Error("Missing resource."));
+    this._send500ResourceResponse(req, res, next, new Error('Missing resource.'));
     return;
   }
 
   if (resource.isInMemory()) {
-    res.setHeader("Content-Type", resource.type);
+    res.setHeader('Content-Type', resource.type);
     res.send(resource.buffer);
   } else if (resource.isPiped()) {
-    res.setHeader("Content-Type", resource.type);
+    res.setHeader('Content-Type', resource.type);
     res.sendFile(resource.filePath, {
       // TODO: maxage configuration.
       maxAge: 0
@@ -275,7 +275,7 @@ p.handleResourceRequest = function (req, res, next, error, resource) {
   } else {
     // This resource is probably not set up correctly. It should either have
     // data in memory or be set up to be piped.
-    this._send500ResourceResponse(req, res, next, new Error("Resource incorrectly configured: " + req.path));
+    this._send500ResourceResponse(req, res, next, new Error('Resource incorrectly configured: ' + req.path));
   }
 };
 

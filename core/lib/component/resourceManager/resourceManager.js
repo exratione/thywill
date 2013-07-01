@@ -3,11 +3,11 @@
  * ResourceManager class definition.
  */
 
-var fs = require("fs");
-var pathUtils = require("path");
-var util = require("util");
-var Thywill = require("thywill");
-var Resource = Thywill.getBaseClass("Resource");
+var fs = require('fs');
+var pathUtils = require('path');
+var util = require('util');
+var Thywill = require('thywill');
+var Resource = Thywill.getBaseClass('Resource');
 
 //-----------------------------------------------------------
 // Class Definition
@@ -20,13 +20,13 @@ var Resource = Thywill.getBaseClass("Resource");
  */
 function ResourceManager() {
   ResourceManager.super_.call(this);
-  this.componentType = "resourceManager";
+  this.componentType = 'resourceManager';
   // Convenience copies of Resource static values.
   this.types = Resource.TYPES;
   this.defaultType = Resource.DEFAULT_TYPE;
   this.typeByExtension = Resource.TYPE_BY_EXTENSION;
 }
-util.inherits(ResourceManager, Thywill.getBaseClass("Component"));
+util.inherits(ResourceManager, Thywill.getBaseClass('Component'));
 var p = ResourceManager.prototype;
 
 //-----------------------------------------------------------
@@ -39,9 +39,9 @@ var p = ResourceManager.prototype;
 p._getDependencies = function () {
   return {
     components: [
-      "log",
-      "cluster",
-      "cacheManager"
+      'log',
+      'cluster',
+      'cacheManager'
     ]
   };
 };
@@ -89,12 +89,12 @@ p.createResourceFromFile = function (path, attributes, callback) {
 p.createResource = function (data, attributes) {
   // If we have a string rather than null or a Buffer, then convert it into a
   // Buffer.
-  if (typeof data === "string") {
+  if (typeof data === 'string') {
     var encoding;
     if (attributes && attributes.encoding) {
       encoding = attributes.encoding;
     } else {
-      encoding = "utf8";
+      encoding = 'utf8';
     }
     data = new Buffer(data, encoding);
   }
@@ -143,7 +143,7 @@ p.createResource = function (data, attributes) {
  *   Of the form function (error), where error === null on success.
  */
 p.store = function (key, resource, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -157,7 +157,7 @@ p.store = function (key, resource, callback) {
  *   resource is the item stored, or null if no item is found.
  */
 p.remove = function (key, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 /**
@@ -170,7 +170,7 @@ p.remove = function (key, callback) {
  *   resource is the item stored, or null if no item is found.
  */
 p.load = function (key, callback) {
-  throw new Error("Not implemented.");
+  throw new Error('Not implemented.');
 };
 
 //-----------------------------------------------------------
