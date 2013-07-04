@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Ongoing Work
-------------
+v0.0.11 - 07/03/2013
+--------------------
 
   * HTML page templates are now provided as bootstrap Resources in the service / application setup.
   * Added Tabular example application to demonstrate integration with AngularJS.

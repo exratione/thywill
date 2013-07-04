@@ -91,7 +91,6 @@ p.receivedFromClient = function (client, message) {
   var data = message.getData();
   var connectionId = client.getConnectionId();
   if (data === 'start') {
-    this.thywill.log.debug('Tabular: start sending data to: ' + connectionId);
     this.startSendingData(connectionId);
   } else if (data === 'stop') {
     this.stopSendingData(connectionId);
@@ -123,6 +122,7 @@ p.getRandomInterval = function () {
  *   Connection ID of the receiving client.
  */
 p.startSendingData = function (connectionId) {
+  this.thywill.log.debug('Tabular: start sending data to: ' + connectionId);
   var self = this;
 
   // Assemble a row, send it on down.

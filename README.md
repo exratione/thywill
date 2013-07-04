@@ -72,9 +72,9 @@ accomplished by:
 
   * Inheriting from the Application class on the server
   * Inheriting from the ApplicationInterface class on the client
-  * Writing a suitable main Thywill configuration file
+  * Writing a Thywill configuration file that defines which components Thywill uses
   * Writing templates and CSS to define the user interface
-  * Defining the manifest of resources for initial delivery to the client
+  * Creating a manifest of resources for initial delivery to the client
   * Cloning and customizing a launch script
 
 Beyond this minimum, a Thywill application can contain any arbitrary code. It
@@ -96,8 +96,12 @@ which, it is assumed, are going to be doing a lot of REST API access. You can
 let Thywill handle messaging, connection tracking, and the rest of its functions
 while both Express and the client framework get on with their jobs.
 
-Using AngularJS, Ember, or Other Frameworks With Thywill
---------------------------------------------------------
+Several of the example Thywill applications use Express to serve all content via
+the SocketIoExpressClientInterface component, such as the Chat application that
+can be found at /applications/chat.
+
+Using AngularJS With Thywill
+----------------------------
 
 It's simple to use a front-end framework like AngularJS with Thywill. Just
 create an ApplicationInterface class as usual, obtain a reference to it in
@@ -107,10 +111,14 @@ For example, in an AngularJS controller you might do something like this:
 
     var thywillApp = Thywill.myApplicationInterfaceInstance;
     thywillApp.on('received', function (message) {
-      $scope.messages.push(message);
+      $scope.apply(function (scope) {
+        scope.messages.push(message);
+      });
     });
     $thywillApp.on('disconnected', function () {
-      $scope.isConnected = false;
+      $scope.apply(function (scope) {
+        scope.isConnected = false;
+      });
     })
 
 The Tabular example application in /applications/tabular illustrates how to

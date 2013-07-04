@@ -574,21 +574,23 @@ exports.application.closeVowsSuite = function (suite) {
 };
 
 /**
- * Perform an action with one child process Thywill instance, and wait for an
- * emitted response, either from that instance or from another instance.
+ * Perform an optional action with one child process Thywill instance, and wait
+ * for an emitted response from one or more instances.
  *
  * Options has the form:
  *
  * {
  *   // Which application this involves.
  *   applicationId: string,
- *   // Which Thywill instance / client instance to use for the action.
- *   actionIndex: number,
- *   // An action definition.
- *   action: object,
+ *   // Which Thywill instance / client instance to use for the action, or
+ *   // undefined if no action is to be taken.
+ *   actionIndex: number | undefined,
+ *   // An action definition or undefined if no action is to be taken.
+ *   action: object | undefined,
  *   // Which Thywill instances / client instances expect the response.
  *   responseIndexes: number|array,
- *   // The Message instance or message data expected in the response.
+ *   // The Message instance or message data expected in the response. This is
+ *   // only checked if no vows are provided.
  *   responseMessage: mixed,
  *   // Optional vows functions to run tests, keyed by display name. Signatures
  *   // are function (error, results).
@@ -611,13 +613,18 @@ exports.application.addActionAndAwaitResponsesBatch = function (batchName, suite
   // indexes, switch it to connectAndAwaitEmit, because otherwise we'll
   // probably miss the emitted response.
   //
-  // This requires further if-statements further down in this message as well.
-  if (options.action.type === 'connect' && options.responseIndexes.indexOf(options.actionIndex) !== -1) {
+  // This requires further if-statements further down in this method as well.
+  if (
+    options.action &&
+    options.action.type === 'connect' &&
+    options.responseIndexes.indexOf(options.actionIndex) !== -1
+  ) {
     options.action.type = 'connectAndAwaitEmit';
     options.action.eventType = 'toClient';
   }
 
-  // Put the default vow in place.
+  // Put the default vow in place if no vows are provided. This checks the
+  // provided action.responseMessage against what is actually received.
   options.vows = options.vows || {
     'expected responses emitted': function (unusedError, results) {
       var args = [
@@ -662,7 +669,11 @@ exports.application.addActionAndAwaitResponsesBatch = function (batchName, suite
       // responseIndexes. We're already waiting on an emitted event in that
       // case.
       options.responseIndexes.filter(function (responseIndex, index, array) {
-        return (options.action.type !== 'connectAndAwaitEmit' || responseIndex !== options.actionIndex);
+        return (
+          !options.action ||
+          options.action.type !== 'connectAndAwaitEmit' ||
+          responseIndex !== options.actionIndex
+        );
       }).forEach(function (responseIndex, index, array) {
         suite.clients[responseIndex].action({
           type: 'awaitEmit',
@@ -672,25 +683,158 @@ exports.application.addActionAndAwaitResponsesBatch = function (batchName, suite
         });
       });
 
-      // If this is connectAndAwaitEmit, and the actionIndex is one of the
-      // responseIndexes, then we have to pass the result along. Otherwise we
-      // discard the callback for the action.
-      if (options.action.type === 'connectAndAwaitEmit' && options.responseIndexes.indexOf(options.actionIndex) !== -1) {
-        suite.clients[options.actionIndex].action(options.action, function (error, socketEvent) {
-          addResult(options.actionIndex, error, socketEvent);
-        });
-      } else {
-        suite.clients[options.actionIndex].action(options.action, function (error) {
-          if (error) {
-            console.error(error.stack || error.toString());
-          }
-        });
+      // If we're taking an action, then take it.
+      if (options.action) {
+        // If this is connectAndAwaitEmit, and the actionIndex is one of the
+        // responseIndexes, then we have to pass the result along.
+        if (
+          options.action.type === 'connectAndAwaitEmit' &&
+          options.responseIndexes.indexOf(options.actionIndex) !== -1
+        ) {
+          suite.clients[options.actionIndex].action(options.action, function (error, socketEvent) {
+            addResult(options.actionIndex, error, socketEvent);
+          });
+        }
+        // Otherwise we discard the callback for the action as uninteresting
+        // unless it errors.
+        else {
+          suite.clients[options.actionIndex].action(options.action, function (error) {
+            if (error) {
+              console.error(error.stack || error.toString());
+            }
+          });
+        }
       }
     }
   };
   for (var prop in options.vows) {
     definition[prop] = options.vows[prop];
   }
+
+  batch[batchName] = definition;
+  suite.addBatch(batch);
+};
+
+/**
+ * Perform an optional action with one child process Thywill instance, and wait
+ * to confirm that there is no emitted response event of a specific type within
+ * the timeout period arriving from one or more instances.
+ *
+ * Options has the form:
+ *
+ * {
+ *   // Which application this involves.
+ *   applicationId: string,
+ *   // Which Thywill instance / client instance to use for the action, or
+ *   // undefined if no action is to be taken.
+ *   actionIndex: number | undefined,
+ *   // An action definition or undefined if no action is to be taken.
+ *   action: object | undefined,
+ *   // Which Thywill instances / client instances expect to have no response.
+ *   responseIndexes: number|array,
+ *   // An optional function that checks the message in the response. If it
+ *   // returns true, then that message counts and the test failed. Otherwise
+ *   // the message is ignored. If no function is provided, then every message
+ *   // counts.
+ *   matchResponseMessage: function (eventName, data ...) { return true; }
+ * }
+ *
+ * @param {string} batchName
+ *   Name of the batch.
+ * @param {object} suite
+ *   A Vows test suite instance.
+ * @param {object} options
+ *   The rest of the needed parameters.
+ */
+exports.application.addActionAndConfirmNoResponsesBatch = function (batchName, suite, options) {
+  if (!Array.isArray(options.responseIndexes)) {
+    options.responseIndexes = [options.responseIndexes];
+  }
+
+  // If the action is connect, and the actionIndex is included in the response
+  // indexes, switch it to connectAndConfirmNoMatchingEmit, because otherwise
+  // we'll probably miss any immediately emitted response.
+  //
+  // This requires further if-statements further down in this method as well.
+  if (
+    options.action &&
+    options.action.type === 'connect' &&
+    options.responseIndexes.indexOf(options.actionIndex) !== -1
+  ) {
+    options.action.type = 'connectAndConfirmNoMatchingEmit';
+    options.action.eventType = 'toClient';
+  }
+
+  var batch = {};
+  var definition = {
+    topic: function () {
+      var self = this;
+      var results = [];
+      // Helper function; get all results before callback is called.
+      var addResult = function (index, error) {
+        results[index] = {
+          error: error
+        };
+        var incomplete = options.responseIndexes.some(function (responseIndex, index, array) {
+          return (typeof results[responseIndex] !== 'object');
+        });
+        if (!incomplete) {
+          self.callback(null, results);
+        }
+      };
+
+      // Note the filtering - don't confirm no emit if we're already running
+      // connectAndConfirmNoMatchingEmit, and the actionIndex is also one of the
+      // responseIndexes. We're already checking for no emitted event in that
+      // case.
+      options.responseIndexes.filter(function (responseIndex, index, array) {
+        return (
+          !options.action ||
+          options.action.type !== 'connectAndConfirmNoMatchingEmit' ||
+          responseIndex !== options.actionIndex
+        );
+      }).forEach(function (responseIndex, index, array) {
+        suite.clients[responseIndex].action({
+          type: 'confirmNoMatchingEmit',
+          eventType: 'toClient',
+          match: options.matchResponseMessage
+        }, function (error) {
+          addResult(responseIndex, error);
+        });
+      });
+
+      // If we're taking an action, then take it.
+      if (options.action) {
+        // If this is connectAndAwaitEmit, and the actionIndex is one of the
+        // responseIndexes, then we have to pass the result along.
+        if (
+          options.action.type === 'connectAndConfirmNoMatchingEmit' &&
+          options.responseIndexes.indexOf(options.actionIndex) !== -1
+        ) {
+          suite.clients[options.actionIndex].action(options.action, function (error) {
+            addResult(options.actionIndex, error);
+          });
+        }
+        // Otherwise we discard the callback for the action as uninteresting
+        // unless it errors.
+        else {
+          suite.clients[options.actionIndex].action(options.action, function (error) {
+            if (error) {
+              console.error(error.stack || error.toString());
+            }
+          });
+        }
+      }
+    }
+  };
+
+  // The vow for this definition. Pretty simple, as we're looking for an
+  // absence of things.
+  definition['no responses emitted'] = function (unusedError, results) {
+    results.forEach(function (result, index, array) {
+      assert.isNull(result.error);
+    });
+  };
 
   batch[batchName] = definition;
   suite.addBatch(batch);
@@ -732,6 +876,44 @@ exports.application.addSendAndAwaitResponsesBatch = function (batchName, suite, 
     args: ['fromClient', options.applicationId, message]
   };
   exports.application.addActionAndAwaitResponsesBatch(batchName, suite, options);
+};
+
+/**
+ * Send a message to a child process Thywill instance, and wait for a response
+ * on one or more instances.
+ *
+ * Options has the form:
+ *
+ * {
+ *   // Which application this involves.
+ *   applicationId: string,
+ *   // Which Thywill instance / client instance to use for sending.
+ *   actionIndex: number,
+ *   // Which Thywill instances / client instances expect the response.
+ *   responseIndexes: number | array,
+ *   // The Message instance or message data to send.
+ *   sendMessage: mixed,
+ *   // An optional function that checks the message in the response. If it
+ *   // returns true, then that message counts and the test failed. Otherwise
+ *   // the message is ignored. If no function is provided, then every message
+ *   // counts.
+ *   matchResponseMessage: function (eventName, data ...) { return true; }
+ * }
+ *
+ * @param {string} batchName
+ *   Name of the batch.
+ * @param {object} suite
+ *   A Vows test suite instance.
+ * @param {object} options
+ *   The rest of the needed parameters.
+ */
+exports.application.addSendAndConfirmNoResponsesBatch = function (batchName, suite, options) {
+  var message = exports.wrapAsMessage(options.sendMessage);
+  options.action = {
+    type: 'emit',
+    args: ['fromClient', options.applicationId, message]
+  };
+  exports.application.addActionAndConfirmNoResponsesBatch(batchName, suite, options);
 };
 
 /**
@@ -803,6 +985,36 @@ exports.application.addConnectAndAwaitResponsesBatch = function (batchName, suit
       'resource': options.applicationId + '/socket.io'
     }
   };
+  exports.application.addActionAndAwaitResponsesBatch(batchName, suite, options);
+};
+
+/**
+ * Wait on a message from one or more instances.
+ *
+ * Options has the form:
+ *
+ * {
+ *   // Which application this involves.
+ *   applicationId: string,
+ *   // Which Thywill instances / client instances expect the response.
+ *   responseIndexes: number | array,
+ *   // The Message instance or message data expected in the response.
+ *   responseMessage: mixed,
+ *   // Optional vows functions to run tests, keyed by display name. Signatures
+ *   // are function (error, results).
+ *   vows: object
+ * }
+ *
+ * @param {string} batchName
+ *   Name of the batch.
+ * @param {object} suite
+ *   A Vows test suite instance.
+ * @param {object} options
+ *   The rest of the needed parameters.
+ */
+exports.application.addAwaitResponsesBatch = function (batchName, suite, options) {
+  options.action = undefined;
+  options.actionIndex = undefined;
   exports.application.addActionAndAwaitResponsesBatch(batchName, suite, options);
 };
 
