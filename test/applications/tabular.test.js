@@ -15,7 +15,7 @@ var suite = tools.application.vowsSuite('Application: Tabular', {
   // Socket.IO. The matches are checked against the page contents. Here
   // we're looking at the templates that should be included.
   pageMatches: [
-    '<html data-ng-app="tabular" class="no-js" lang="en">'
+    'data-ng-app="tabular"'
   ],
   // Data for the processes to launch.
   processData: [
