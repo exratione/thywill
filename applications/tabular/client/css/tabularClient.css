@@ -97,8 +97,8 @@ button {
 }
 
 /*
-  When the UI is enabled, change colors, and shadows. The buttons can separately
-  be enabled or disabled when the UI is enabled.
+  When the UI is enabled, change colors, and shadows. The buttons can be
+  enabled or disabled separately when the UI is enabled.
 */
 
 .ui-enabled .row-header {
@@ -133,20 +133,20 @@ button {
   transition: all 0.3s ease-in-out;
 }
 
-/* CSS3 animations, keyed in with the AngularJS animation directives. */
+/* CSS3 animations, keyed in with the AngularJS ngAnimate service. */
 
-.row-enter, .row-leave {
+.row.ng-enter, .row.ng-leave {
   -webkit-transition: all 0.3s ease-in-out;
   -moz-transition: all 0.3s ease-in-out;
   -o-transition: all 0.3s ease-in-out;
   transition: all 0.3s ease-in-out;
 }
-.row.row-enter, .row.row-leave.row-leave-active {
+.row.ng-enter, .row.ng-leave.ng-leave-active {
   height: 0;
   line-height: 0;
   opacity: 0;
 }
-.row.row-leave, .row.row-enter.row-enter-active {
+.row.ng-leave, .row.ng-enter.ng-enter-active {
   height: 30px;
   line-height: 30px;
   opacity: 1;
