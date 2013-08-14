@@ -41,10 +41,18 @@ var manifest = {
     clientPath: '/tabular/js/plugins.js',
     weight: -30
   },
-  // Add in Angular.js.
-  '../../../thirdParty/angular/angular.1.1.5.min.js': {
+  // Add in AngularJS files.
+  '../../../thirdParty/angular/angular.1.2.0.rc1.min.js': {
     clientPath: '/tabular/js/angular.min.js',
     weight: -20
+  },
+  '../../../thirdParty/angular/angular-route.1.2.0.rc1.min.js': {
+    clientPath: '/tabular/js/angular-route.min.js',
+    weight: -19
+  },
+  '../../../thirdParty/angular/angular-animate.1.2.0.rc1.min.js': {
+    clientPath: '/tabular/js/angular-animate.min.js',
+    weight: -18
   },
   // Add in the various client and Angular application Javascript files.
   '../client/js/tabularAngularApp.js': {

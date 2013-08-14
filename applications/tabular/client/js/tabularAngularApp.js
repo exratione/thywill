@@ -15,7 +15,7 @@
   // Obtain a reference to the ApplicationInterface.
   var applicationInterface = Thywill.tabularApplication;
   // Create the example application AngularJS module.
-  var tabular = angular.module('tabular', []);
+  var tabular = angular.module('tabular', ['ngRoute', 'ngAnimate']);
 
   // Use the config function to set up routes, or route singular in this case.
   tabular.config(function ($routeProvider) {
