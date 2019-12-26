@@ -17,7 +17,7 @@
     "dateformat": "*",
     "ejs": "*",
     "express": "3.x.x",
-    "handlebars": "1.x.x",
+    "handlebars": "4.x.x",
     "lru-cache": "2.x.x",
     "redis": "*",
     "request": "*",
